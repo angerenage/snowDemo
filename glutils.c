@@ -78,7 +78,7 @@ void initWindow(vec2 size) {
 #endif
 
 	XMapWindow(display, window);
-	XStoreName(display, window, "Train Demo");
+	XStoreName(display, window, "Snow Demo");
 
 	typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 	glXCreateContextAttribsARBProc glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc) glXGetProcAddressARB((const GLubyte *) "glXCreateContextAttribsARB");
