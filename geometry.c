@@ -103,29 +103,43 @@ mat4 scaleMatrix(vec3 scale) {
 
 mat4 mat4_multiply(const mat4 *a, const mat4 *b) {
 	mat4 result = {0};
+
 	for (int i = 0; i < 4; i++) {
+		__m128 row_a = _mm_loadu_ps(a->m[i]);
+
 		for (int j = 0; j < 4; j++) {
-			for (int k = 0; k < 4; k++) {
-				result.m[i][j] += a->m[i][k] * b->m[k][j];
-			}
+			__m128 col_b = _mm_set_ps(b->m[3][j], b->m[2][j], b->m[1][j], b->m[0][j]);
+
+			__m128 mul = _mm_mul_ps(row_a, col_b);
+
+			__m128 shuf1 = _mm_shuffle_ps(mul, mul, _MM_SHUFFLE(2, 3, 0, 1));
+			__m128 sums1 = _mm_add_ps(mul, shuf1);
+
+			__m128 shuf2 = _mm_shuffle_ps(sums1, sums1, _MM_SHUFFLE(1, 0, 3, 2));
+			__m128 sums2 = _mm_add_ss(sums1, shuf2);
+
+			result.m[i][j] = _mm_cvtss_f32(sums2);
 		}
 	}
+
 	return result;
 }
 
 vec3 transform(mat4 matrix, vec3 v) {
-	float x = matrix.m[0][0] * v.x + matrix.m[0][1] * v.y + matrix.m[0][2] * v.z + matrix.m[0][3];
-	float y = matrix.m[1][0] * v.x + matrix.m[1][1] * v.y + matrix.m[1][2] * v.z + matrix.m[1][3];
-	float z = matrix.m[2][0] * v.x + matrix.m[2][1] * v.y + matrix.m[2][2] * v.z + matrix.m[2][3];
-	float w = matrix.m[3][0] * v.x + matrix.m[3][1] * v.y + matrix.m[3][2] * v.z + matrix.m[3][3];
+	float result[4] = {0};
+	__m128 vec_sse = _mm_loadu_ps(&v);
 
-	if (w != 0.0f) {
-		x /= w;
-		y /= w;
-		z /= w;
+	for (int i = 0; i < 4; i++) {
+		__m128 mat_row = _mm_loadu_ps(matrix.m[i]);
+		__m128 mul = _mm_mul_ps(mat_row, vec_sse);
+
+		__m128 temp = _mm_add_ps(mul, _mm_movehl_ps(mul, mul));
+		__m128 sum = _mm_add_ss(temp, _mm_shuffle_ps(temp, temp, 1));
+
+		result[i] = _mm_cvtss_f32(sum);
 	}
 
-	return (vec3){x, y, z};
+	return (vec3){result[0], result[1], result[2]};
 }
 
 vec3 vec3_add(vec3 a, vec3 b) {

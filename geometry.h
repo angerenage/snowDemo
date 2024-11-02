@@ -3,6 +3,7 @@
 #define _USE_MATH_DEFINES
 
 #include <math.h>
+#include <immintrin.h>
 #include <float.h>
 #include <stdlib.h>
 #include <stdbool.h>

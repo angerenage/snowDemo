@@ -40,22 +40,22 @@ typedef struct s_boneDefinition {
 } BoneDefinition;
 
 static const BoneDefinition characterDefinition[] = {
-	{{0.0f, 0.7553f, 0.0f}, Y, {0.0f, 0.287f, 0.0f}, {1.0f, 1.0f, 0.713f}, 0.287f, 0.23f, 0},			// 0 : Lower body
-	{{0.0f, 0.3109f, 0.0f}, Y | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.713f}, 0.287f, 0.23f, 0},		// 1 : Upper body
+	{{0.0f, 0.7553f, 0.0f}, Y, {0.0f, 0.287f, 0.0f}, {1.0f, 1.0f, 0.713f}, 0.287f, 0.23f, 0},				// 0 : Lower body
+	{{0.0f, 0.3109f, 0.0f}, Y | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.713f}, 0.287f, 0.23f, 0},			// 1 : Upper body
 
-	{{-0.1548f, 0.0764f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 0},			// 2 : Upper left leg
-	{{0.0f, -0.4153f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 2},				// 3 : Lower left leg
+	{{-0.1548f, 0.0764f, 0.0f}, Y | MINUS, {0.0f, -0.395f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 0},	// 2 : Upper left leg
+	{{0.0f, -0.4153f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.41636f, 0.12f, 2},				// 3 : Lower left leg
 
-	{{0.1548f, 0.0764f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 0},			// 4 : Upper right leg
-	{{0.0f, -0.4153f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 4},				// 5 : Lower right leg
+	{{0.1548f, 0.0764f, 0.0f}, Y | MINUS, {0.0f, -0.395f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 0},		// 4 : Upper right leg
+	{{0.0f, -0.4153f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.41636f, 0.12f, 4},				// 5 : Lower right leg
 
-	{{-0.0910f, 0.2533f, 0.0f}, X | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 1},	// 6 : Upper left arm
-	{{-0.4153f, 0.0f, 0.0f}, X | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 6},		// 7 : Lower left arm
+	{{-0.0910f, 0.2533f, 0.0f}, X, {-0.395f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 1},			// 6 : Upper left arm
+	{{-0.4153f, 0.0f, 0.0f}, X | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 6},			// 7 : Lower left arm
 	
-	{{0.0910f, 0.2533f, 0.0f}, X, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 1},			// 8 : Upper right arm
-	{{0.4153f, 0.0f, 0.0f}, X, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 8},				// 9 : Lower right arm
+	{{0.0910f, 0.2533f, 0.0f}, X | MINUS, {0.395f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 1},		// 8 : Upper right arm
+	{{0.4153f, 0.0f, 0.0f}, X, {0.0, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 8},					// 9 : Lower right arm
 
-	{{0.0f, 0.3290f, 0.0f}, Y | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.335f, 0.29f, 1},		// 10 : Head
+	{{0.0f, 0.3290f, 0.0f}, Y | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.335f, 0.29f, 1},			// 10 : Head
 };
 
 static GLuint characterVAO;
@@ -316,7 +316,7 @@ void initCharacter() {
 
 	for (int i = 0; i < boneNumber; i++) {
 		// Create the mesh
-		const float topHeight = characterDefinition[i].length * randomFloat(0.3f, 0.7f);
+		const float topHeight = characterDefinition[i].length * randomFloat(0.1, 0.4);
 		Crystal crystal = {
 			characterDefinition[i].radius / 2.0f,
 			topHeight,
@@ -336,9 +336,10 @@ void initCharacter() {
 
 		faces = (Face*)realloc(faces, sizeof(Face) * (faceCount + newFaceCount));
 		for (int j = 0; j < newFaceCount; j++) {
-			newFaces[j].triangle.A = vec3_add(characterDefinition[i].localPosition, transform(transformation, newFaces[j].triangle.A));
-			newFaces[j].triangle.B = vec3_add(characterDefinition[i].localPosition, transform(transformation, newFaces[j].triangle.B));
-			newFaces[j].triangle.C = vec3_add(characterDefinition[i].localPosition, transform(transformation, newFaces[j].triangle.C));
+			vec3 localPosition = characterDefinition[i].localPosition;
+			newFaces[j].triangle.A = vec3_add(localPosition, transform(transformation, newFaces[j].triangle.A));
+			newFaces[j].triangle.B = vec3_add(localPosition, transform(transformation, newFaces[j].triangle.B));
+			newFaces[j].triangle.C = vec3_add(localPosition, transform(transformation, newFaces[j].triangle.C));
 			
 			faces[faceCount + j] = newFaces[j];
 		}
@@ -367,14 +368,12 @@ void renderCharacter(mat4 projection, mat4 view, mat4 model) {
 	glUniformMatrix4fv(glGetUniformLocation(characterShader, "model"), 1, GL_FALSE, &model);
 
 	for (int i = 0; i < boneNumber; i++) {
-		char uniformName[32];
+		char uniformName[20];
 		snprintf(uniformName, sizeof(uniformName), "bones[%d].transform", i);
-		GLuint transformLocation = glGetUniformLocation(characterShader, uniformName);
-		glUniformMatrix4fv(transformLocation, 1, GL_FALSE, &bones[i].transform);
-
+		glUniformMatrix4fv(glGetUniformLocation(characterShader, uniformName), 1, GL_FALSE, &bones[i].transform);
+		
 		snprintf(uniformName, sizeof(uniformName), "bones[%d].parent", i);
-		GLuint parentIDLocation = glGetUniformLocation(characterShader, uniformName);
-		glUniform1ui(parentIDLocation, bones[i].parentID);
+		glUniform1ui(glGetUniformLocation(characterShader, uniformName), bones[i].parentID);
 	}
 
 	glBindVertexArray(characterVAO);
