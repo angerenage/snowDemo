@@ -12,6 +12,7 @@ extern GLuint rnoiseShader;
 extern GLuint terrainShader;
 
 extern GLuint atmosphereShader;
+extern GLuint skyShader;
 
 extern GLuint shadowShader;
 

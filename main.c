@@ -10,6 +10,7 @@
 #include "shader.h"
 #include "snow.h"
 #include "character.h"
+#include "sky.h"
 
 #ifndef CLOCK_MONOTONIC
 #define CLOCK_MONOTONIC 1
@@ -73,34 +74,7 @@ void handleEvents(Display *display, Atom wmDelete) {
 				break;
 
 			case MotionNotify:
-				if (mouseHeld) {
-					float mouseX = event.xmotion.x;
-					float mouseY = event.xmotion.y;
-
-					if (firstMouse) {
-						lastMouseX = mouseX;
-						lastMouseY = mouseY;
-						firstMouse = false;
-					}
-
-					float xoffset = mouseX - lastMouseX;
-					float yoffset = lastMouseY - mouseY;
-
-					lastMouseX = mouseX;
-					lastMouseY = mouseY;
-
-					const float sensitivity = 0.0005f;
-					xoffset *= sensitivity;
-					yoffset *= sensitivity;
-
-					cameraYaw += xoffset;
-					cameraPitch += yoffset;
-
-					if (cameraPitch > 89.0f)
-						cameraPitch = 89.0f;
-					if (cameraPitch < -89.0f)
-						cameraPitch = -89.0f;
-				}
+				if (mouseHeld) updateCamera(event.xmotion.x, event.xmotion.y);
 				break;
 		}
 	}
@@ -122,6 +96,7 @@ int main(int argc, char *argv[]) {
 
 	initShaders();
 	initUtils();
+	initSky();
 	initShadow();
 	initCharacter();
 
@@ -132,7 +107,7 @@ int main(int argc, char *argv[]) {
 	const int chunkNbr = 3;
 	const float chunkSize = 25.0f;
 
-	const Mesh terrainMesh = generateGrid((vec2){chunkSize, chunkSize}, 200);
+	const Mesh terrainMesh = generateGrid((vec2){chunkSize, chunkSize}, 200, -4.0f);
 
 	GLuint terrainHeights[chunkNbr][chunkNbr];
 	for (int x = 0; x < chunkNbr; x++) {
@@ -143,6 +118,10 @@ int main(int argc, char *argv[]) {
 
 	
 	projection = projectionMatrix(M_PI / 4.0, screenSize.x / screenSize.y, 0.001f, 1000.0f);
+
+	updateCamera(0.0f, 0.0f);
+
+	bool skyUpdate = true;
 	
 	struct timespec start;
 	clock_gettime(CLOCK_MONOTONIC, &start);
@@ -151,8 +130,6 @@ int main(int argc, char *argv[]) {
 	while (running) {
 		handleEvents(display, wmDelete);
 		
-		const mat4 view = getViewMatrix();
-
 		struct timespec end;
 		clock_gettime(CLOCK_MONOTONIC, &end);
 		const float ftime = end.tv_sec - start.tv_sec + (end.tv_nsec - start.tv_nsec) / 1e9;
@@ -161,6 +138,9 @@ int main(int argc, char *argv[]) {
 		clearShadow();
 
 		updateLight(ftime);
+
+		if (skyUpdate) updateSky(&sunPosition, &screenSize, ftime);
+		skyUpdate = !skyUpdate;
 
 		switch (currentSceneId) {
 			case 0:
@@ -235,22 +215,7 @@ int main(int argc, char *argv[]) {
 				break;
 		}
 
-		// rendering atmosphere
-		glDepthFunc(GL_LEQUAL);
-
-		glUseProgram(atmosphereShader);
-		glUniformMatrix4fv(glGetUniformLocation(atmosphereShader, "viewMatrix"), 1, GL_FALSE, &view);
-		glUniform3fv(glGetUniformLocation(atmosphereShader, "sunPosition"), 1, &sunPosition);
-		glUniform2f(glGetUniformLocation(atmosphereShader, "iResolution"), screenSize.x, screenSize.y);
-		glUniform1f(glGetUniformLocation(atmosphereShader, "iTime"), ftime);
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, rnoiseTexture);
-		glUniform1i(glGetUniformLocation(atmosphereShader, "rnoise"), 0);
-		
-		renderScreenQuad();
-	
-		glDepthFunc(GL_LESS);
+		renderSky(&projection);
 
 
 		checkOpenGLError();
@@ -268,8 +233,9 @@ int main(int argc, char *argv[]) {
 	
 	cleanupCharacter();
 	cleanupShadow();
-	cleanupShaders();
+	cleanupSky();
 	cleanupUtils();
+	cleanupShaders();
 	cleanupWindow();
 
 	return 0;

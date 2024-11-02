@@ -281,10 +281,10 @@ out vec4 fragColor;
 
 in vec2 fragPos;
 
+uniform mat4 view;
 uniform float iTime;
 uniform vec2 iResolution;
 uniform vec3 sunPosition;
-uniform mat4 viewMatrix;
 uniform sampler2D rnoise;
 
 const float cloudSpeed = 0.02;
@@ -593,22 +593,44 @@ vec3 robobo1221Tonemap(vec3 color) {
 
 void main() {
 	worldPosition = normalize(vec3(fragPos, 1.0));
-	worldPosition = mat3(inverse(viewMatrix)) * worldPosition;
+	worldPosition = mat3(view) * worldPosition;
 
 	sunVector = normalize(sunPosition);
 	worldVector = normalize(worldPosition);
-	
+
 	vec3 lightAbsorb = vec3(0.0);
 
 	vec3 color = calcAtmosphericScatter(lightAbsorb);
 	color = calculateVolumetricClouds(color, bayer16(fragPos * iResolution), lightAbsorb);
-	
+
 	color = robobo1221Tonemap(color * 0.5);
 	color = pow(color, vec3(1.0 / 2.2));
 
 	fragColor = vec4(color, 1.0);
-	gl_FragDepth = 1.0;
 })glsl";
+
+// --------------------------- SKY SHADERS ---------------------------
+
+static const char skyVertSrc[] = "#version 330 core\n"
+"layout(location=0) in vec3 pA;"
+"out vec3 fragPos;"
+"uniform mat4 projection;"
+"uniform mat4 view;"
+"void main()"
+"{"
+	"fragPos=normalize(pA);"
+	"gl_Position=projection*mat4(mat3(view))*vec4(pA,1.);"
+"}";
+
+static const char skyFragSrc[] = "#version 330 core\n"
+"in vec3 fragPos;"
+"out vec4 fragColor;"
+"uniform samplerCube skybox;"
+"void main()"
+"{"
+	"fragColor=texture(skybox,fragPos);"
+	"gl_FragDepth=1.0;"
+"}";
 
 // --------------------------- SHADOW SHADERS ---------------------------
 
@@ -678,6 +700,7 @@ GLuint rnoiseShader;
 GLuint terrainShader;
 
 GLuint atmosphereShader;
+GLuint skyShader;
 
 GLuint shadowShader;
 
@@ -693,6 +716,7 @@ void initShaders() {
 	terrainShader = compileShader(terrainVertSrc, NULL, terrainFragSrc);
 
 	atmosphereShader = compileShader(postVertSrc, NULL, atmosphereFragSrc);
+	skyShader = compileShader(skyVertSrc, NULL, skyFragSrc);
 
 	shadowShader = compileShader(terrainVertSrc, NULL, shadowFragSrc);
 
@@ -711,4 +735,6 @@ void cleanupShaders() {
 	glDeleteProgram(atmosphereShader);
 
 	glDeleteProgram(shadowShader);
+
+	glDeleteProgram(characterShader);
 }

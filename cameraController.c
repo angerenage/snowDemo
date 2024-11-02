@@ -1,15 +1,36 @@
 #include "cameraController.h"
 
-float cameraYaw = 0.0f;
-float cameraPitch = 0.0f;
+static float cameraYaw = 0.0f;
+static float cameraPitch = 0.0f;
 float lastMouseX = 0.0f;
 float lastMouseY = 0.0f;
 bool firstMouse = true;
 
-mat4 getViewMatrix() {
-	vec3 cameraPos, cameraDirection;
+mat4 view = {0};
+vec3 cameraPos = {0};
+vec3 cameraDirection = {0};
+
+void updateCamera(float xoffset, float yoffset) {
+	if (firstMouse) {
+		lastMouseX = xoffset;
+		lastMouseY = yoffset;
+		firstMouse = false;
+	}
+
+	float xoffsetChange = xoffset - lastMouseX;
+	float yoffsetChange = lastMouseY - yoffset;
+
+	lastMouseX = xoffset;
+	lastMouseY = yoffset;
+
+	cameraYaw += xoffsetChange * 0.005f;
+	cameraPitch += yoffsetChange * 0.005f;
+
+	if (cameraPitch > 1.57f) cameraPitch = 1.57f;
+	if (cameraPitch < -1.57f) cameraPitch = -1.57f;
+
 	defaultCameraTransforms(&cameraPos, &cameraDirection, 10.0f, (vec2){cameraYaw, cameraPitch});
-	return viewMatrix(cameraPos, (vec3){0.0, 5.0, 0.0}, (vec3){0.0f, 1.0f, 0.0f});
+	view = viewMatrix(cameraPos, (vec3){0.0, 0.0, 0.0}, (vec3){0.0f, 1.0f, 0.0f});
 }
 
 void defaultCameraTransforms(vec3 *pos, vec3 *dir, float distance, vec2 angles) {

@@ -328,7 +328,8 @@ void initCharacter() {
 		};
 
 		mat4 transformation = scaleMatrix(characterDefinition[i].localScale);
-		transformation = mat4_multiply(transformation, rotationMatrix(axisToRotation(characterDefinition[i].axis)));
+		mat4 rotation = rotationMatrix(axisToRotation(characterDefinition[i].axis));
+		transformation = mat4_multiply(&transformation, &rotation);
 
 		int newFaceCount = 0;
 		Face *newFaces = generateCrystal(crystal, &newFaceCount, i);
@@ -367,6 +368,8 @@ void initCharacter() {
 void renderCharacter(mat4 projection, mat4 view, mat4 model) {
 	glUseProgram(characterShader);
 
+	glCullFace(GL_FRONT);
+
 	glUniformMatrix4fv(glGetUniformLocation(characterShader, "projection"), 1, GL_FALSE, &projection);
 	glUniformMatrix4fv(glGetUniformLocation(characterShader, "view"), 1, GL_FALSE, &view);
 	glUniformMatrix4fv(glGetUniformLocation(characterShader, "model"), 1, GL_FALSE, &model);
@@ -376,13 +379,15 @@ void renderCharacter(mat4 projection, mat4 view, mat4 model) {
 	for (int i = 0; i < boneCount; i++) {
 		mat4 position = translationMatrix(bones[i].position);
 		mat4 rotation = rotationMatrix(bones[i].rotation);
-		bonesMatrix[i] = mat4_multiply(position, rotation);
+		bonesMatrix[i] = mat4_multiply(&position, &rotation);
 	}
 	glUniformMatrix4fv(glGetUniformLocation(characterShader, "bones"), boneCount, GL_FALSE, bonesMatrix);
 
 	glBindVertexArray(characterVAO);
 	glDrawArrays(GL_TRIANGLES, 0, characterVertexCount);
 	glBindVertexArray(0);
+
+	glCullFace(GL_BACK);
 
 	glUseProgram(0);
 }

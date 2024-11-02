@@ -2,7 +2,7 @@
 
 #define TERRAIN_RESOLUTION 4096
 
-Mesh generateGrid(vec2 size, int subdivision) {
+Mesh generateGrid(vec2 size, int subdivision, float yOffset) {
 	const int width = subdivision + 1;
 	const int vertexNbr = (subdivision + 2) * (subdivision + 2);
 	const int indexNbr = width * width * 6;
@@ -19,7 +19,7 @@ Mesh generateGrid(vec2 size, int subdivision) {
 				float posX = size.x * ((float)x / (float)width);
 				float posZ = size.y * ((float)y / (float)width);
 
-				positions[x + y * (width + 1)] = (vec3){posX - size.x / 2.0, 0.0, posZ - size.y / 2.0};
+				positions[x + y * (width + 1)] = (vec3){posX - size.x / 2.0, yOffset, posZ - size.y / 2.0};
 
 				if (x < width && y < width) {
 					int topLeft = x + y * (width + 1);

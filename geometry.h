@@ -36,7 +36,7 @@ mat4 translationMatrix(vec3 translation);
 mat4 rotationMatrix(vec3 rotation);
 mat4 scaleMatrix(vec3 scale);
 
-mat4 mat4_multiply(mat4 a, mat4 b);
+mat4 mat4_multiply(const mat4 *a, const mat4 *b);
 
 vec3 transform(mat4 matrix, vec3 v);
 
