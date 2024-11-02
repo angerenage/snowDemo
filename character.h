@@ -9,8 +9,8 @@
 typedef struct s_bone {
 	vec3 position;
 	vec3 rotation;
-	int childrenCount;
-	struct s_bone **children;
+	mat4 transform;
+	uint8_t parentID;
 } Bone;
 
 extern Bone character;

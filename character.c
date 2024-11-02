@@ -40,28 +40,28 @@ typedef struct s_boneDefinition {
 } BoneDefinition;
 
 static const BoneDefinition characterDefinition[] = {
-	{{0.0f, 0.7553f, 0.0f}, Y, {0.0f, 0.287f, 0.0f}, {1.0f, 1.0f, 0.713f}, 0.287f, 0.23f, 0},			// 1 : Lower body
-	{{0.0f, 1.0662f, 0.0f}, Y | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.713f}, 0.287f, 0.23f, 1},		// 2 : Upper body
+	{{0.0f, 0.7553f, 0.0f}, Y, {0.0f, 0.287f, 0.0f}, {1.0f, 1.0f, 0.713f}, 0.287f, 0.23f, 0},			// 0 : Lower body
+	{{0.0f, 0.3109f, 0.0f}, Y | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.713f}, 0.287f, 0.23f, 0},		// 1 : Upper body
 
-	{{-0.1548f, 0.8317f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 1},			// 3 : Upper left leg
-	{{-0.1548f, 0.4164f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 3},			// 4 : Lower left leg
-	{{-0.1548f, 0.0214f, 0.0f}, Z, {0.0f, -0.0214f, 0.1958f}, {1.0f, 0.5f, 1.0f}, 0.221f, 0.10f, 4},	// 5 : Left foot
+	{{-0.1548f, 0.0764f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 0},			// 2 : Upper left leg
+	{{0.0f, -0.4153f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 2},				// 3 : Lower left leg
 
-	{{0.1548f, 0.8317f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 1},			// 6 : Upper right leg
-	{{0.1548f, 0.4164f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 6},			// 7 : Lower right leg
-	{{0.1548f, 0.0214f, 0.0f}, Z, {0.0f, -0.0214f, 0.1958f}, {1.0f, 0.5f, 1.0f}, 0.221f, 0.10f, 7},		// 8 : Right foot
+	{{0.1548f, 0.0764f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 0},			// 4 : Upper right leg
+	{{0.0f, -0.4153f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 4},				// 5 : Lower right leg
 
-	{{-0.0910f, 1.3194f, 0.0f}, X | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 2},	// 9 : Upper left arm
-	{{-0.5063f, 1.3194f, 0.0f}, X | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 9},	// 10 : Lower left arm
+	{{-0.0910f, 0.2533f, 0.0f}, X | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 1},	// 6 : Upper left arm
+	{{-0.4153f, 0.0f, 0.0f}, X | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 6},		// 7 : Lower left arm
 	
-	{{0.0910f, 1.3194f, 0.0f}, X, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 2},			// 11 : Upper right arm
-	{{0.5063f, 1.3194f, 0.0f}, X, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 11},			// 12 : Lower right arm
+	{{0.0910f, 0.2533f, 0.0f}, X, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 1},			// 8 : Upper right arm
+	{{0.4153f, 0.0f, 0.0f}, X, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 8},				// 9 : Lower right arm
 
-	{{0.0f, 1.3952f, 0.0f}, Y | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.335f, 0.29f, 2},		// 13 : Head
+	{{0.0f, 0.3290f, 0.0f}, Y | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.335f, 0.29f, 1},		// 10 : Head
 };
 
 static GLuint characterVAO;
 static unsigned int characterVertexCount;
+
+static const boneNumber = sizeof(characterDefinition) / sizeof(BoneDefinition);
 static Bone bones[sizeof(characterDefinition) / sizeof(BoneDefinition)] = {0};
 Bone character = {0};
 
@@ -106,43 +106,43 @@ static int reconstructTriangle(Triangle triangle, Plane plane, Triangle *triangl
 		default: // No intersections
 			if (invert) return 0;
 			else {
-				triangles[0] = (Triangle){triangle.A, triangle.C, triangle.B};
+				triangles[0] = (Triangle){triangle.A, triangle.B, triangle.C};
 				return 1;
 			}
 			break;
 
 		case 3: // Intersection on edge AB and AC
 			if (invert) {
-				triangles[0] = (Triangle){triangle.B, intersections[0], intersections[1]};
-				triangles[1] = (Triangle){triangle.B, intersections[1], triangle.C};
+				triangles[0] = (Triangle){triangle.B, intersections[1], intersections[0]};
+				triangles[1] = (Triangle){triangle.B, triangle.C, intersections[1]};
 				return 2;
 			}
 			else {
-				triangles[0] = (Triangle){triangle.A, intersections[1], intersections[0]};
+				triangles[0] = (Triangle){triangle.A, intersections[0], intersections[1]};
 				return 1;
 			}
 			break;
 
 		case 4: // Intersection on edge AB and BC
 			if (invert) {
-				triangles[0] = (Triangle){triangle.B, intersections[0], intersections[2]};
+				triangles[0] = (Triangle){triangle.B, intersections[2], intersections[0]};
 				return 1;
 			}
 			else {
-				triangles[0] = (Triangle){triangle.A, intersections[2], intersections[0]};
-				triangles[1] = (Triangle){triangle.A, triangle.C, intersections[2]};
+				triangles[0] = (Triangle){triangle.A, intersections[0], intersections[2]};
+				triangles[1] = (Triangle){triangle.A, intersections[2], triangle.C};
 				return 2;
 			}
 			break;
 
 		case 5: // Intersection on edge AC and BC
 			if (invert) {
-				triangles[0] = (Triangle){triangle.C, intersections[2], intersections[1]};
+				triangles[0] = (Triangle){triangle.C, intersections[1], intersections[2]};
 				return 1;
 			}
 			else {
-				triangles[0] = (Triangle){triangle.A, intersections[1], intersections[2]};
-				triangles[1] = (Triangle){triangle.A, intersections[2], triangle.B};
+				triangles[0] = (Triangle){triangle.A, intersections[2], intersections[1]};
+				triangles[1] = (Triangle){triangle.A, triangle.B, intersections[2]};
 				return 2;
 			}
 			break;
@@ -188,7 +188,7 @@ static int reconstructInnerCrystal(Crystal crystal, Plane plane1, Plane plane2, 
 		float epsilon = -crystal.topHeight - 0.00001f;
 		for (int j = 0; j < faceCount; j++) {
 			if (newTriangles[j].A.y >= epsilon && newTriangles[j].B.y >= epsilon && newTriangles[j].B.y >= epsilon)
-				triangles[innerFaceCount++] = (Triangle){newTriangles[j].A, newTriangles[j].C, newTriangles[j].B};
+				triangles[innerFaceCount++] = newTriangles[j];
 		}
 	}
 
@@ -199,7 +199,7 @@ static int reconstructInnerCrystal(Crystal crystal, Plane plane1, Plane plane2, 
 		float epsilon = -crystal.topHeight + 0.00001f;
 		for (int j = 0; j < faceCount; j++) {
 			if (newTriangles[j].A.y <= epsilon && newTriangles[j].B.y <= epsilon && newTriangles[j].B.y <= epsilon)
-				triangles[innerFaceCount++] = (Triangle){newTriangles[j].A, newTriangles[j].C, newTriangles[j].B};
+				triangles[innerFaceCount++] = newTriangles[j];
 		}
 	}
 
@@ -314,7 +314,7 @@ void initCharacter() {
 	Face *faces = NULL;
 	int faceCount = 0;
 
-	for (int i = 0; i < sizeof(characterDefinition) / sizeof(BoneDefinition); i++) {
+	for (int i = 0; i < boneNumber; i++) {
 		// Create the mesh
 		const float topHeight = characterDefinition[i].length * randomFloat(0.3f, 0.7f);
 		Crystal crystal = {
@@ -350,15 +350,9 @@ void initCharacter() {
 		bones[i] = (Bone){
 			characterDefinition[i].position,
 			(vec3){0.0f, 0.0f, 0.0f},
-			0,
-			NULL
+			translationMatrix(characterDefinition[i].position),
+			characterDefinition[i].parentId
 		};
-
-		int parentId = characterDefinition[i].parentId - 1;
-		if (parentId >= 0) {
-			bones[i].children = (Bone**)realloc(bones[i].children, sizeof(Bone*) * (bones[i].childrenCount + 1));
-			bones[i].children[bones[i].childrenCount++] = &bones[i];
-		}
 	}
 
 	characterVAO = createCharacterVAO(faces, faceCount);
@@ -368,26 +362,24 @@ void initCharacter() {
 void renderCharacter(mat4 projection, mat4 view, mat4 model) {
 	glUseProgram(characterShader);
 
-	glCullFace(GL_FRONT);
-
 	glUniformMatrix4fv(glGetUniformLocation(characterShader, "projection"), 1, GL_FALSE, &projection);
 	glUniformMatrix4fv(glGetUniformLocation(characterShader, "view"), 1, GL_FALSE, &view);
 	glUniformMatrix4fv(glGetUniformLocation(characterShader, "model"), 1, GL_FALSE, &model);
 
-	int boneCount = sizeof(characterDefinition) / sizeof(BoneDefinition);
-	mat4 bonesMatrix[boneCount];
-	for (int i = 0; i < boneCount; i++) {
-		mat4 position = translationMatrix(bones[i].position);
-		mat4 rotation = rotationMatrix(bones[i].rotation);
-		bonesMatrix[i] = mat4_multiply(&position, &rotation);
+	for (int i = 0; i < boneNumber; i++) {
+		char uniformName[32];
+		snprintf(uniformName, sizeof(uniformName), "bones[%d].transform", i);
+		GLuint transformLocation = glGetUniformLocation(characterShader, uniformName);
+		glUniformMatrix4fv(transformLocation, 1, GL_FALSE, &bones[i].transform);
+
+		snprintf(uniformName, sizeof(uniformName), "bones[%d].parent", i);
+		GLuint parentIDLocation = glGetUniformLocation(characterShader, uniformName);
+		glUniform1ui(parentIDLocation, bones[i].parentID);
 	}
-	glUniformMatrix4fv(glGetUniformLocation(characterShader, "bones"), boneCount, GL_FALSE, bonesMatrix);
 
 	glBindVertexArray(characterVAO);
 	glDrawArrays(GL_TRIANGLES, 0, characterVertexCount);
 	glBindVertexArray(0);
-
-	glCullFace(GL_BACK);
 
 	glUseProgram(0);
 }

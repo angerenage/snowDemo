@@ -647,17 +647,34 @@ static const char characterVertSrc[] = "#version 330 core\n"
 "layout(location=1) in vec3 normal;"
 "layout(location=2) in uint material;"
 "layout(location=3) in uint bone;"
+
 "uniform mat4 projection;"
 "uniform mat4 view;"
 "uniform mat4 model;"
-"uniform mat4 bones[13];"
+
+"struct Bone {"
+	"mat4 transform;"
+	"uint parent;"
+"};"
+"uniform Bone bones[13];"
+
 "out vec3 fragNormal;"
 "flat out uint fragMaterial;"
+
 "void main()"
 "{"
-	"vec4 pos = bones[bone] * vec4(position, 1.0);"
+	"mat4 accumulatedMatrix = mat4(1.0);"
+    "uint currentBone = bone;"
+
+    "while (currentBone != bones[currentBone].parent) {"
+        "accumulatedMatrix = bones[currentBone].transform * accumulatedMatrix;"
+        "currentBone = bones[currentBone].parent;"
+    "}"
+
+	"vec4 pos = accumulatedMatrix * vec4(position, 1.0);"
 	"fragMaterial = material;"
-	"fragNormal = normalize(mat3(transpose(inverse(bones[bone] * model))) * normal);"
+
+	"fragNormal = normalize(mat3(transpose(inverse(accumulatedMatrix * model))) * normal);"
 	"gl_Position = projection * view * model * pos;"
 "}";
 
