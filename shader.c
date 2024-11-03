@@ -664,11 +664,9 @@ static const char characterVertSrc[] = "#version 330 core\n"
 "void main()"
 "{"
 	"mat4 accumulatedMatrix = mat4(1.0);"
-    "uint currentBone = bone;"
-
-    "while (currentBone != bones[currentBone].parent) {"
+ 
+    "for (uint currentBone = bone; currentBone != bones[currentBone].parent; currentBone = bones[currentBone].parent) {"
         "accumulatedMatrix = bones[currentBone].transform * accumulatedMatrix;"
-        "currentBone = bones[currentBone].parent;"
     "}"
 
 	"vec4 pos = accumulatedMatrix * vec4(position, 1.0);"

@@ -334,6 +334,21 @@ void initCharacter() {
 		int newFaceCount = 0;
 		Face *newFaces = generateCrystal(crystal, &newFaceCount, i);
 
+
+		// export to blender
+		/*vec3 position = {0};
+		int currentBoneId = i;
+		while (characterDefinition[currentBoneId].parentId != currentBoneId) {
+			position = vec3_add(position, characterDefinition[currentBoneId].position);
+			currentBoneId = characterDefinition[currentBoneId].parentId;
+		}
+
+
+		printf("b bone_%d %f %f %f", i, position.x, position.y, position.z);
+		if (characterDefinition[i].parentId != i) printf(" bone_%d\n", characterDefinition[i].parentId);
+		else printf("\n");*/
+
+
 		faces = (Face*)realloc(faces, sizeof(Face) * (faceCount + newFaceCount));
 		for (int j = 0; j < newFaceCount; j++) {
 			vec3 localPosition = characterDefinition[i].localPosition;
@@ -342,6 +357,15 @@ void initCharacter() {
 			newFaces[j].triangle.C = vec3_add(localPosition, transform(transformation, newFaces[j].triangle.C));
 			
 			faces[faceCount + j] = newFaces[j];
+
+
+			/*vec3 A = vec3_add(position, newFaces[j].triangle.A);
+			vec3 B = vec3_add(position, newFaces[j].triangle.B);
+			vec3 C = vec3_add(position, newFaces[j].triangle.C);
+			printf("v %f %f %f\n", A.x, A.y, A.z);
+			printf("v %f %f %f\n", B.x, B.y, B.z);
+			printf("v %f %f %f\n", C.x, C.y, C.z);
+			printf("f %d %d %d m %d\n", (faceCount + j) * 3, (faceCount + j) * 3 + 1, (faceCount + j) * 3 + 2, newFaces[j].material);*/
 		}
 		faceCount += newFaceCount;
 
