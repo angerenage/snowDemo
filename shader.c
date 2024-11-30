@@ -1,7 +1,7 @@
 #include "shader.h"
 
 GLuint compileShader(const char *vShaderCode, const char *gShaderCode, const char *fShaderCode) {
-	GLuint vertex, geometry, fragment;
+	GLuint vertex = 0, geometry = 0, fragment = 0;
 	int success;
 	char infoLog[512];
 

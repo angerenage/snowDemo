@@ -59,7 +59,7 @@ GLuint generateTerrainHeight(const vec2 *pos) {
 	glUseProgram(snoiseShader);
 
 	glUniform2f(glGetUniformLocation(snoiseShader, "resolution"), TERRAIN_RESOLUTION, TERRAIN_RESOLUTION);
-	glUniform2fv(glGetUniformLocation(snoiseShader, "offset"), 1, pos);
+	glUniform2fv(glGetUniformLocation(snoiseShader, "offset"), 1, (GLfloat*)pos);
 
 	renderScreenQuad();
 

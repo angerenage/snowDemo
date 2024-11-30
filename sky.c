@@ -58,8 +58,8 @@ void updateSky(const vec3* sunPosition, const vec2* screenSize, float ftime) {
 		glClear(GL_DEPTH_BUFFER_BIT);
 
 		glUseProgram(atmosphereShader);
-		glUniformMatrix4fv(glGetUniformLocation(atmosphereShader, "view"), 1, GL_FALSE, &view);
-		glUniform3fv(glGetUniformLocation(atmosphereShader, "sunPosition"), 1, sunPosition);
+		glUniformMatrix4fv(glGetUniformLocation(atmosphereShader, "view"), 1, GL_FALSE, (GLfloat*)&view);
+		glUniform3fv(glGetUniformLocation(atmosphereShader, "sunPosition"), 1, (GLfloat*)sunPosition);
 		glUniform2f(glGetUniformLocation(atmosphereShader, "iResolution"), SKYBOX_RESOLUTION, SKYBOX_RESOLUTION);
 		glUniform1f(glGetUniformLocation(atmosphereShader, "iTime"), ftime);
 
@@ -79,8 +79,8 @@ void renderSky(const mat4* projection) {
 
 	glUseProgram(skyShader);
 
-	glUniformMatrix4fv(glGetUniformLocation(skyShader, "projection"), 1, GL_FALSE, projection);
-	glUniformMatrix4fv(glGetUniformLocation(skyShader, "view"), 1, GL_FALSE, &view);
+	glUniformMatrix4fv(glGetUniformLocation(skyShader, "projection"), 1, GL_FALSE, (GLfloat*)projection);
+	glUniformMatrix4fv(glGetUniformLocation(skyShader, "view"), 1, GL_FALSE, (GLfloat*)&view);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);

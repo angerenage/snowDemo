@@ -62,7 +62,7 @@ static const BoneDefinition characterDefinition[] = {
 static GLuint characterVAO;
 static unsigned int characterVertexCount;
 
-static const boneNumber = sizeof(characterDefinition) / sizeof(BoneDefinition);
+static const int boneNumber = sizeof(characterDefinition) / sizeof(BoneDefinition);
 static Bone bones[sizeof(characterDefinition) / sizeof(BoneDefinition)] = {0};
 
 typedef struct s_frame {
@@ -96,6 +96,7 @@ static vec3 axisToRotation(Axis axis) {
 		case Z:
 			return (vec3){halfPi, 0.0f, 0.0f};
 	}
+	return (vec3){0.0f, 0.0f, 0.0f};
 }
 
 static int reconstructTriangle(Triangle triangle, Plane plane, Triangle *triangles, bool invert) {
@@ -287,7 +288,7 @@ GLuint createCharacterVAO(const Face *faces, unsigned int faceCount) {
 
 	characterVertexCount = faceCount * 3;
 	Vertex *vertices = (Vertex*)malloc(sizeof(Vertex) * characterVertexCount);
-	for (int i = 0; i < faceCount; i++) {
+	for (unsigned int i = 0; i < faceCount; i++) {
 		vec3 normal = vec3_normalize(vec3_crossProduct(vec3_subtract(faces[i].triangle.B, faces[i].triangle.A), vec3_subtract(faces[i].triangle.C, faces[i].triangle.A)));
 		vertices[i * 3 + 0] = (Vertex){faces[i].triangle.A, normal, faces[i].material, faces[i].boneId};
 		vertices[i * 3 + 1] = (Vertex){faces[i].triangle.B, normal, faces[i].material, faces[i].boneId};
@@ -398,7 +399,7 @@ void loadAnimation(const char* path) {
 	if (animation) free(animation);
 
 	size_t animationSize;
-	loadRessource(path, &animation, &animationSize);
+	loadRessource(path, (void**)&animation, &animationSize);
 	animationLength = animationSize / sizeof(Frame);
 }
 
@@ -425,17 +426,17 @@ void renderCharacter(mat4 projection, mat4 view, vec3 pos, vec3 rot) {
 	mat4 rotation = rotationMatrix(rot);
 	mat4 model = mat4_multiply(&translation, &rotation);
 
-	glUniformMatrix4fv(glGetUniformLocation(characterShader, "projection"), 1, GL_FALSE, &projection);
-	glUniformMatrix4fv(glGetUniformLocation(characterShader, "view"), 1, GL_FALSE, &view);
-	glUniformMatrix4fv(glGetUniformLocation(characterShader, "model"), 1, GL_FALSE, &model);
+	glUniformMatrix4fv(glGetUniformLocation(characterShader, "projection"), 1, GL_FALSE, (GLfloat*)&projection);
+	glUniformMatrix4fv(glGetUniformLocation(characterShader, "view"), 1, GL_FALSE, (GLfloat*)&view);
+	glUniformMatrix4fv(glGetUniformLocation(characterShader, "model"), 1, GL_FALSE, (GLfloat*)&model);
 
 	for (int i = 0; i < boneNumber; i++) {
 		char uniformName[32];
 		snprintf(uniformName, sizeof(uniformName), "bones[%d].position", i);
-		glUniform3fv(glGetUniformLocation(characterShader, uniformName), 1, &bones[i].position);
+		glUniform3fv(glGetUniformLocation(characterShader, uniformName), 1, (GLfloat*)&bones[i].position);
 
 		snprintf(uniformName, sizeof(uniformName), "bones[%d].rotation", i);
-		glUniformMatrix3fv(glGetUniformLocation(characterShader, uniformName), 1, GL_FALSE, &bones[i].rotation);
+		glUniformMatrix3fv(glGetUniformLocation(characterShader, uniformName), 1, GL_FALSE, (GLfloat*)&bones[i].rotation);
 		
 		snprintf(uniformName, sizeof(uniformName), "bones[%d].parent", i);
 		glUniform1ui(glGetUniformLocation(characterShader, uniformName), bones[i].parentID);

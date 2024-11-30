@@ -173,7 +173,7 @@ mat4 scaleMatrix(vec3 scale) {
 
 vec3 transform(mat4 matrix, vec3 v) {
 	float result[4] = {0};
-	__m128 vec_sse = _mm_loadu_ps(&v);
+	__m128 vec_sse = _mm_loadu_ps((float*)&v);
 
 	for (int i = 0; i < 4; i++) {
 		__m128 mat_row = _mm_loadu_ps(matrix.m[i]);

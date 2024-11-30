@@ -31,7 +31,7 @@ void handleEvents(Display *display, Atom wmDelete) {
 		XNextEvent(display, &event);
 		switch (event.type) {
 			case ClientMessage:
-				if (event.xclient.data.l[0] == wmDelete) {
+				if ((Atom)event.xclient.data.l[0] == wmDelete) {
 					running = false;
 				}
 				break;
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 	
 	struct timespec start;
 	clock_gettime(CLOCK_MONOTONIC, &start);
-	float lastTime = 0.0;
+	//float lastTime = 0.0;
 
 	while (running) {
 		handleEvents(display, wmDelete);
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
 		skyUpdate = !skyUpdate;
 
 		switch (currentSceneId) {
-			case 0:
+			case 0: {
 				const float mapCenter = (chunkNbr - 1) / 2.0f;
 
 				//Shadow pass
@@ -158,15 +158,15 @@ int main(int argc, char *argv[]) {
 
 				glUseProgram(shadowShader);
 
-				glUniformMatrix4fv(glGetUniformLocation(shadowShader, "projection"), 1, GL_FALSE, &shadowProjection);
-				glUniformMatrix4fv(glGetUniformLocation(shadowShader, "view"), 1, GL_FALSE, &shadowView);
+				glUniformMatrix4fv(glGetUniformLocation(shadowShader, "projection"), 1, GL_FALSE, (GLfloat*)&shadowProjection);
+				glUniformMatrix4fv(glGetUniformLocation(shadowShader, "view"), 1, GL_FALSE, (GLfloat*)&shadowView);
 				glUniform1f(glGetUniformLocation(shadowShader, "size"), chunkSize);
 				
 				for (int x = 0; x < chunkNbr; x++) {
 					for (int z = 0; z < chunkNbr; z++) {
 						mat4 model = translationMatrix((vec3){((float)x - mapCenter) * chunkSize, 0.0, ((float)z - mapCenter) * chunkSize});
 
-						glUniformMatrix4fv(glGetUniformLocation(shadowShader, "model"), 1, GL_FALSE, &model);
+						glUniformMatrix4fv(glGetUniformLocation(shadowShader, "model"), 1, GL_FALSE, (GLfloat*)&model);
 
 						glActiveTexture(GL_TEXTURE0);
 						glBindTexture(GL_TEXTURE_2D, terrainHeights[x][z]);
@@ -185,11 +185,11 @@ int main(int argc, char *argv[]) {
 				//Render pass
 				glUseProgram(terrainShader);
 
-				glUniformMatrix4fv(glGetUniformLocation(terrainShader, "projection"), 1, GL_FALSE, &projection);
-				glUniformMatrix4fv(glGetUniformLocation(terrainShader, "view"), 1, GL_FALSE, &view);
-				glUniformMatrix4fv(glGetUniformLocation(terrainShader, "shadowProjection"), 1, GL_FALSE, &shadowProjection);
-				glUniformMatrix4fv(glGetUniformLocation(terrainShader, "shadowView"), 1, GL_FALSE, &shadowView);
-				glUniform3fv(glGetUniformLocation(terrainShader, "sunPos"), 1, &sunPosition);
+				glUniformMatrix4fv(glGetUniformLocation(terrainShader, "projection"), 1, GL_FALSE, (GLfloat*)&projection);
+				glUniformMatrix4fv(glGetUniformLocation(terrainShader, "view"), 1, GL_FALSE, (GLfloat*)&view);
+				glUniformMatrix4fv(glGetUniformLocation(terrainShader, "shadowProjection"), 1, GL_FALSE, (GLfloat*)&shadowProjection);
+				glUniformMatrix4fv(glGetUniformLocation(terrainShader, "shadowView"), 1, GL_FALSE, (GLfloat*)&shadowView);
+				glUniform3fv(glGetUniformLocation(terrainShader, "sunPos"), 1, (GLfloat*)&sunPosition);
 				glUniform1f(glGetUniformLocation(terrainShader, "size"), chunkSize);
 
 				glActiveTexture(GL_TEXTURE0);
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
 					for (int z = 0; z < chunkNbr; z++) {
 						mat4 model = translationMatrix((vec3){((float)x - mapCenter) * chunkSize, 0.0, ((float)z - mapCenter) * chunkSize});
 
-						glUniformMatrix4fv(glGetUniformLocation(terrainShader, "model"), 1, GL_FALSE, &model);
+						glUniformMatrix4fv(glGetUniformLocation(terrainShader, "model"), 1, GL_FALSE, (GLfloat*)&model);
 
 						glActiveTexture(GL_TEXTURE1);
 						glBindTexture(GL_TEXTURE_2D, terrainHeights[x][z]);
@@ -213,6 +213,7 @@ int main(int argc, char *argv[]) {
 
 				glBindVertexArray(0);
 				break;
+			}
 
 			case 1:
 				renderCharacter(projection, view, (vec3){0.0f, 0.0f, 0.0f}, (vec3){0.0f, 0.0f, 0.0f});
@@ -224,7 +225,7 @@ int main(int argc, char *argv[]) {
 
 		checkOpenGLError();
 		
-		lastTime = ftime;
+		//lastTime = ftime;
 
 		glXSwapBuffers(display, window);
 	}
