@@ -104,6 +104,9 @@ int main(int argc, char *argv[]) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	
+	loadAnimation("ressources/running.anim.gz");
+	
+
 	const int chunkNbr = 3;
 	const float chunkSize = 25.0f;
 
@@ -138,6 +141,7 @@ int main(int argc, char *argv[]) {
 		clearShadow();
 
 		updateLight(ftime);
+		updateAnimation(ftime);
 
 		if (skyUpdate) updateSky(&sunPosition, &screenSize, ftime);
 		skyUpdate = !skyUpdate;
@@ -211,7 +215,7 @@ int main(int argc, char *argv[]) {
 				break;
 
 			case 1:
-				renderCharacter(projection, view, translationMatrix((vec3){0.0f, 0.0f, 0.0f}));
+				renderCharacter(projection, view, (vec3){0.0f, 0.0f, 0.0f}, (vec3){0.0f, 0.0f, 0.0f});
 				break;
 		}
 

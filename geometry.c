@@ -1,11 +1,81 @@
 #include "geometry.h"
 
-mat4 getIdentity() {
+Quaternion quat_normalize(Quaternion q) {
+    float magnitude = sqrt(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
+    q.w /= magnitude;
+    q.x /= magnitude;
+    q.y /= magnitude;
+    q.z /= magnitude;
+    return q;
+}
+
+Quaternion quat_lerp(Quaternion q1, Quaternion q2, float t) {
+    Quaternion result;
+    result.w = (1 - t) * q1.w + t * q2.w;
+    result.x = (1 - t) * q1.x + t * q2.x;
+    result.y = (1 - t) * q1.y + t * q2.y;
+    result.z = (1 - t) * q1.z + t * q2.z;
+    
+    result = quat_normalize(result);
+    return result;
+}
+
+mat3 mat3_identity() {
+	mat3 matrix = {0};
+	for (int i = 0; i < 3; i++) {
+		matrix.m[i][i] = 1.0f;
+	}
+	return matrix;
+}
+
+mat3 mat3_quaternion(Quaternion q) {
+	q = quat_normalize(q);
+
+	mat3 matrix;
+	matrix.m[0][0] = 1.0f - 2.0f * q.y * q.y - 2.0f * q.z * q.z;
+	matrix.m[0][1] = 2.0f * q.x * q.y - 2.0f * q.w * q.z;
+	matrix.m[0][2] = 2.0f * q.x * q.z + 2.0f * q.w * q.y;
+	
+	matrix.m[1][0] = 2.0f * q.x * q.y + 2.0f * q.w * q.z;
+	matrix.m[1][1] = 1.0f - 2.0f * q.x * q.x - 2.0f * q.z * q.z;
+	matrix.m[1][2] = 2.0f * q.y * q.z - 2.0f * q.w * q.x;
+
+	matrix.m[2][0] = 2.0f * q.x * q.z - 2.0f * q.w * q.y;
+	matrix.m[2][1] = 2.0f * q.y * q.z + 2.0f * q.w * q.x;
+	matrix.m[2][2] = 1.0f - 2.0f * q.x * q.x - 2.0f * q.y * q.y;
+	return matrix;
+}
+
+mat4 mat4_identity() {
 	mat4 matrix = {0};
 	for (int i = 0; i < 4; i++) {
 		matrix.m[i][i] = 1.0f;
 	}
 	return matrix;
+}
+
+mat4 mat4_multiply(const mat4 *a, const mat4 *b) {
+	mat4 result = {0};
+
+	for (int i = 0; i < 4; i++) {
+		__m128 row_a = _mm_loadu_ps(a->m[i]);
+
+		for (int j = 0; j < 4; j++) {
+			__m128 col_b = _mm_set_ps(b->m[3][j], b->m[2][j], b->m[1][j], b->m[0][j]);
+
+			__m128 mul = _mm_mul_ps(row_a, col_b);
+
+			__m128 shuf1 = _mm_shuffle_ps(mul, mul, _MM_SHUFFLE(2, 3, 0, 1));
+			__m128 sums1 = _mm_add_ps(mul, shuf1);
+
+			__m128 shuf2 = _mm_shuffle_ps(sums1, sums1, _MM_SHUFFLE(1, 0, 3, 2));
+			__m128 sums2 = _mm_add_ss(sums1, shuf2);
+
+			result.m[i][j] = _mm_cvtss_f32(sums2);
+		}
+	}
+
+	return result;
 }
 
 mat4 projectionMatrix(float fov, float aspectRatio, float nearPlane, float farPlane) {
@@ -63,7 +133,7 @@ mat4 viewMatrix(vec3 position, vec3 focus, vec3 up) {
 }
 
 mat4 translationMatrix(vec3 translation) {
-	mat4 matrix = getIdentity();
+	mat4 matrix = mat4_identity();
 	matrix.m[3][0] = translation.x;
 	matrix.m[3][1] = translation.y;
 	matrix.m[3][2] = translation.z;
@@ -71,7 +141,7 @@ mat4 translationMatrix(vec3 translation) {
 }
 
 mat4 rotationMatrix(vec3 rotation) {
-	mat4 matrix = getIdentity();
+	mat4 matrix = mat4_identity();
 
 	float cp = cos(rotation.x);
 	float sp = sin(rotation.x);
@@ -94,35 +164,11 @@ mat4 rotationMatrix(vec3 rotation) {
 }
 
 mat4 scaleMatrix(vec3 scale) {
-	mat4 matrix = getIdentity();
+	mat4 matrix = mat4_identity();
 	matrix.m[0][0] = scale.x;
 	matrix.m[1][1] = scale.y;
 	matrix.m[2][2] = scale.z;
 	return matrix;
-}
-
-mat4 mat4_multiply(const mat4 *a, const mat4 *b) {
-	mat4 result = {0};
-
-	for (int i = 0; i < 4; i++) {
-		__m128 row_a = _mm_loadu_ps(a->m[i]);
-
-		for (int j = 0; j < 4; j++) {
-			__m128 col_b = _mm_set_ps(b->m[3][j], b->m[2][j], b->m[1][j], b->m[0][j]);
-
-			__m128 mul = _mm_mul_ps(row_a, col_b);
-
-			__m128 shuf1 = _mm_shuffle_ps(mul, mul, _MM_SHUFFLE(2, 3, 0, 1));
-			__m128 sums1 = _mm_add_ps(mul, shuf1);
-
-			__m128 shuf2 = _mm_shuffle_ps(sums1, sums1, _MM_SHUFFLE(1, 0, 3, 2));
-			__m128 sums2 = _mm_add_ss(sums1, shuf2);
-
-			result.m[i][j] = _mm_cvtss_f32(sums2);
-		}
-	}
-
-	return result;
 }
 
 vec3 transform(mat4 matrix, vec3 v) {

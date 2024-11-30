@@ -20,6 +20,17 @@ typedef struct s_vec3 {
 	float x, y, z;
 } vec3;
 
+typedef struct s_quaternion {
+	float w;
+	float x;
+	float y;
+	float z;
+} Quaternion;
+
+typedef struct s_mat3 {
+	float m[3][3];
+} mat3;
+
 typedef struct s_mat4 {
 	float m[4][4];
 } mat4;
@@ -29,15 +40,21 @@ typedef struct s_plane {
 	vec3 normal;
 } Plane;
 
-mat4 getIdentity();
+Quaternion quat_normalize(Quaternion q);
+Quaternion quat_lerp(Quaternion q1, Quaternion q2, float t);
+
+mat3 mat3_identity();
+mat3 mat3_quaternion(Quaternion q);
+
+mat4 mat4_identity();
+mat4 mat4_multiply(const mat4 *a, const mat4 *b);
+
 mat4 projectionMatrix(float fov, float aspectRatio, float nearPlane, float farPlane);
 mat4 orthographicMatrix(float left, float right, float bottom, float top, float nearPlane, float farPlane);
 mat4 viewMatrix(vec3 position, vec3 focus, vec3 up);
 mat4 translationMatrix(vec3 translation);
 mat4 rotationMatrix(vec3 rotation);
 mat4 scaleMatrix(vec3 scale);
-
-mat4 mat4_multiply(const mat4 *a, const mat4 *b);
 
 vec3 transform(mat4 matrix, vec3 v);
 

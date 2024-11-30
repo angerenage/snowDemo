@@ -5,16 +5,16 @@
 
 #include "geometry.h"
 #include "glutils.h"
+#include "ressource.h"
 
 typedef struct s_bone {
 	vec3 position;
-	vec3 rotation;
-	mat4 transform;
+	mat3 rotation;
 	uint8_t parentID;
 } Bone;
 
-extern Bone character;
-
 void initCharacter();
-void renderCharacter(mat4 projection, mat4 view, mat4 model);
+void loadAnimation(const char* path);
+void updateAnimation(float time);
+void renderCharacter(mat4 projection, mat4 view, vec3 pos, vec3 rot);
 void cleanupCharacter();

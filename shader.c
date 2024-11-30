@@ -653,27 +653,44 @@ static const char characterVertSrc[] = "#version 330 core\n"
 "uniform mat4 model;"
 
 "struct Bone {"
-	"mat4 transform;"
+	"vec3 position;"
+	"mat3 rotation;"
 	"uint parent;"
 "};"
-"uniform Bone bones[13];"
+"uniform Bone bones[11];"
 
 "out vec3 fragNormal;"
 "flat out uint fragMaterial;"
 
+"vec3 calculate_global_position(uint boneID)"
+"{"
+	"uint stack[5];"
+	"int stackSize = 0;"
+
+	"uint currentBone = boneID;"
+	"while (currentBone != bones[currentBone].parent) {"
+		"stack[stackSize++] = currentBone;"
+		"currentBone = bones[currentBone].parent;"
+	"}"
+	"stack[stackSize++] = currentBone;"
+
+	"vec3 globalPosition = vec3(0.0);"
+	"for (int i = stackSize - 1; i >= 0; i--) {"
+		"globalPosition = bones[stack[i + 1]].rotation * bones[stack[i]].position + globalPosition;"
+	"}"
+
+	"return globalPosition;"
+"}"
+
 "void main()"
 "{"
-	"mat4 accumulatedMatrix = mat4(1.0);"
- 
-    "for (uint currentBone = bone; currentBone != bones[currentBone].parent; currentBone = bones[currentBone].parent) {"
-        "accumulatedMatrix = bones[currentBone].transform * accumulatedMatrix;"
-    "}"
+	"mat3 rotation = bones[bone].rotation;"
+	"vec3 globalPosition = calculate_global_position(bone);"
+	"vec3 pos = rotation * position + globalPosition;"
 
-	"vec4 pos = accumulatedMatrix * vec4(position, 1.0);"
 	"fragMaterial = material;"
-
-	"fragNormal = normalize(mat3(transpose(inverse(accumulatedMatrix * model))) * normal);"
-	"gl_Position = projection * view * model * pos;"
+	"fragNormal = normalize(mat3(transpose(inverse(model))) * normal);"
+	"gl_Position = projection * view * model * vec4(pos, 1.0);"
 "}";
 
 static const char characterFragSrc[] = "#version 330 core\n"
@@ -683,6 +700,7 @@ static const char characterFragSrc[] = "#version 330 core\n"
 "void main()"
 "{"
 	"fragColor = vec4(vec3(fragMaterial), 1.0);"
+	//"fragColor = vec4(fragNormal, 1.0);"
 "}";
 
 // --------------------------- DEBUG SHADERS ---------------------------

@@ -40,20 +40,21 @@ typedef struct s_boneDefinition {
 } BoneDefinition;
 
 static const BoneDefinition characterDefinition[] = {
-	{{0.0f, 0.7553f, 0.0f}, Y, {0.0f, 0.287f, 0.0f}, {1.0f, 1.0f, 0.713f}, 0.287f, 0.23f, 0},				// 0 : Lower body
-	{{0.0f, 0.3109f, 0.0f}, Y | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.713f}, 0.287f, 0.23f, 0},			// 1 : Upper body
+	//0.7553f
+	{{0.0f, 0.0f, 0.0f}, Y, {0.0f, 0.287f, 0.0f}, {0.713f, 1.0f, 1.0f}, 0.287f, 0.23f, 0},					// 0 : Lower body
+	{{0.0f, 0.3109f, 0.0f}, Y | MINUS, {0.0f, 0.0f, 0.0f}, {0.713f, 1.0f, 1.0f}, 0.287f, 0.23f, 0},			// 1 : Upper body
 
-	{{-0.1548f, 0.0764f, 0.0f}, Y | MINUS, {0.0f, -0.395f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 0},	// 2 : Upper left leg
-	{{0.0f, -0.4153f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.41636f, 0.12f, 2},				// 3 : Lower left leg
+	{{0.0f, 0.0764f, -0.1248f}, Y | MINUS, {0.0f, -0.395f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 2},	// 2 : Upper left leg
+	{{0.0f, -0.4153f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.4164f, 0.12f, 2},					// 3 : Lower left leg
 
-	{{0.1548f, 0.0764f, 0.0f}, Y | MINUS, {0.0f, -0.395f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 0},		// 4 : Upper right leg
-	{{0.0f, -0.4153f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.41636f, 0.12f, 4},				// 5 : Lower right leg
+	{{0.0f, 0.0764f, 0.1248f}, Y | MINUS, {0.0f, -0.395f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 4},		// 4 : Upper right leg
+	{{0.0f, -0.4153f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.4164f, 0.12f, 4},					// 5 : Lower right leg
 
-	{{-0.0910f, 0.2533f, 0.0f}, X, {-0.395f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 1},			// 6 : Upper left arm
-	{{-0.4153f, 0.0f, 0.0f}, X | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 6},			// 7 : Lower left arm
-	
-	{{0.0910f, 0.2533f, 0.0f}, X | MINUS, {0.395f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 1},		// 8 : Upper right arm
-	{{0.4153f, 0.0f, 0.0f}, X, {0.0, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 8},					// 9 : Lower right arm
+	{{0.0f, 0.2533f, -0.1203f}, Z | MINUS, {0.0f, 0.0f, -0.395f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 1},	// 6 : Upper left arm
+	{{0.0f, 0.0f, -0.4153f}, Z, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 6},					// 7 : Lower left arm
+
+	{{0.0f, 0.2533f, 0.1203f}, Z, {0.0f, 0.0f, 0.395f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 1},				// 8 : Upper right arm
+	{{0.0f, 0.0f, 0.4153f}, Z | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 8},			// 9 : Lower right arm
 
 	{{0.0f, 0.3290f, 0.0f}, Y | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.335f, 0.29f, 1},			// 10 : Head
 };
@@ -63,7 +64,15 @@ static unsigned int characterVertexCount;
 
 static const boneNumber = sizeof(characterDefinition) / sizeof(BoneDefinition);
 static Bone bones[sizeof(characterDefinition) / sizeof(BoneDefinition)] = {0};
-Bone character = {0};
+
+typedef struct s_frame {
+	vec3 position;
+	Quaternion rotations[sizeof(characterDefinition) / sizeof(BoneDefinition)];
+} Frame;
+
+static Frame* animation = NULL;
+static vec3 animationPosition = {0};
+static unsigned int animationLength = 0;
 
 static float randomFloat(float min, float max) {
 	return min + (max - min) * ((float)rand() / RAND_MAX);
@@ -335,18 +344,18 @@ void initCharacter() {
 		Face *newFaces = generateCrystal(crystal, &newFaceCount, i);
 
 
-		// export to blender
-		/*vec3 position = {0};
+#ifdef EXPORT_TO_BLENDER
+		vec3 position = {0};
 		int currentBoneId = i;
 		while (characterDefinition[currentBoneId].parentId != currentBoneId) {
 			position = vec3_add(position, characterDefinition[currentBoneId].position);
 			currentBoneId = characterDefinition[currentBoneId].parentId;
 		}
 
-
 		printf("b bone_%d %f %f %f", i, position.x, position.y, position.z);
 		if (characterDefinition[i].parentId != i) printf(" bone_%d\n", characterDefinition[i].parentId);
-		else printf("\n");*/
+		else printf("\n");
+#endif
 
 
 		faces = (Face*)realloc(faces, sizeof(Face) * (faceCount + newFaceCount));
@@ -359,13 +368,15 @@ void initCharacter() {
 			faces[faceCount + j] = newFaces[j];
 
 
-			/*vec3 A = vec3_add(position, newFaces[j].triangle.A);
+#ifdef EXPORT_TO_BLENDER
+			vec3 A = vec3_add(position, newFaces[j].triangle.A);
 			vec3 B = vec3_add(position, newFaces[j].triangle.B);
 			vec3 C = vec3_add(position, newFaces[j].triangle.C);
 			printf("v %f %f %f\n", A.x, A.y, A.z);
 			printf("v %f %f %f\n", B.x, B.y, B.z);
 			printf("v %f %f %f\n", C.x, C.y, C.z);
-			printf("f %d %d %d m %d\n", (faceCount + j) * 3, (faceCount + j) * 3 + 1, (faceCount + j) * 3 + 2, newFaces[j].material);*/
+			printf("f %d %d %d m %d\n", (faceCount + j) * 3, (faceCount + j) * 3 + 1, (faceCount + j) * 3 + 2, newFaces[j].material);
+#endif
 		}
 		faceCount += newFaceCount;
 
@@ -374,8 +385,7 @@ void initCharacter() {
 		// Create the bones
 		bones[i] = (Bone){
 			characterDefinition[i].position,
-			(vec3){0.0f, 0.0f, 0.0f},
-			translationMatrix(characterDefinition[i].position),
+			mat3_identity(),
 			characterDefinition[i].parentId
 		};
 	}
@@ -384,17 +394,48 @@ void initCharacter() {
 	free(faces);
 }
 
-void renderCharacter(mat4 projection, mat4 view, mat4 model) {
+void loadAnimation(const char* path) {
+	if (animation) free(animation);
+
+	size_t animationSize;
+	loadRessource(path, &animation, &animationSize);
+	animationLength = animationSize / sizeof(Frame);
+}
+
+void updateAnimation(float time) {
+	if (!animation) return;
+	
+	int currentFrameId = (int)(time * 30.0f) % animationLength;
+	int nextFrameId = (currentFrameId + 1) % animationLength;
+
+	Frame currentFrame = animation[currentFrameId];
+	Frame nextFrame = animation[nextFrameId];
+
+	animationPosition = vec3_lerp(currentFrame.position, nextFrame.position, time - (int)time);
+	for (int i = 0; i < boneNumber; i++) {
+		Quaternion rot = quat_lerp(currentFrame.rotations[i], nextFrame.rotations[i], time - (int)time);
+		bones[i].rotation = mat3_quaternion(rot);
+	}
+}
+
+void renderCharacter(mat4 projection, mat4 view, vec3 pos, vec3 rot) {
 	glUseProgram(characterShader);
+
+	mat4 translation = translationMatrix(vec3_add(pos, animationPosition));
+	mat4 rotation = rotationMatrix(rot);
+	mat4 model = mat4_multiply(&translation, &rotation);
 
 	glUniformMatrix4fv(glGetUniformLocation(characterShader, "projection"), 1, GL_FALSE, &projection);
 	glUniformMatrix4fv(glGetUniformLocation(characterShader, "view"), 1, GL_FALSE, &view);
 	glUniformMatrix4fv(glGetUniformLocation(characterShader, "model"), 1, GL_FALSE, &model);
 
 	for (int i = 0; i < boneNumber; i++) {
-		char uniformName[20];
-		snprintf(uniformName, sizeof(uniformName), "bones[%d].transform", i);
-		glUniformMatrix4fv(glGetUniformLocation(characterShader, uniformName), 1, GL_FALSE, &bones[i].transform);
+		char uniformName[32];
+		snprintf(uniformName, sizeof(uniformName), "bones[%d].position", i);
+		glUniform3fv(glGetUniformLocation(characterShader, uniformName), 1, &bones[i].position);
+
+		snprintf(uniformName, sizeof(uniformName), "bones[%d].rotation", i);
+		glUniformMatrix3fv(glGetUniformLocation(characterShader, uniformName), 1, GL_FALSE, &bones[i].rotation);
 		
 		snprintf(uniformName, sizeof(uniformName), "bones[%d].parent", i);
 		glUniform1ui(glGetUniformLocation(characterShader, uniformName), bones[i].parentID);
@@ -409,4 +450,5 @@ void renderCharacter(mat4 projection, mat4 view, mat4 model) {
 
 void cleanupCharacter() {
 	glDeleteVertexArrays(1, &characterVAO);
+	if (animation) free(animation);
 }
