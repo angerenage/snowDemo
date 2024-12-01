@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	
-	loadAnimation("ressources/running.anim.gz");
+	loadAnimation("ressources/running.anim.xz");
 	
 
 	const int chunkNbr = 3;

@@ -1,65 +1,83 @@
 #include "ressource.h"
 
-// https://www.zlib.net/zlib_how.html
-int loadRessource(const char *sourceFile, void** data, size_t *data_size) {
+static void lzmaError(lzma_ret ret) {
+	switch (ret) {
+		case LZMA_MEM_ERROR:
+			fprintf(stderr, "Memory allocation failed\n");
+			break;
+		case LZMA_FORMAT_ERROR:
+			fprintf(stderr, "Input is not in the xz format\n");
+			break;
+		case LZMA_OPTIONS_ERROR:
+			fprintf(stderr, "Unsupported compression options\n");
+			break;
+		case LZMA_DATA_ERROR:
+			fprintf(stderr, "Corrupted input data\n");
+			break;
+		case LZMA_BUF_ERROR:
+			fprintf(stderr, "No progress is possible, buffer too small?\n");
+			break;
+		default:
+			fprintf(stderr, "Unknown error: %d\n", ret);
+	}
+}
+
+int loadRessource(const char *sourceFile, void **data, size_t *data_size) {
 	FILE *source = fopen(sourceFile, "rb");
 	if (source == NULL) {
 		perror("File open error");
-		return Z_ERRNO;
+		return -1;
 	}
 
-	int ret;
-	unsigned have;
-	z_stream strm;
+	lzma_stream strm = LZMA_STREAM_INIT;
 	unsigned char in[CHUNK];
 	unsigned char out[CHUNK];
 	unsigned char *result = NULL, *temp_ptr;
-	unsigned long result_size = 0;
+	size_t result_size = 0;
+	lzma_ret ret;
 
-	/* allocate inflate state */
-	strm.zalloc = Z_NULL;
-	strm.zfree = Z_NULL;
-	strm.opaque = Z_NULL;
-	strm.avail_in = 0;
-	strm.next_in = Z_NULL;
-	ret = inflateInit2(&strm, 16 + MAX_WBITS);
-	if (ret != Z_OK)
-		return ret;
+	ret = lzma_stream_decoder(&strm, UINT64_MAX, LZMA_CONCATENATED);
+	if (ret != LZMA_OK) {
+		fprintf(stderr, "Failed to initialize lzma decoder: %d\n", ret);
+		lzmaError(ret);
+		fclose(source);
+		return -1;
+	}
 
-	/* decompress until deflate stream ends or end of file */
 	do {
 		strm.avail_in = fread(in, 1, CHUNK, source);
 		if (ferror(source)) {
-			(void)inflateEnd(&strm);
-			return Z_ERRNO;
+			perror("File read error");
+			lzma_end(&strm);
+			fclose(source);
+			free(result);
+			return -1;
 		}
-		if (strm.avail_in == 0)
-			break;
 		strm.next_in = in;
 
-		/* run inflate() on input until output buffer not full */
 		do {
 			strm.avail_out = CHUNK;
 			strm.next_out = out;
-			ret = inflate(&strm, Z_NO_FLUSH);
-			assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
-			switch (ret) {
-			case Z_NEED_DICT:
-				ret = Z_DATA_ERROR;     /* fall through */
-			case Z_DATA_ERROR:
-			case Z_MEM_ERROR:
-				(void)inflateEnd(&strm);
-				return ret;
-			}
-			have = CHUNK - strm.avail_out;
 
-			temp_ptr = realloc(result, result_size + have);
-			if (!temp_ptr) {
-				printf("reallocation failed\n");
-				(void)inflateEnd(&strm);
+			ret = lzma_code(&strm, strm.avail_in == 0 ? LZMA_FINISH : LZMA_RUN);
+
+			if (ret != LZMA_OK && ret != LZMA_STREAM_END) {
+				fprintf(stderr, "Decompression error: %d\n", ret);
+				lzmaError(ret);
+				lzma_end(&strm);
 				fclose(source);
 				free(result);
-				return Z_ERRNO;
+				return -1;
+			}
+
+			size_t have = CHUNK - strm.avail_out;
+			temp_ptr = realloc(result, result_size + have);
+			if (!temp_ptr) {
+				perror("Memory allocation error");
+				lzma_end(&strm);
+				fclose(source);
+				free(result);
+				return -1;
 			}
 			result = temp_ptr;
 			memcpy(result + result_size, out, have);
@@ -67,39 +85,20 @@ int loadRessource(const char *sourceFile, void** data, size_t *data_size) {
 
 		} while (strm.avail_out == 0);
 
-		/* done when inflate() says it's done */
-	} while (ret != Z_STREAM_END);
+	} while (ret != LZMA_STREAM_END);
 
-	/* clean up and return */
-	(void)inflateEnd(&strm);
+	lzma_end(&strm);
 	fclose(source);
 
-	*data_size = result_size;
-	*data = result;
-
-	return ret == Z_STREAM_END ? Z_OK : Z_DATA_ERROR;
-}
-
-void zerr(int ret) {
-	fputs("zpipe: ", stderr);
-	switch (ret) {
-	case Z_ERRNO:
-		if (ferror(stdin))
-			fputs("error reading stdin\n", stderr);
-		if (ferror(stdout))
-			fputs("error writing stdout\n", stderr);
-		break;
-	case Z_STREAM_ERROR:
-		fputs("invalid compression level\n", stderr);
-		break;
-	case Z_DATA_ERROR:
-		fputs("invalid or incomplete deflate data\n", stderr);
-		break;
-	case Z_MEM_ERROR:
-		fputs("out of memory\n", stderr);
-		break;
-	case Z_VERSION_ERROR:
-		fputs("zlib version mismatch!\n", stderr);
-		break;
+	if (ret != LZMA_STREAM_END) {
+		fprintf(stderr, "File decompression did not end properly\n");
+		lzmaError(ret);
+		free(result);
+		return -1;
 	}
+
+	*data = result;
+	*data_size = result_size;
+
+	return 0;
 }
