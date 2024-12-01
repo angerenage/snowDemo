@@ -182,7 +182,7 @@ void main() {
 	float frequency = 1.0;
 	float noise = 0.0;
 
-	float texelSize = 1.0 / 8192.0;
+	float texelSize = 1.0 / 1024.0;
 
 	vec3 normal = vec3(0.0);
 
@@ -221,56 +221,69 @@ static const char rnoiseFragSrc[] = "#version 330 core\n"
 
 // --------------------------- TERRAIN SHADERS ---------------------------
 
-static const char terrainVertSrc[] = "#version 430 core\n"
+static const char snowVertSrc[] = "#version 430 core\n"
 "layout(location=0) in vec3 pA;"
+
 "out vec3 normal;"
 "out vec4 shadowSpacePos;"
+
 "uniform mat4 projection;"
 "uniform mat4 view;"
 "uniform mat4 model;"
 "uniform mat4 shadowView;"
 "uniform mat4 shadowProjection;"
-"uniform sampler2D terrainTex;"
+"uniform sampler2D heightTex;"
 "uniform float size;"
+
+"const float heightScale = 0.3;"
+
 "void main()"
 "{"
-	"vec2 uv=vec2(mat3(model)*vec3((pA.xz/size+1.)/2.,0.));"
-	"normal=normalize(transpose(inverse(mat3(model)))*(texture(terrainTex,uv).xyz * 2.0 - 1.0));"
-	"vec4 pos=model*vec4(pA.x,pA.y+texture(terrainTex,uv).w*5.,pA.z,1.);"
-	"shadowSpacePos=shadowProjection*shadowView*pos;"
-	"gl_Position=projection*view*pos;"
+	"vec2 uv = vec2(mat3(model) * vec3((pA.xz / size + 1.0) / 2.0, 0.0));"
+
+	"normal = normalize(transpose(inverse(mat3(model))) * (texture(heightTex, uv).xyz * 2.0 - 1.0));"
+	"vec4 pos = model * vec4(pA.x, pA.y + texture(heightTex, uv).w * heightScale, pA.z, 1.0);"
+
+	"shadowSpacePos = shadowProjection * shadowView * pos;"
+	"gl_Position = projection * view * pos;"
 "}";
 
-static const char terrainFragSrc[] = "#version 330 core\n"
+static const char snowFragSrc[] = "#version 330 core\n"
 "#define M_PI 3.1415926535897932384626433832795\n"
+
 "out vec4 fragColor;"
+
 "in vec3 normal;"
 "in vec4 shadowSpacePos;"
+
 "uniform vec3 sunPos;"
 "uniform sampler2D shadowMap;"
+
+"const float heightScale = 0.3;"
+
 "float shadowCalculation()"
 "{"
 	"vec3 projCoords = shadowSpacePos.xyz / shadowSpacePos.w;"
 	"projCoords = projCoords * 0.5 + 0.5;"
-	"if(projCoords.z >= 1.0)"
+	"if (projCoords.z >= 1.0)"
 		"return 1.0;"
 	
 	"float closestDepth = texture(shadowMap, projCoords.xy).r;"
 	"float currentDepth = projCoords.z;"
-	"float bias = max(0.005 * (1.0 - dot(normal, normalize(sunPos * -1.0))), 0.0005);"
+
+	"float bias = 0.0;"//max(0.005 * (1.0 - dot(normal, normalize(sunPos * -1.0))), 0.0005);"
 	"return currentDepth - bias > closestDepth ? 1.0 : 0.0;"
 "}"
+
 "void main()"
 "{"
-	"float shadow=0.;"
-	"if (sunPos.y >= 0.)"
-		"shadow=1.-shadowCalculation();"
-	"shadow*=clamp(dot(normalize(sunPos),normal),0.01,1.);"
-	"float ambient=clamp(sunPos.y/0.2,0.,1.)*.15;"
-	"shadow=clamp((shadow+ambient)/(1.+ambient),ambient,1.);"
+	"float shadow = clamp(dot(vec3(0.0, 1.0, 0.0), normalize(sunPos)) * 5.0, 0.15, 1.0);"
+	"if (sunPos.y >= 0.0)"
+		"shadow *= clamp((1.0 - shadowCalculation()) + (1.0 - shadow), 0.0, 1.0);"
+	"shadow *= (dot(normalize(sunPos), normal * heightScale) + 1.0) / 2.0;"
 
-	"vec3 color=vec3(1.,.5,.3);"
-	"fragColor=vec4(color*shadow,1.);"
+	"vec3 color = vec3(1.0, 1.0, 1.0);"
+	"fragColor = vec4(color * shadow, 1.0);"
 "}";
 
 // --------------------------- ATMOSPHERE ---------------------------
@@ -730,14 +743,13 @@ GLuint textShader;
 GLuint snoiseShader;
 GLuint rnoiseShader;
 
-GLuint terrainShader;
+GLuint snowShader;
 
 GLuint atmosphereShader;
 GLuint skyShader;
 
-GLuint shadowShader;
-
 GLuint characterShader;
+GLuint shadowCharacterShader;
 
 void initShaders() {
 	debugShader = compileShader(debugVertSrc, NULL, debugFragSrc);
@@ -746,14 +758,13 @@ void initShaders() {
 	snoiseShader = compileShader(postVertSrc, NULL, snoiseFragSrc);
 	rnoiseShader = compileShader(postVertSrc, NULL, rnoiseFragSrc);
 
-	terrainShader = compileShader(terrainVertSrc, NULL, terrainFragSrc);
+	snowShader = compileShader(snowVertSrc, NULL, snowFragSrc);
 
 	atmosphereShader = compileShader(postVertSrc, NULL, atmosphereFragSrc);
 	skyShader = compileShader(skyVertSrc, NULL, skyFragSrc);
 
-	shadowShader = compileShader(terrainVertSrc, NULL, shadowFragSrc);
-
 	characterShader = compileShader(characterVertSrc, NULL, characterFragSrc);
+	shadowCharacterShader = compileShader(characterVertSrc, NULL, shadowFragSrc);
 }
 
 void cleanupShaders() {
@@ -763,11 +774,10 @@ void cleanupShaders() {
 	glDeleteProgram(snoiseShader);
 	glDeleteProgram(rnoiseShader);
 
-	glDeleteProgram(terrainShader);
+	glDeleteProgram(snowShader);
 
 	glDeleteProgram(atmosphereShader);
 
-	glDeleteProgram(shadowShader);
-
 	glDeleteProgram(characterShader);
+	glDeleteProgram(shadowCharacterShader);
 }

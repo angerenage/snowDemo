@@ -419,27 +419,27 @@ void updateAnimation(float time) {
 	}
 }
 
-void renderCharacter(mat4 projection, mat4 view, vec3 pos, vec3 rot) {
-	glUseProgram(characterShader);
+void renderCharacter(GLuint shader, mat4 projection, mat4 view, vec3 pos, vec3 rot) {
+	glUseProgram(shader);
 
 	mat4 translation = translationMatrix(vec3_add(pos, animationPosition));
 	mat4 rotation = rotationMatrix(rot);
 	mat4 model = mat4_multiply(&translation, &rotation);
 
-	glUniformMatrix4fv(glGetUniformLocation(characterShader, "projection"), 1, GL_FALSE, (GLfloat*)&projection);
-	glUniformMatrix4fv(glGetUniformLocation(characterShader, "view"), 1, GL_FALSE, (GLfloat*)&view);
-	glUniformMatrix4fv(glGetUniformLocation(characterShader, "model"), 1, GL_FALSE, (GLfloat*)&model);
+	glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, (GLfloat*)&projection);
+	glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, (GLfloat*)&view);
+	glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, (GLfloat*)&model);
 
 	for (int i = 0; i < boneNumber; i++) {
 		char uniformName[32];
 		snprintf(uniformName, sizeof(uniformName), "bones[%d].position", i);
-		glUniform3fv(glGetUniformLocation(characterShader, uniformName), 1, (GLfloat*)&bones[i].position);
+		glUniform3fv(glGetUniformLocation(shader, uniformName), 1, (GLfloat*)&bones[i].position);
 
 		snprintf(uniformName, sizeof(uniformName), "bones[%d].rotation", i);
-		glUniformMatrix3fv(glGetUniformLocation(characterShader, uniformName), 1, GL_FALSE, (GLfloat*)&bones[i].rotation);
+		glUniformMatrix3fv(glGetUniformLocation(shader, uniformName), 1, GL_FALSE, (GLfloat*)&bones[i].rotation);
 		
 		snprintf(uniformName, sizeof(uniformName), "bones[%d].parent", i);
-		glUniform1ui(glGetUniformLocation(characterShader, uniformName), bones[i].parentID);
+		glUniform1ui(glGetUniformLocation(shader, uniformName), bones[i].parentID);
 	}
 
 	glBindVertexArray(characterVAO);

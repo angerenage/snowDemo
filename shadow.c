@@ -8,7 +8,7 @@ GLuint shadowMap;
 GLuint shadowFBO;
 
 void initShadow() {
-	shadowProjection = orthographicMatrix(-76.0f, 76.0f, -76.0f, 76.0f, -100.0f, 100.0f);
+	shadowProjection = orthographicMatrix(-10.0f, 10.0f, -10.0f, 10.0f, -100.0f, 100.0f);
 	
 	shadowMap = createTextureDepth(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 
@@ -21,9 +21,9 @@ void initShadow() {
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	/*if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 		fprintf(stderr, "Error: Shadow framebuffer is not complete\n");
-	}*/
+	}
 }
 
 void clearShadow() {
