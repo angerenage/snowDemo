@@ -676,14 +676,12 @@ static const char characterVertSrc[] = "#version 330 core\n"
 
 "vec3 calculate_global_position(uint boneID)"
 "{"
-	"vec3 globalPosition = vec3(0.0);"
+	"vec3 globalPosition = bones[0].position;"
 
 	"while (boneID != bones[boneID].parent) {"
 		"globalPosition += bones[bones[boneID].parent].rotation * bones[boneID].position;"
 		"boneID = bones[boneID].parent;"
 	"}"
-
-	"globalPosition += bones[boneID].position;"
 
 	"return globalPosition;"
 "}"
