@@ -44,10 +44,10 @@ static const BoneDefinition characterDefinition[] = {
 	{{0.0f, 0.0f, 0.0f}, Y, {0.0f, 0.287f, 0.0f}, {0.713f, 1.0f, 1.0f}, 0.287f, 0.23f, 0},					// 0 : Lower body
 	{{0.0f, 0.3109f, 0.0f}, Y | MINUS, {0.0f, 0.0f, 0.0f}, {0.713f, 1.0f, 1.0f}, 0.287f, 0.23f, 0},			// 1 : Upper body
 
-	{{0.0f, 0.0764f, -0.1248f}, Y | MINUS, {0.0f, -0.395f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 2},	// 2 : Upper left leg
+	{{0.0f, 0.0764f, -0.1248f}, Y | MINUS, {0.0f, -0.395f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 0},	// 2 : Upper left leg
 	{{0.0f, -0.4153f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.4164f, 0.12f, 2},					// 3 : Lower left leg
 
-	{{0.0f, 0.0764f, 0.1248f}, Y | MINUS, {0.0f, -0.395f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 4},		// 4 : Upper right leg
+	{{0.0f, 0.0764f, 0.1248f}, Y | MINUS, {0.0f, -0.395f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 0},		// 4 : Upper right leg
 	{{0.0f, -0.4153f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.4164f, 0.12f, 4},					// 5 : Lower right leg
 
 	{{0.0f, 0.2533f, -0.1203f}, Z | MINUS, {0.0f, 0.0f, -0.395f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 1},	// 6 : Upper left arm
@@ -71,7 +71,6 @@ typedef struct s_frame {
 } Frame;
 
 static Frame* animation = NULL;
-static vec3 animationPosition = {0};
 static unsigned int animationLength = 0;
 
 static float randomFloat(float min, float max) {
@@ -412,19 +411,15 @@ void updateAnimation(float time) {
 	Frame currentFrame = animation[currentFrameId];
 	Frame nextFrame = animation[nextFrameId];
 
-	animationPosition = vec3_lerp(currentFrame.position, nextFrame.position, time - (int)time);
+	bones[0].position = vec3_lerp(currentFrame.position, nextFrame.position, time - (int)time);
 	for (int i = 0; i < boneNumber; i++) {
 		Quaternion rot = quat_lerp(currentFrame.rotations[i], nextFrame.rotations[i], time - (int)time);
 		bones[i].rotation = mat3_quaternion(rot);
 	}
 }
 
-void renderCharacter(GLuint shader, mat4 projection, mat4 view, vec3 pos, vec3 rot) {
+void renderCharacter(GLuint shader, mat4 projection, mat4 view, mat4 model) {
 	glUseProgram(shader);
-
-	mat4 translation = translationMatrix(vec3_add(pos, animationPosition));
-	mat4 rotation = rotationMatrix(rot);
-	mat4 model = mat4_multiply(&translation, &rotation);
 
 	glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, (GLfloat*)&projection);
 	glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, (GLfloat*)&view);

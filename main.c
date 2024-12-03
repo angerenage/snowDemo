@@ -157,7 +157,8 @@ int main(int argc, char *argv[]) {
 				glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO);
 				glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 
-				renderCharacter(shadowCharacterShader, shadowProjection, shadowView, (vec3){0.0f, 0.0f, 0.0f}, (vec3){0.0f, -M_PI / 2.0f, 0.0f});
+				mat4 characterModel = rotationMatrix((vec3){0.0f, -M_PI / 2.0f, 0.0f});
+				renderCharacter(shadowCharacterShader, shadowProjection, shadowView, characterModel);
 
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 				glViewport(0, 0, screenSize.x, screenSize.y);
@@ -195,7 +196,7 @@ int main(int argc, char *argv[]) {
 
 				glBindVertexArray(0);
 
-				renderCharacter(characterShader, projection, view, (vec3){0.0f, 0.0f, 0.0f}, (vec3){0.0f, -M_PI / 2.0f, 0.0f});
+				renderCharacter(characterShader, projection, view, characterModel);
 
 				break;
 			}

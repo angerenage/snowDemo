@@ -128,88 +128,87 @@ static const char postVertSrc[] = "#version 330 core\n"
 	"gl_Position=vec4(pA,1.);"
 "}";
 
-static const char snoiseFragSrc[] = R"glsl(#version 330 core
-out vec4 fragColor;
+static const char snoiseFragSrc[] = "#version 330 core\n"
+"out vec4 fragColor;"
 
-uniform vec2 resolution;
-uniform vec2 offset;
+"uniform vec2 resolution;"
+"uniform vec2 offset;"
 
-vec3 permute(vec3 x) {
-    return mod(((x * 34.0) + 1.0) * x, 289.0);
-}
+"vec3 permute(vec3 x) {"
+    "return mod(((x * 34.0) + 1.0) * x, 289.0);"
+"}"
 
-float simplex2D(vec2 v) {
-	const vec4 C = vec4(0.211324865405187,  // (3.0-sqrt(3.0))/6.0
-						0.366025403784439,  // 0.5*(sqrt(3.0)-1.0)
-						-0.577350269189626, // -1.0 + 2.0 * C.x
-						0.024390243902439); // 1.0 / 41.0
+"float simplex2D(vec2 v) {"
+	"const vec4 C = vec4(0.211324865405187,"  // (3.0-sqrt(3.0))/6.0
+						"0.366025403784439,"  // 0.5*(sqrt(3.0)-1.0)
+						"-0.577350269189626," // -1.0 + 2.0 * C.x
+						"0.024390243902439);" // 1.0 / 41.0
 
-	vec2 i = floor(v + dot(v, C.yy));
-	vec2 x0 = v - i + dot(i, C.xx);
+	"vec2 i = floor(v + dot(v, C.yy));"
+	"vec2 x0 = v - i + dot(i, C.xx);"
 
-	vec2 i1;
-	i1.x = step(x0.y, x0.x);
-	i1.y = 1.0 - i1.x;
+	"vec2 i1;"
+	"i1.x = step(x0.y, x0.x);"
+	"i1.y = 1.0 - i1.x;"
 
-	vec4 x12 = x0.xyxy + C.xxzz;
-	x12.xy -= i1;
+	"vec4 x12 = x0.xyxy + C.xxzz;"
+	"x12.xy -= i1;"
 
-	i = mod(i, 289.0);
-	vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0))
-					+ i.x + vec3(0.0, i1.x, 1.0));
+	"i = mod(i, 289.0);"
+	"vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));"
 
-	vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);
-	m = m * m;
-	m = m * m;
+	"vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);"
+	"m = m * m;"
+	"m = m * m;"
 
-	vec3 x = 2.0 * fract(p * C.www) - 1.0;
-	vec3 h = abs(x) - 0.5;
-	vec3 ox = floor(x + 0.5);
-	vec3 a0 = x - ox;
+	"vec3 x = 2.0 * fract(p * C.www) - 1.0;"
+	"vec3 h = abs(x) - 0.5;"
+	"vec3 ox = floor(x + 0.5);"
+	"vec3 a0 = x - ox;"
 
-	vec3 g;
-	g.x = a0.x * x0.x + h.x * x0.y;
-	g.y = a0.y * x12.x + h.y * x12.y;
-	g.z = a0.z * x12.z + h.z * x12.w;
+	"vec3 g;"
+	"g.x = a0.x * x0.x + h.x * x0.y;"
+	"g.y = a0.y * x12.x + h.y * x12.y;"
+	"g.z = a0.z * x12.z + h.z * x12.w;"
 
-	return 130.0 * dot(m, g);
-}
+	"return 130.0 * dot(m, g);"
+"}"
 
-void main() {
-	vec2 uv = 2.0 * gl_FragCoord.xy / resolution.xy;
-	vec2 pos = uv + offset;
-	float amplitude = 1.0;
-	float frequency = 1.0;
-	float noise = 0.0;
+"void main() {"
+	"vec2 uv = 2.0 * gl_FragCoord.xy / resolution.xy;"
+	"vec2 pos = uv + offset;"
+	"float amplitude = 1.0;"
+	"float frequency = 1.0;"
+	"float noise = 0.0;"
 
-	float texelSize = 1.0 / 1024.0;
+	"float texelSize = 1.0 / 1024.0;"
 
-	vec3 normal = vec3(0.0);
+	"vec3 normal = vec3(0.0);"
 
-	for(int i = 0; i < 10; i++) {
-		float n = simplex2D(pos * frequency);
-		float vL = simplex2D((pos + vec2(-texelSize, 0.0)) * frequency);
-		float vR = simplex2D((pos + vec2(texelSize, 0.0)) * frequency);
-		float vD = simplex2D((pos + vec2(0.0, texelSize)) * frequency);
-		float vU = simplex2D((pos + vec2(0.0, -texelSize)) * frequency);
+	"for (int i = 0; i < 10; i++) {"
+		"float n = simplex2D(pos * frequency);"
+		"float vL = simplex2D((pos + vec2(-texelSize, 0.0)) * frequency);"
+		"float vR = simplex2D((pos + vec2(texelSize, 0.0)) * frequency);"
+		"float vD = simplex2D((pos + vec2(0.0, texelSize)) * frequency);"
+		"float vU = simplex2D((pos + vec2(0.0, -texelSize)) * frequency);"
 
-		vec2 deriv = vec2(vR - vL, vU - vD);
+		"vec2 deriv = vec2(vR - vL, vU - vD);"
 
-		float mag = length(deriv);
+		"float mag = length(deriv);"
 
-		amplitude = amplitude * 1.0 / (1.0 + mag * 18.0);
-		noise += amplitude * n;
+		"amplitude = amplitude * 1.0 / (1.0 + mag * 18.0);"
+		"noise += amplitude * n;"
 
-		deriv *= amplitude;
-		normal += vec3(-deriv, 2.0 * texelSize);
+		"deriv *= amplitude;"
+		"normal += vec3(-deriv, 2.0 * texelSize);"
 
-		frequency *= 2.0;
-		amplitude *= 0.5;
-	}
+		"frequency *= 2.0;"
+		"amplitude *= 0.5;"
+	"}"
 
-	float height = (noise + 1.0) / 2.0;
-	fragColor = vec4((normalize(normal) + 1.0) / 2.0, height);
-})glsl";
+	"float height = (noise + 1.0) / 2.0;"
+	"fragColor = vec4((normalize(normal) + 1.0) / 2.0, height);"
+"}";
 
 static const char rnoiseFragSrc[] = "#version 330 core\n"
 "out vec4 c;"
@@ -677,20 +676,14 @@ static const char characterVertSrc[] = "#version 330 core\n"
 
 "vec3 calculate_global_position(uint boneID)"
 "{"
-	"uint stack[5];"
-	"int stackSize = 0;"
-
-	"uint currentBone = boneID;"
-	"while (currentBone != bones[currentBone].parent) {"
-		"stack[stackSize++] = currentBone;"
-		"currentBone = bones[currentBone].parent;"
-	"}"
-	"stack[stackSize++] = currentBone;"
-
 	"vec3 globalPosition = vec3(0.0);"
-	"for (int i = stackSize - 1; i >= 0; i--) {"
-		"globalPosition = bones[stack[i + 1]].rotation * bones[stack[i]].position + globalPosition;"
+
+	"while (boneID != bones[boneID].parent) {"
+		"globalPosition += bones[bones[boneID].parent].rotation * bones[boneID].position;"
+		"boneID = bones[boneID].parent;"
 	"}"
+
+	"globalPosition += bones[boneID].position;"
 
 	"return globalPosition;"
 "}"
