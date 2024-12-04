@@ -654,7 +654,7 @@ static const char shadowFragSrc[] = "#version 330 core\n"
 
 // --------------------------- CHARACTER SHADERS ---------------------------
 
-static const char characterVertSrc[] = "#version 330 core\n"
+static const char characterVertSrc[] = "#version 450 core\n"
 "layout(location=0) in vec3 position;"
 "layout(location=1) in vec3 normal;"
 "layout(location=2) in uint material;"
@@ -666,6 +666,7 @@ static const char characterVertSrc[] = "#version 330 core\n"
 
 "struct Bone {"
 	"vec3 position;"
+	"vec3 lightPosition;"
 	"mat3 rotation;"
 	"uint parent;"
 "};"
@@ -674,8 +675,13 @@ static const char characterVertSrc[] = "#version 330 core\n"
 "out vec3 fragNormal;"
 "flat out uint fragMaterial;"
 
-"vec3 calculate_global_position(uint boneID)"
+"layout(std430, binding = 0) buffer StorageBuffer {"
+	"vec3 lightPositions[];"
+"};"
+
+"void main()"
 "{"
+	"uint boneID = bone;"
 	"vec3 globalPosition = bones[0].position;"
 
 	"while (boneID != bones[boneID].parent) {"
@@ -683,18 +689,13 @@ static const char characterVertSrc[] = "#version 330 core\n"
 		"boneID = bones[boneID].parent;"
 	"}"
 
-	"return globalPosition;"
-"}"
-
-"void main()"
-"{"
 	"mat3 rotation = bones[bone].rotation;"
-	"vec3 globalPosition = calculate_global_position(bone);"
-	"vec3 pos = rotation * position + globalPosition;"
+	"lightPositions[bone] = globalPosition + rotation * bones[bone].lightPosition;"
+	"globalPosition += rotation * position;"
 
 	"fragMaterial = material;"
 	"fragNormal = normalize(mat3(transpose(inverse(model))) * normal);"
-	"gl_Position = projection * view * model * vec4(pos, 1.0);"
+	"gl_Position = projection * view * model * vec4(globalPosition, 1.0);"
 "}";
 
 static const char characterFragSrc[] = "#version 330 core\n"

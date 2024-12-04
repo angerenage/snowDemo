@@ -43,6 +43,8 @@ GLuint createIndexedVAO(const vec3 *vertices, int vertexCount, const unsigned in
 GLuint createVAO(const vec3 *vertices, unsigned int vertexCount);
 GLuint setupInstanceBuffer(GLuint instanceVAO, const vec3 *positions, unsigned int positionsCount);
 
+GLuint createSSBO(size_t size, GLuint index);
+
 void checkOpenGLError();
 void cleanupUtils();
 void freeMesh(Mesh m);

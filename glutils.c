@@ -335,6 +335,16 @@ GLuint setupInstanceBuffer(GLuint instanceVAO, const vec3 *positions, unsigned i
 	return instanceVBO;
 }
 
+GLuint createSSBO(size_t size, GLuint index) {
+	GLuint ssbo;
+	glGenBuffers(1, &ssbo);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, size, NULL, GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, ssbo);
+
+	return ssbo;
+}
+
 void checkOpenGLError() {
 	GLenum err;
 	while ((err = glGetError()) != GL_NO_ERROR) {

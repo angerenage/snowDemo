@@ -25,10 +25,12 @@ typedef struct s_face {
 } Face;
 
 typedef enum e_axis {
-	X = 0b001,
-	Y = 0b010,
-	Z = 0b100,
-	MINUS = 0b1000,
+	X = 0,
+	Y = 1,
+	Z = 2,
+	MINUS = 4,
+	DOWN = 8,
+	INVERT = 16
 } Axis;
 
 typedef struct s_boneDefinition {
@@ -40,25 +42,25 @@ typedef struct s_boneDefinition {
 } BoneDefinition;
 
 static const BoneDefinition characterDefinition[] = {
-	//0.7553f
-	{{0.0f, 0.0f, 0.0f}, Y, {0.0f, 0.287f, 0.0f}, {0.713f, 1.0f, 1.0f}, 0.287f, 0.23f, 0},					// 0 : Lower body
-	{{0.0f, 0.3109f, 0.0f}, Y | MINUS, {0.0f, 0.0f, 0.0f}, {0.713f, 1.0f, 1.0f}, 0.287f, 0.23f, 0},			// 1 : Upper body
+	{{0.0f, 0.0f, 0.0f}, Y, {0.0f, 0.287f, 0.0f}, {0.713f, 1.0f, 1.0f}, 0.287f, 0.23f, 0},						// 0 : Lower body
+	{{0.0f, 0.3109f, 0.0f}, Y | MINUS | INVERT, {0.0f, 0.0f, 0.0f}, {0.713f, 1.0f, 1.0f}, 0.287f, 0.23f, 0},	// 1 : Upper body
 
-	{{0.0f, 0.0764f, -0.1248f}, Y | MINUS, {0.0f, -0.395f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 0},	// 2 : Upper left leg
-	{{0.0f, -0.4153f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.4164f, 0.12f, 2},					// 3 : Lower left leg
+	{{0.0f, 0.0764f, 0.1248f}, Y | MINUS | DOWN, {0.0f, -0.395f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 0},	// 2 : Upper left leg
+	{{0.0f, -0.4153f, 0.0f}, Y | DOWN | INVERT, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.4164f, 0.12f, 2},		// 3 : Lower left leg
 
-	{{0.0f, 0.0764f, 0.1248f}, Y | MINUS, {0.0f, -0.395f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 0},		// 4 : Upper right leg
-	{{0.0f, -0.4153f, 0.0f}, Y, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.4164f, 0.12f, 4},					// 5 : Lower right leg
+	{{0.0f, 0.0764f, -0.1248f}, Y | MINUS | DOWN, {0.0f, -0.395f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.12f, 0},	// 4 : Upper right leg
+	{{0.0f, -0.4153f, 0.0f}, Y | DOWN | INVERT, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.4164f, 0.12f, 4},		// 5 : Lower right leg
 
-	{{0.0f, 0.2533f, -0.1203f}, Z | MINUS, {0.0f, 0.0f, -0.395f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 1},	// 6 : Upper left arm
-	{{0.0f, 0.0f, -0.4153f}, Z, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 6},					// 7 : Lower left arm
+	{{0.0f, 0.2533f, 0.1203f}, Z, {0.0f, 0.0f, 0.395f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 1},					// 6 : Upper left arm
+	{{0.0f, 0.0f, 0.4153f}, Z | MINUS | INVERT, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 6},		// 7 : Lower left arm
 
-	{{0.0f, 0.2533f, 0.1203f}, Z, {0.0f, 0.0f, 0.395f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 1},				// 8 : Upper right arm
-	{{0.0f, 0.0f, 0.4153f}, Z | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 8},			// 9 : Lower right arm
+	{{0.0f, 0.2533f, -0.1203f}, Z | MINUS | DOWN, {0.0f, 0.0f, -0.395f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 1},	// 8 : Upper right arm
+	{{0.0f, 0.0f, -0.4153f}, Z | DOWN | INVERT, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.395f, 0.10f, 8},		// 9 : Lower right arm
 
-	{{0.0f, 0.3290f, 0.0f}, Y | MINUS, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.335f, 0.29f, 1},			// 10 : Head
+	{{0.0f, 0.3290f, 0.0f}, Y | MINUS | INVERT, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.335f, 0.29f, 1},		// 10 : Head
 };
 
+static GLuint pointLightSSBO;
 static GLuint characterVAO;
 static unsigned int characterVertexCount;
 
@@ -87,7 +89,7 @@ static vec3 randomVector() {
 static vec3 axisToRotation(Axis axis) {
 	bool invert = axis & MINUS;
 	float halfPi = (invert ? -1.0f : 1.0f) * (M_PI / 2.0f);
-	switch (axis & ~MINUS) {
+	switch (axis & ~MINUS & ~DOWN & ~INVERT) {
 		case X:
 			return (vec3){0.0, 0.0f, halfPi};
 		case Y:
@@ -96,6 +98,12 @@ static vec3 axisToRotation(Axis axis) {
 			return (vec3){halfPi, 0.0f, 0.0f};
 	}
 	return (vec3){0.0f, 0.0f, 0.0f};
+}
+
+static vec3 axisToVector(Axis axis, float length) {
+	float result[3] = {0.0f, 0.0f, 0.0f};
+	result[axis & ~MINUS & ~DOWN & ~INVERT] = axis & DOWN ? -length : length;
+	return *(vec3*)result;
 }
 
 static int reconstructTriangle(Triangle triangle, Plane plane, Triangle *triangles, bool invert) {
@@ -385,6 +393,7 @@ void initCharacter() {
 		// Create the bones
 		bones[i] = (Bone){
 			characterDefinition[i].position,
+			axisToVector(characterDefinition[i].axis, characterDefinition[i].axis & INVERT ? crystal.topHeight : crystal.bottomHeight),
 			mat3_identity(),
 			characterDefinition[i].parentId
 		};
@@ -392,6 +401,8 @@ void initCharacter() {
 
 	characterVAO = createCharacterVAO(faces, faceCount);
 	free(faces);
+
+	pointLightSSBO = createSSBO(sizeof(float) * 4 * boneNumber, 0); // padded to 4 floats by openGL
 }
 
 void loadAnimation(const char* path) {
@@ -430,6 +441,9 @@ void renderCharacter(GLuint shader, mat4 projection, mat4 view, mat4 model) {
 		snprintf(uniformName, sizeof(uniformName), "bones[%d].position", i);
 		glUniform3fv(glGetUniformLocation(shader, uniformName), 1, (GLfloat*)&bones[i].position);
 
+		snprintf(uniformName, sizeof(uniformName), "bones[%d].lightPosition", i);
+		glUniform3fv(glGetUniformLocation(shader, uniformName), 1, (GLfloat*)&bones[i].lightPosition);
+
 		snprintf(uniformName, sizeof(uniformName), "bones[%d].rotation", i);
 		glUniformMatrix3fv(glGetUniformLocation(shader, uniformName), 1, GL_FALSE, (GLfloat*)&bones[i].rotation);
 		
@@ -442,9 +456,12 @@ void renderCharacter(GLuint shader, mat4 projection, mat4 view, mat4 model) {
 	glBindVertexArray(0);
 
 	glUseProgram(0);
+
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
 void cleanupCharacter() {
 	glDeleteVertexArrays(1, &characterVAO);
+	glDeleteBuffers(1, &pointLightSSBO);
 	if (animation) free(animation);
 }

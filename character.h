@@ -9,6 +9,7 @@
 
 typedef struct s_bone {
 	vec3 position;
+	vec3 lightPosition;
 	mat3 rotation;
 	uint8_t parentID;
 } Bone;
