@@ -172,6 +172,7 @@ int main(int argc, char *argv[]) {
 				glUniformMatrix4fv(glGetUniformLocation(snowShader, "view"), 1, GL_FALSE, (GLfloat*)&view);
 				glUniformMatrix4fv(glGetUniformLocation(snowShader, "shadowProjection"), 1, GL_FALSE, (GLfloat*)&shadowProjection);
 				glUniformMatrix4fv(glGetUniformLocation(snowShader, "shadowView"), 1, GL_FALSE, (GLfloat*)&shadowView);
+				glUniform3fv(glGetUniformLocation(snowShader, "viewPos"), 1, (GLfloat*)&cameraPos);
 				glUniform3fv(glGetUniformLocation(snowShader, "sunPos"), 1, (GLfloat*)&sunPosition);
 				glUniform1f(glGetUniformLocation(snowShader, "size"), chunkSize);
 

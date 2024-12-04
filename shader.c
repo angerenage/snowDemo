@@ -134,80 +134,89 @@ static const char snoiseFragSrc[] = "#version 330 core\n"
 "uniform vec2 resolution;"
 "uniform vec2 offset;"
 
-"vec3 permute(vec3 x) {"
-    "return mod(((x * 34.0) + 1.0) * x, 289.0);"
+"const vec2  GRAD2[8] = vec2[8]("
+	"vec2( 1, 1), vec2(-1, 1), vec2( 1,-1), vec2(-1,-1),"
+	"vec2( 1, 0), vec2(-1, 0), vec2( 0, 1), vec2( 0,-1)"
+");"
+"const float F2 = 0.366025403784439;" // (sqrt(3)-1)/2
+"const float G2 = 0.211324865405187;" // (3-sqrt(3))/6
+
+"float permute(float x) {"
+	"return mod((34.0 * x + 1.0) * x, 289.0);"
 "}"
 
-"float simplex2D(vec2 v) {"
-	"const vec4 C = vec4(0.211324865405187,"  // (3.0-sqrt(3.0))/6.0
-						"0.366025403784439,"  // 0.5*(sqrt(3.0)-1.0)
-						"-0.577350269189626," // -1.0 + 2.0 * C.x
-						"0.024390243902439);" // 1.0 / 41.0
-
-	"vec2 i = floor(v + dot(v, C.yy));"
-	"vec2 x0 = v - i + dot(i, C.xx);"
-
-	"vec2 i1;"
-	"i1.x = step(x0.y, x0.x);"
-	"i1.y = 1.0 - i1.x;"
-
-	"vec4 x12 = x0.xyxy + C.xxzz;"
-	"x12.xy -= i1;"
-
-	"i = mod(i, 289.0);"
-	"vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));"
-
-	"vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);"
-	"m = m * m;"
-	"m = m * m;"
-
-	"vec3 x = 2.0 * fract(p * C.www) - 1.0;"
-	"vec3 h = abs(x) - 0.5;"
-	"vec3 ox = floor(x + 0.5);"
-	"vec3 a0 = x - ox;"
-
-	"vec3 g;"
-	"g.x = a0.x * x0.x + h.x * x0.y;"
-	"g.y = a0.y * x12.x + h.y * x12.y;"
-	"g.z = a0.z * x12.z + h.z * x12.w;"
-
-	"return 130.0 * dot(m, g);"
+"float dot2(vec2 g, vec2 v) {"
+	"return g.x * v.x + g.y * v.y;"
 "}"
 
-"void main() {"
-	"vec2 uv = 2.0 * gl_FragCoord.xy / resolution.xy;"
-	"vec2 pos = uv + offset;"
+"vec3 simplexNoiseWithDerivatives(vec2 v)"
+"{"
+	"vec2 s = (v.x + v.y) * vec2(F2);"
+	"vec2 i = floor(v + s);"
+	"vec2 t = (i.x + i.y) * vec2(G2);"
+	"vec2 X0 = i - t;"
+	"vec2 x0 = v - X0;"
+
+	"vec2 i1 = x0.x > x0.y ? vec2(1.0, 0.0) : vec2(0.0, 1.0);"
+
+	"vec2 x1 = x0 - i1 + G2;"
+	"vec2 x2 = x0 - 1.0 + 2.0 * G2;"
+
+	"vec3 h = vec3(0.5 - dot(x0, x0), 0.5 - dot(x1, x1), 0.5 - dot(x2, x2));"
+	"vec3 mask = step(vec3(0.0), h);"
+	"h = h * mask * h;"
+	"vec3 g = mask * 8.0;"
+
+	"vec3 perm = vec3("
+		"permute(permute(i.x + 0.0) + i.y + 0.0),"
+		"permute(permute(i.x + i1.x) + i.y + i1.y),"
+		"permute(permute(i.x + 1.0) + i.y + 1.0)"
+	");"
+
+	"vec3 grad = vec3("
+		"dot2(GRAD2[int(perm.x) & 7], x0),"
+		"dot2(GRAD2[int(perm.y) & 7], x1),"
+		"dot2(GRAD2[int(perm.z) & 7], x2)"
+	");"
+
+	"vec3 dx = -2.0 * vec3(x0.x, x1.x, x2.x) * grad;"
+	"vec3 dy = -2.0 * vec3(x0.y, x1.y, x2.y) * grad;"
+
+	"vec2 deriv = vec2(dot(h, dx), dot(h, dy));"
+	"float noise = dot(h, grad);"
+
+	"return vec3(noise, deriv.x, deriv.y);"
+"}"
+
+"vec3 fbmWithDerivatives(vec2 v, int octaves, float persistence, float lacunarity)"
+"{"
 	"float amplitude = 1.0;"
 	"float frequency = 1.0;"
-	"float noise = 0.0;"
+	"float total = 0.0;"
+	"vec2 deriv = vec2(0.0);"
 
-	"float texelSize = 1.0 / 1024.0;"
+	"for (int i = 0; i < octaves; i++) {"
+		"vec3 noiseAndDeriv = simplexNoiseWithDerivatives(v * frequency);"
+		"total += noiseAndDeriv.x * amplitude;"
+		"deriv += vec2(noiseAndDeriv.y, noiseAndDeriv.z) * amplitude;"
 
-	"vec3 normal = vec3(0.0);"
-
-	"for (int i = 0; i < 10; i++) {"
-		"float n = simplex2D(pos * frequency);"
-		"float vL = simplex2D((pos + vec2(-texelSize, 0.0)) * frequency);"
-		"float vR = simplex2D((pos + vec2(texelSize, 0.0)) * frequency);"
-		"float vD = simplex2D((pos + vec2(0.0, texelSize)) * frequency);"
-		"float vU = simplex2D((pos + vec2(0.0, -texelSize)) * frequency);"
-
-		"vec2 deriv = vec2(vR - vL, vU - vD);"
-
-		"float mag = length(deriv);"
-
-		"amplitude = amplitude * 1.0 / (1.0 + mag * 18.0);"
-		"noise += amplitude * n;"
-
-		"deriv *= amplitude;"
-		"normal += vec3(-deriv, 2.0 * texelSize);"
-
-		"frequency *= 2.0;"
-		"amplitude *= 0.5;"
+		"frequency *= lacunarity;" 
+		"amplitude *= persistence;"
 	"}"
 
-	"float height = (noise + 1.0) / 2.0;"
-	"fragColor = vec4((normalize(normal) + 1.0) / 2.0, height);"
+	"return vec3(total, deriv.x, deriv.y);"
+"}"
+
+"void main()"
+"{"
+	"vec2 uv = 2.0 * gl_FragCoord.xy / resolution.xy;"
+
+	"int octaves = 4;"
+	"float persistence = 0.5;"
+	"float lacunarity = 2.0;"
+	"vec3 fbmResult = fbmWithDerivatives(uv + offset, octaves, persistence, lacunarity);"
+
+	"gl_FragColor = vec4(fbmResult, 1.0);"
 "}";
 
 static const char rnoiseFragSrc[] = "#version 330 core\n"
@@ -223,7 +232,8 @@ static const char rnoiseFragSrc[] = "#version 330 core\n"
 static const char snowVertSrc[] = "#version 430 core\n"
 "layout(location=0) in vec3 pA;"
 
-"out vec3 normal;"
+"out vec3 fragPos;"
+"out vec3 fragNormal;"
 "out vec4 shadowSpacePos;"
 
 "uniform mat4 projection;"
@@ -234,31 +244,45 @@ static const char snowVertSrc[] = "#version 430 core\n"
 "uniform sampler2D heightTex;"
 "uniform float size;"
 
-"const float heightScale = 0.3;"
+"const float heightScale = 1.5;"
 
 "void main()"
 "{"
 	"vec2 uv = vec2(mat3(model) * vec3((pA.xz / size + 1.0) / 2.0, 0.0));"
 
-	"normal = normalize(transpose(inverse(mat3(model))) * (texture(heightTex, uv).xyz * 2.0 - 1.0));"
-	"vec4 pos = model * vec4(pA.x, pA.y + texture(heightTex, uv).w * heightScale, pA.z, 1.0);"
+	"vec3 noise = texture(heightTex, uv).xyz;"
+
+	"vec3 perturbation = vec3("
+		"-noise.y * heightScale,"
+		"1.0,"
+		"-noise.z * heightScale"
+	");"
+
+	"fragNormal = mat3(transpose(inverse(model))) * normalize(perturbation);"
+	"vec4 pos = model * vec4(pA.x, pA.y + noise.x * heightScale, pA.z, 1.0);"
+	"fragPos = pos.xyz;"
 
 	"shadowSpacePos = shadowProjection * shadowView * pos;"
 	"gl_Position = projection * view * pos;"
 "}";
 
-static const char snowFragSrc[] = "#version 330 core\n"
+static const char snowFragSrc[] = "#version 450 core\n"
 "#define M_PI 3.1415926535897932384626433832795\n"
+"#define NUM_LIGHTS 11\n"
+
+"layout(std430, binding = 0) buffer StorageBuffer {"
+	"vec3 lightPositions[];"
+"};"
 
 "out vec4 fragColor;"
 
-"in vec3 normal;"
+"in vec3 fragPos;"
+"in vec3 fragNormal;"
 "in vec4 shadowSpacePos;"
 
+"uniform vec3 viewPos;"
 "uniform vec3 sunPos;"
 "uniform sampler2D shadowMap;"
-
-"const float heightScale = 0.3;"
 
 "float shadowCalculation()"
 "{"
@@ -270,19 +294,53 @@ static const char snowFragSrc[] = "#version 330 core\n"
 	"float closestDepth = texture(shadowMap, projCoords.xy).r;"
 	"float currentDepth = projCoords.z;"
 
-	"float bias = 0.0;"//max(0.005 * (1.0 - dot(normal, normalize(sunPos * -1.0))), 0.0005);"
-	"return currentDepth - bias > closestDepth ? 1.0 : 0.0;"
+	"float bias = 0.0;"//max(0.005 * (1.0 - dot(fragNormal, normalize(-sunPos))), 0.0005);"
+	"return currentDepth - bias > closestDepth ? 0.0 : 1.0;"
+"}"
+
+"vec3 calculate_point_lighting(vec3 viewDir, float sunIntensity)"
+"{"
+	"vec3 color = vec3(0.0);"
+
+	"for (int i = 0; i < NUM_LIGHTS; i++) {"
+		"vec3 lightPos = lightPositions[i];"
+
+		"vec3 lightDir = normalize(lightPos - fragPos);"
+
+		"float diff = max(dot(fragNormal, lightDir), 0.0);"
+
+		"vec3 reflectDir = reflect(-lightDir, fragNormal);"
+		"float spec = pow(max(dot(viewDir, reflectDir), 0.0), 16.0);"
+
+		"float attenuation = 1.0 / (1.0 + 0.09 * length(lightPos - fragPos));"
+		"vec3 lightColor = vec3(1.0, 0.5, 0.0) / NUM_LIGHTS;"
+
+		"color += (diff/* + spec*/) * lightColor * attenuation * (1.0 - sunIntensity);"
+	"}"
+
+	"return color;"
 "}"
 
 "void main()"
 "{"
-	"float shadow = clamp(dot(vec3(0.0, 1.0, 0.0), normalize(sunPos)) * 5.0, 0.15, 1.0);"
-	"if (sunPos.y >= 0.0)"
-		"shadow *= clamp((1.0 - shadowCalculation()) + (1.0 - shadow), 0.0, 1.0);"
-	"shadow *= (dot(normalize(sunPos), normal * heightScale) + 1.0) / 2.0;"
+	"vec3 baseAmbient = vec3(0.1);"
 
-	"vec3 color = vec3(1.0, 1.0, 1.0);"
-	"fragColor = vec4(color * shadow, 1.0);"
+	"float sunIntensity = max(dot(normalize(sunPos), vec3(0.0, 1.0, 0.0)), 0.0);"
+	"vec3 ambient = baseAmbient + vec3(0.3, 0.3, 0.4) * sunIntensity * 0.7;"
+
+	"vec3 lightDir = normalize(sunPos);"
+	"float diff = max(dot(fragNormal, lightDir), 0.0);"
+
+	"float shadow = shadowCalculation();"
+
+	"vec3 sunLight = shadow * (diff * vec3(1.0, 1.0, 0.9));"
+
+	"vec3 viewDir = normalize(viewPos - fragPos);"
+	"vec3 pointLighting = calculate_point_lighting(viewDir, sunIntensity);"
+
+	"vec3 finalColor = ambient + sunLight + pointLighting;"
+
+	"fragColor = vec4(finalColor, 1.0);"
 "}";
 
 // --------------------------- ATMOSPHERE ---------------------------
@@ -660,6 +718,10 @@ static const char characterVertSrc[] = "#version 450 core\n"
 "layout(location=2) in uint material;"
 "layout(location=3) in uint bone;"
 
+"layout(std430, binding = 0) buffer StorageBuffer {"
+	"vec3 lightPositions[];"
+"};"
+
 "uniform mat4 projection;"
 "uniform mat4 view;"
 "uniform mat4 model;"
@@ -674,10 +736,6 @@ static const char characterVertSrc[] = "#version 450 core\n"
 
 "out vec3 fragNormal;"
 "flat out uint fragMaterial;"
-
-"layout(std430, binding = 0) buffer StorageBuffer {"
-	"vec3 lightPositions[];"
-"};"
 
 "void main()"
 "{"
