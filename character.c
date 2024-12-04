@@ -436,6 +436,8 @@ void renderCharacter(GLuint shader, mat4 projection, mat4 view, mat4 model) {
 	glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, (GLfloat*)&view);
 	glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, (GLfloat*)&model);
 
+	glUniform3fv(glGetUniformLocation(shader, "sunPos"), 1, (GLfloat*)&sunPosition);
+
 	for (int i = 0; i < boneNumber; i++) {
 		char uniformName[32];
 		snprintf(uniformName, sizeof(uniformName), "bones[%d].position", i);

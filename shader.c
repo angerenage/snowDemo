@@ -138,8 +138,8 @@ static const char snoiseFragSrc[] = "#version 330 core\n"
 	"vec2( 1, 1), vec2(-1, 1), vec2( 1,-1), vec2(-1,-1),"
 	"vec2( 1, 0), vec2(-1, 0), vec2( 0, 1), vec2( 0,-1)"
 ");"
-"const float F2 = 0.366025403784439;" // (sqrt(3)-1)/2
-"const float G2 = 0.211324865405187;" // (3-sqrt(3))/6
+"const float F2 = (sqrt(3.0) - 1.0) / 2.0;"
+"const float G2 = (3.0 - sqrt(3.0)) / 6.0;"
 
 "float permute(float x) {"
 	"return mod((34.0 * x + 1.0) * x, 289.0);"
@@ -280,7 +280,6 @@ static const char snowFragSrc[] = "#version 450 core\n"
 "in vec3 fragNormal;"
 "in vec4 shadowSpacePos;"
 
-"uniform vec3 viewPos;"
 "uniform vec3 sunPos;"
 "uniform sampler2D shadowMap;"
 
@@ -298,7 +297,7 @@ static const char snowFragSrc[] = "#version 450 core\n"
 	"return currentDepth - bias > closestDepth ? 0.0 : 1.0;"
 "}"
 
-"vec3 calculate_point_lighting(vec3 viewDir, float sunIntensity)"
+"vec3 calculate_point_lighting(float sunIntensity)"
 "{"
 	"vec3 color = vec3(0.0);"
 
@@ -308,14 +307,10 @@ static const char snowFragSrc[] = "#version 450 core\n"
 		"vec3 lightDir = normalize(lightPos - fragPos);"
 
 		"float diff = max(dot(fragNormal, lightDir), 0.0);"
-
-		"vec3 reflectDir = reflect(-lightDir, fragNormal);"
-		"float spec = pow(max(dot(viewDir, reflectDir), 0.0), 16.0);"
-
 		"float attenuation = 1.0 / (1.0 + 0.09 * length(lightPos - fragPos));"
 		"vec3 lightColor = vec3(1.0, 0.5, 0.0) / NUM_LIGHTS;"
 
-		"color += (diff/* + spec*/) * lightColor * attenuation * (1.0 - sunIntensity);"
+		"color += diff * lightColor * attenuation * (1.0 - sunIntensity);"
 	"}"
 
 	"return color;"
@@ -334,9 +329,7 @@ static const char snowFragSrc[] = "#version 450 core\n"
 	"float shadow = shadowCalculation();"
 
 	"vec3 sunLight = shadow * (diff * vec3(1.0, 1.0, 0.9));"
-
-	"vec3 viewDir = normalize(viewPos - fragPos);"
-	"vec3 pointLighting = calculate_point_lighting(viewDir, sunIntensity);"
+	"vec3 pointLighting = calculate_point_lighting(sunIntensity);"
 
 	"vec3 finalColor = ambient + sunLight + pointLighting;"
 
@@ -734,36 +727,79 @@ static const char characterVertSrc[] = "#version 450 core\n"
 "};"
 "uniform Bone bones[11];"
 
+"out vec3 fragPos;"
 "out vec3 fragNormal;"
 "flat out uint fragMaterial;"
 
 "void main()"
 "{"
 	"uint boneID = bone;"
-	"vec3 globalPosition = bones[0].position;"
+	"fragPos = bones[0].position;"
 
 	"while (boneID != bones[boneID].parent) {"
-		"globalPosition += bones[bones[boneID].parent].rotation * bones[boneID].position;"
+		"fragPos += bones[bones[boneID].parent].rotation * bones[boneID].position;"
 		"boneID = bones[boneID].parent;"
 	"}"
 
 	"mat3 rotation = bones[bone].rotation;"
-	"lightPositions[bone] = globalPosition + rotation * bones[bone].lightPosition;"
-	"globalPosition += rotation * position;"
+	"lightPositions[bone] = fragPos + rotation * bones[bone].lightPosition;"
+	"fragPos += rotation * position;"
 
 	"fragMaterial = material;"
 	"fragNormal = normalize(mat3(transpose(inverse(model))) * normal);"
-	"gl_Position = projection * view * model * vec4(globalPosition, 1.0);"
+	"gl_Position = projection * view * model * vec4(fragPos, 1.0);"
 "}";
 
-static const char characterFragSrc[] = "#version 330 core\n"
+static const char characterFragSrc[] = "#version 450 core\n"
+"#define NUM_LIGHTS 11\n"
+
+"layout(std430, binding = 0) buffer StorageBuffer {"
+	"vec3 lightPositions[];"
+"};"
+
+"in vec3 fragPos;"
 "in vec3 fragNormal;"
-"out vec4 fragColor;"
 "flat in uint fragMaterial;"
+
+"out vec4 fragColor;"
+
+"uniform vec3 sunPos;"
+
+"vec3 calculate_point_lighting(float sunIntensity)"
+"{"
+	"vec3 color = vec3(0.0);"
+
+	"for (int i = 0; i < NUM_LIGHTS; i++) {"
+		"vec3 lightPos = lightPositions[i];"
+
+		"vec3 lightDir = normalize(lightPos - fragPos);"
+
+		"float diff = max(dot(fragNormal, lightDir), 0.0);"
+
+		"float attenuation = 1.0 / (1.0 + 0.09 * length(lightPos - fragPos));"
+		"vec3 lightColor = vec3(1.0, 0.5, 0.0) / NUM_LIGHTS;"
+
+		"color += diff * lightColor * attenuation * (1.0 - sunIntensity);"
+	"}"
+
+	"return color;"
+"}"
+
 "void main()"
 "{"
-	"fragColor = vec4(vec3(fragMaterial), 1.0);"
-	//"fragColor = vec4(fragNormal, 1.0);"
+	"if (fragMaterial == 1) {"
+		"fragColor = vec4(1.0, 1.0, 1.0, 1.0);"
+		"return;"
+	"}"
+
+	"vec3 baseAmbient = vec3(0.05);"
+
+	"float sunIntensity = max(dot(normalize(sunPos), vec3(0.0, 1.0, 0.0)), 0.0);"
+	"vec3 ambient = baseAmbient + min(vec3(0.3, 0.3, 0.4) * sunIntensity, 1.0) * 0.05;"
+
+	"vec3 pointLighting = calculate_point_lighting(sunIntensity);"
+
+	"fragColor = vec4(ambient + pointLighting, 1.0);"
 "}";
 
 // --------------------------- DEBUG SHADERS ---------------------------
