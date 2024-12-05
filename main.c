@@ -99,27 +99,16 @@ int main(int argc, char *argv[]) {
 	initSky();
 	initShadow();
 	initCharacter();
+	initSnow();
 
 	glViewport(0, 0, screenSize.x, screenSize.y);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	
+	mat4 characterModel = rotationMatrix((vec3){0.0f, -M_PI / 2.0f, 0.0f});
 	loadAnimation("ressources/running.anim.xz");
 	
 
-	const int chunkNbrX = 2, chunkNbrZ = 3;
-	const float chunkSize = 10.0f;
-
-	const Mesh terrainMesh = generateGrid((vec2){chunkSize, chunkSize}, 100, 0.3f);
-
-	GLuint terrainHeights[chunkNbrX][chunkNbrZ];
-	for (int x = 0; x < chunkNbrX; x++) {
-		for (int z = 0; z < chunkNbrZ; z++) {
-			terrainHeights[x][z] = generateTerrainHeight(&(vec2){(float)x, (float)z});
-		}
-	}
-
-	
 	projection = projectionMatrix(M_PI / 4.0, screenSize.x / screenSize.y, 0.001f, 1000.0f);
 
 	updateCamera(0.0f, 0.0f);
@@ -148,17 +137,14 @@ int main(int argc, char *argv[]) {
 
 		switch (currentSceneId) {
 			case 0: {
-				const float mapCenterX = (chunkNbrX - 1) / 2.0f - 0.5f;
-				const float mapCenterZ = (chunkNbrZ - 1) / 2.0f;
-
 				//Shadow pass
 				glDisable(GL_CULL_FACE);
 
 				glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO);
 				glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 
-				mat4 characterModel = rotationMatrix((vec3){0.0f, -M_PI / 2.0f, 0.0f});
-				renderCharacter(shadowCharacterShader, shadowProjection, shadowView, characterModel);
+				renderCharacter(shadowCharacterShader, &shadowProjection, &shadowView, &characterModel);
+				renderSnow(shadowSnowShader, &shadowProjection, &shadowView);
 
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 				glViewport(0, 0, screenSize.x, screenSize.y);
@@ -166,37 +152,8 @@ int main(int argc, char *argv[]) {
 				glEnable(GL_CULL_FACE);
 
 				//Render pass
-				glUseProgram(snowShader);
-
-				glUniformMatrix4fv(glGetUniformLocation(snowShader, "projection"), 1, GL_FALSE, (GLfloat*)&projection);
-				glUniformMatrix4fv(glGetUniformLocation(snowShader, "view"), 1, GL_FALSE, (GLfloat*)&view);
-				glUniformMatrix4fv(glGetUniformLocation(snowShader, "shadowProjection"), 1, GL_FALSE, (GLfloat*)&shadowProjection);
-				glUniformMatrix4fv(glGetUniformLocation(snowShader, "shadowView"), 1, GL_FALSE, (GLfloat*)&shadowView);
-				glUniform3fv(glGetUniformLocation(snowShader, "sunPos"), 1, (GLfloat*)&sunPosition);
-				glUniform1f(glGetUniformLocation(snowShader, "size"), chunkSize);
-
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, shadowMap);
-				glUniform1i(glGetUniformLocation(snowShader, "shadowMap"), 0);
-
-				for (int x = 0; x < chunkNbrX; x++) {
-					for (int z = 0; z < chunkNbrZ; z++) {
-						mat4 model = translationMatrix((vec3){((float)x - mapCenterX) * chunkSize, 0.0, ((float)z - mapCenterZ) * chunkSize});
-
-						glUniformMatrix4fv(glGetUniformLocation(snowShader, "model"), 1, GL_FALSE, (GLfloat*)&model);
-
-						glActiveTexture(GL_TEXTURE1);
-						glBindTexture(GL_TEXTURE_2D, terrainHeights[x][z]);
-						glUniform1i(glGetUniformLocation(snowShader, "heightTex"), 1);
-
-						glBindVertexArray(terrainMesh.VAO);
-						glDrawElements(GL_TRIANGLES, terrainMesh.indexCount, GL_UNSIGNED_INT, 0);
-					}
-				}
-
-				glBindVertexArray(0);
-
-				renderCharacter(characterShader, projection, view, characterModel);
+				renderCharacter(characterShader, &projection, &view, &characterModel);
+				renderSnow(snowShader, &projection, &view);
 
 				break;
 			}
@@ -216,12 +173,7 @@ int main(int argc, char *argv[]) {
 		glXSwapBuffers(display, window);
 	}
 
-	freeMesh(terrainMesh);
-
-	for (int i = 0; i < chunkNbrX; i++) {
-		glDeleteTextures(chunkNbrZ, terrainHeights[i]);
-	}
-	
+	cleanupSnow();	
 	cleanupCharacter();
 	cleanupShadow();
 	cleanupSky();

@@ -227,115 +227,6 @@ static const char rnoiseFragSrc[] = "#version 330 core\n"
 	"c=vec4(fract(sin(dot(fragPos,vec2(12.9898,78.233)))*43758.5453123));"
 "}";
 
-// --------------------------- TERRAIN SHADERS ---------------------------
-
-static const char snowVertSrc[] = "#version 430 core\n"
-"layout(location=0) in vec3 pA;"
-
-"out vec3 fragPos;"
-"out vec3 fragNormal;"
-"out vec4 shadowSpacePos;"
-
-"uniform mat4 projection;"
-"uniform mat4 view;"
-"uniform mat4 model;"
-"uniform mat4 shadowView;"
-"uniform mat4 shadowProjection;"
-"uniform sampler2D heightTex;"
-"uniform float size;"
-
-"const float heightScale = 1.5;"
-
-"void main()"
-"{"
-	"vec2 uv = vec2(mat3(model) * vec3((pA.xz / size + 1.0) / 2.0, 0.0));"
-
-	"vec3 noise = texture(heightTex, uv).xyz;"
-
-	"vec3 perturbation = vec3("
-		"-noise.y * heightScale,"
-		"1.0,"
-		"-noise.z * heightScale"
-	");"
-
-	"fragNormal = mat3(transpose(inverse(model))) * normalize(perturbation);"
-	"vec4 pos = model * vec4(pA.x, pA.y + noise.x * heightScale, pA.z, 1.0);"
-	"fragPos = pos.xyz;"
-
-	"shadowSpacePos = shadowProjection * shadowView * pos;"
-	"gl_Position = projection * view * pos;"
-"}";
-
-static const char snowFragSrc[] = "#version 450 core\n"
-"#define M_PI 3.1415926535897932384626433832795\n"
-"#define NUM_LIGHTS 11\n"
-
-"layout(std430, binding = 0) buffer StorageBuffer {"
-	"vec3 lightPositions[];"
-"};"
-
-"out vec4 fragColor;"
-
-"in vec3 fragPos;"
-"in vec3 fragNormal;"
-"in vec4 shadowSpacePos;"
-
-"uniform vec3 sunPos;"
-"uniform sampler2D shadowMap;"
-
-"float shadowCalculation()"
-"{"
-	"vec3 projCoords = shadowSpacePos.xyz / shadowSpacePos.w;"
-	"projCoords = projCoords * 0.5 + 0.5;"
-	"if (projCoords.z >= 1.0)"
-		"return 1.0;"
-	
-	"float closestDepth = texture(shadowMap, projCoords.xy).r;"
-	"float currentDepth = projCoords.z;"
-
-	"float bias = 0.0;"//max(0.005 * (1.0 - dot(fragNormal, normalize(-sunPos))), 0.0005);"
-	"return currentDepth - bias > closestDepth ? 0.0 : 1.0;"
-"}"
-
-"vec3 calculate_point_lighting(float sunIntensity)"
-"{"
-	"vec3 color = vec3(0.0);"
-
-	"for (int i = 0; i < NUM_LIGHTS; i++) {"
-		"vec3 lightPos = lightPositions[i];"
-
-		"vec3 lightDir = normalize(lightPos - fragPos);"
-
-		"float diff = max(dot(fragNormal, lightDir), 0.0);"
-		"float attenuation = 1.0 / (1.0 + 0.09 * length(lightPos - fragPos));"
-		"vec3 lightColor = vec3(1.0, 0.5, 0.0) / NUM_LIGHTS;"
-
-		"color += diff * lightColor * attenuation * (1.0 - sunIntensity);"
-	"}"
-
-	"return color;"
-"}"
-
-"void main()"
-"{"
-	"vec3 baseAmbient = vec3(0.1);"
-
-	"float sunIntensity = max(dot(normalize(sunPos), vec3(0.0, 1.0, 0.0)), 0.0);"
-	"vec3 ambient = baseAmbient + vec3(0.3, 0.3, 0.4) * sunIntensity * 0.7;"
-
-	"vec3 lightDir = normalize(sunPos);"
-	"float diff = max(dot(fragNormal, lightDir), 0.0);"
-
-	"float shadow = shadowCalculation();"
-
-	"vec3 sunLight = shadow * (diff * vec3(1.0, 1.0, 0.9));"
-	"vec3 pointLighting = calculate_point_lighting(sunIntensity);"
-
-	"vec3 finalColor = ambient + sunLight + pointLighting;"
-
-	"fragColor = vec4(finalColor, 1.0);"
-"}";
-
 // --------------------------- ATMOSPHERE ---------------------------
 
 // https://www.shadertoy.com/view/MstBWs
@@ -703,6 +594,115 @@ static const char shadowFragSrc[] = "#version 330 core\n"
 	//"gl_FragDepth = gl_FragCoord.z;"
 "}";
 
+// --------------------------- TERRAIN SHADERS ---------------------------
+
+static const char snowVertSrc[] = "#version 430 core\n"
+"layout(location=0) in vec3 pA;"
+
+"out vec3 fragPos;"
+"out vec3 fragNormal;"
+"out vec4 shadowSpacePos;"
+
+"uniform mat4 projection;"
+"uniform mat4 view;"
+"uniform mat4 model;"
+"uniform mat4 shadowView;"
+"uniform mat4 shadowProjection;"
+"uniform sampler2D heightTex;"
+"uniform float size;"
+
+"const float heightScale = 1.5;"
+
+"void main()"
+"{"
+	"vec2 uv = vec2(mat3(model) * vec3((pA.xz / size + 1.0) / 2.0, 0.0));"
+
+	"vec3 noise = texture(heightTex, uv).xyz;"
+
+	"vec3 perturbation = vec3("
+		"-noise.y * heightScale,"
+		"1.0,"
+		"-noise.z * heightScale"
+	");"
+
+	"fragNormal = mat3(transpose(inverse(model))) * normalize(perturbation);"
+	"vec4 pos = model * vec4(pA.x, pA.y + noise.x * heightScale, pA.z, 1.0);"
+	"fragPos = pos.xyz;"
+
+	"shadowSpacePos = shadowProjection * shadowView * pos;"
+	"gl_Position = projection * view * pos;"
+"}";
+
+static const char snowFragSrc[] = "#version 450 core\n"
+"#define M_PI 3.1415926535897932384626433832795\n"
+"#define NUM_LIGHTS 11\n"
+
+"layout(std430, binding = 0) buffer StorageBuffer {"
+	"vec3 lightPositions[];"
+"};"
+
+"out vec4 fragColor;"
+
+"in vec3 fragPos;"
+"in vec3 fragNormal;"
+"in vec4 shadowSpacePos;"
+
+"uniform vec3 sunPos;"
+"uniform sampler2D shadowMap;"
+
+"float shadowCalculation()"
+"{"
+	"vec3 projCoords = shadowSpacePos.xyz / shadowSpacePos.w;"
+	"projCoords = projCoords * 0.5 + 0.5;"
+	"if (projCoords.z >= 1.0)"
+		"return 1.0;"
+
+	"float closestDepth = texture(shadowMap, projCoords.xy).r;"
+	"float currentDepth = projCoords.z;"
+
+	"float bias = max(0.001 * (1.0 - dot(fragNormal, normalize(-sunPos))), 0.0001);"
+	"return currentDepth - bias > closestDepth ? 0.0 : 1.0;"
+"}"
+
+"vec3 calculate_point_lighting(float sunIntensity)"
+"{"
+	"vec3 color = vec3(0.0);"
+
+	"for (int i = 0; i < NUM_LIGHTS; i++) {"
+		"vec3 lightPos = lightPositions[i];"
+
+		"vec3 lightDir = normalize(lightPos - fragPos);"
+
+		"float diff = max(dot(fragNormal, lightDir), 0.0);"
+		"float attenuation = 1.0 / (1.0 + 0.09 * length(lightPos - fragPos));"
+		"vec3 lightColor = vec3(1.0, 0.5, 0.0) / NUM_LIGHTS;"
+
+		"color += diff * lightColor * attenuation * (1.0 - sunIntensity);"
+	"}"
+
+	"return color;"
+"}"
+
+"void main()"
+"{"
+	"vec3 baseAmbient = vec3(0.1);"
+
+	"float sunIntensity = max(dot(normalize(sunPos), vec3(0.0, 1.0, 0.0)), 0.0);"
+	"vec3 ambient = baseAmbient + vec3(0.3, 0.3, 0.4) * sunIntensity * 0.7;"
+
+	"vec3 lightDir = normalize(sunPos);"
+	"float diff = max(dot(fragNormal, lightDir), 0.0);"
+
+	"float shadow = shadowCalculation();"
+
+	"vec3 sunLight = shadow * (diff * vec3(1.0, 1.0, 0.9));"
+	"vec3 pointLighting = calculate_point_lighting(sunIntensity);"
+
+	"vec3 finalColor = ambient + sunLight + pointLighting;"
+
+	"fragColor = vec4(finalColor, 1.0);"
+"}";
+
 // --------------------------- CHARACTER SHADERS ---------------------------
 
 static const char characterVertSrc[] = "#version 450 core\n"
@@ -829,10 +829,11 @@ GLuint textShader;
 GLuint snoiseShader;
 GLuint rnoiseShader;
 
-GLuint snowShader;
-
 GLuint atmosphereShader;
 GLuint skyShader;
+
+GLuint snowShader;
+GLuint shadowSnowShader;
 
 GLuint characterShader;
 GLuint shadowCharacterShader;
@@ -845,6 +846,7 @@ void initShaders() {
 	rnoiseShader = compileShader(postVertSrc, NULL, rnoiseFragSrc);
 
 	snowShader = compileShader(snowVertSrc, NULL, snowFragSrc);
+	shadowSnowShader = compileShader(snowVertSrc, NULL, shadowFragSrc);
 
 	atmosphereShader = compileShader(postVertSrc, NULL, atmosphereFragSrc);
 	skyShader = compileShader(skyVertSrc, NULL, skyFragSrc);

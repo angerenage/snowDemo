@@ -18,5 +18,5 @@ typedef struct s_bone {
 void initCharacter();
 void loadAnimation(const char* path);
 void updateAnimation(float time);
-void renderCharacter(GLuint shader, mat4 projection, mat4 view, mat4 model);
+void renderCharacter(GLuint shader, const mat4* projection, const mat4* view, const mat4* model);
 void cleanupCharacter();

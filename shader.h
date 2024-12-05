@@ -9,10 +9,11 @@ extern GLuint textShader;
 extern GLuint snoiseShader;
 extern GLuint rnoiseShader;
 
-extern GLuint snowShader;
-
 extern GLuint atmosphereShader;
 extern GLuint skyShader;
+
+extern GLuint snowShader;
+extern GLuint shadowSnowShader;
 
 extern GLuint characterShader;
 extern GLuint shadowCharacterShader;

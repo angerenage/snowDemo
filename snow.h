@@ -1,6 +1,8 @@
 #pragma once
 
 #include "glutils.h"
+#include "shadow.h"
 
-Mesh generateGrid(vec2 size, int subdivision, float yOffset);
-GLuint generateTerrainHeight(const vec2 *pos);
+void initSnow();
+void renderSnow(GLuint shader, const mat4 *projection, const mat4 *view);
+void cleanupSnow();
