@@ -96,6 +96,7 @@ void renderSnow(GLuint shader, const mat4 *projection, const mat4 *view) {
 	glUniformMatrix4fv(glGetUniformLocation(shader, "shadowProjection"), 1, GL_FALSE, (GLfloat*)&shadowProjection);
 	glUniformMatrix4fv(glGetUniformLocation(shader, "shadowView"), 1, GL_FALSE, (GLfloat*)&shadowView);
 	glUniform3fv(glGetUniformLocation(shader, "sunPos"), 1, (GLfloat*)&sunPosition);
+	glUniform3fv(glGetUniformLocation(shader, "viewPos"), 1, (GLfloat*)&cameraPos);
 	glUniform1f(glGetUniformLocation(shader, "size"), chunkSize);
 
 	glActiveTexture(GL_TEXTURE0);

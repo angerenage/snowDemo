@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
 				glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 
 				renderCharacter(shadowCharacterShader, &shadowProjection, &shadowView, &characterModel);
-				renderSnow(shadowSnowShader, &shadowProjection, &shadowView);
+				//renderSnow(shadowSnowShader, &shadowProjection, &shadowView);
 
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 				glViewport(0, 0, screenSize.x, screenSize.y);

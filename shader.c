@@ -648,6 +648,7 @@ static const char snowFragSrc[] = "#version 450 core\n"
 "in vec4 shadowSpacePos;"
 
 "uniform vec3 sunPos;"
+"uniform vec3 viewPos;"
 "uniform sampler2D shadowMap;"
 
 "float shadowCalculation()"
@@ -660,7 +661,7 @@ static const char snowFragSrc[] = "#version 450 core\n"
 	"float closestDepth = texture(shadowMap, projCoords.xy).r;"
 	"float currentDepth = projCoords.z;"
 
-	"float bias = max(0.001 * (1.0 - dot(fragNormal, normalize(-sunPos))), 0.0001);"
+	"float bias = 0.0;"//max(0.001 * (1.0 - dot(fragNormal, normalize(-sunPos))), 0.0001);"
 	"return currentDepth - bias > closestDepth ? 0.0 : 1.0;"
 "}"
 
@@ -687,10 +688,10 @@ static const char snowFragSrc[] = "#version 450 core\n"
 "{"
 	"vec3 baseAmbient = vec3(0.1);"
 
-	"float sunIntensity = max(dot(normalize(sunPos), vec3(0.0, 1.0, 0.0)), 0.0);"
+	"vec3 lightDir = normalize(sunPos);"
+	"float sunIntensity = max(dot(lightDir, vec3(0.0, 1.0, 0.0)), 0.0);"
 	"vec3 ambient = baseAmbient + vec3(0.3, 0.3, 0.4) * sunIntensity * 0.7;"
 
-	"vec3 lightDir = normalize(sunPos);"
 	"float diff = max(dot(fragNormal, lightDir), 0.0);"
 
 	"float shadow = shadowCalculation();"
@@ -698,7 +699,11 @@ static const char snowFragSrc[] = "#version 450 core\n"
 	"vec3 sunLight = shadow * (diff * vec3(1.0, 1.0, 0.9));"
 	"vec3 pointLighting = calculate_point_lighting(sunIntensity);"
 
-	"vec3 finalColor = ambient + sunLight + pointLighting;"
+	"vec3 viewDir = normalize(viewPos - fragPos);"
+	"float fresnel = pow(1.0 - max(dot(viewDir, fragNormal), 0.0), 5.0);"
+	"vec3 fresnelReflection = vec3(0.3, 0.5, 0.7) * fresnel * sunIntensity;"
+
+	"vec3 finalColor = ambient + sunLight + pointLighting + fresnelReflection;"
 
 	"fragColor = vec4(finalColor, 1.0);"
 "}";
