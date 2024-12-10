@@ -238,6 +238,14 @@ float length(vec3 p) {
 	return sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
 }
 
+vec2 vec2_subtract(vec2 a, vec2 b) {
+	return (vec2){a.x - b.x, a.y - b.y};
+}
+
+vec2 vec2_scale(vec2 v, float s) {
+	return (vec2){v.x * s, v.y * s};
+}
+
 float lerp(float a, float b, float t) {
 	return a + (t) * (b - a);
 }

@@ -14,6 +14,7 @@ extern GLuint skyShader;
 
 extern GLuint snowShader;
 extern GLuint shadowSnowShader;
+extern GLuint updateSnowShader;
 
 extern GLuint characterShader;
 extern GLuint shadowCharacterShader;

@@ -605,9 +605,11 @@ static const char snowVertSrc[] = "#version 430 core\n"
 
 "uniform mat4 projection;"
 "uniform mat4 view;"
-"uniform mat4 model;"
+"uniform vec3 offset;"
+"uniform vec2 updateOffset;"
 "uniform mat4 shadowView;"
 "uniform mat4 shadowProjection;"
+"uniform sampler2D noiseTex;"
 "uniform sampler2D heightTex;"
 "uniform float size;"
 
@@ -615,9 +617,9 @@ static const char snowVertSrc[] = "#version 430 core\n"
 
 "void main()"
 "{"
-	"vec2 uv = vec2(mat3(model) * vec3((pA.xz / size + 1.0) / 2.0, 0.0));"
+	"vec2 uv = vec2((pA.xz / size + 1.0) / 2.0);"
 
-	"vec3 noise = texture(heightTex, uv).xyz;"
+	"vec3 noise = texture(noiseTex, uv).xyz;"
 
 	"vec3 perturbation = vec3("
 		"-noise.y * heightScale,"
@@ -625,8 +627,14 @@ static const char snowVertSrc[] = "#version 430 core\n"
 		"-noise.z * heightScale"
 	");"
 
-	"fragNormal = mat3(transpose(inverse(model))) * normalize(perturbation);"
-	"vec4 pos = model * vec4(pA.x, pA.y + noise.x * heightScale, pA.z, 1.0);"
+	"noise.x = noise.x * heightScale + 0.5;"
+
+	"float height = texture(heightTex, uv + (offset.xz - updateOffset) / size).x;"
+	"if (height > noise.x || height >= 1.0)"
+		"height = noise.x;"
+
+	"fragNormal = normalize(perturbation);"
+	"vec4 pos = vec4(vec3(pA.x, pA.y + height, pA.z) + offset, 1.0);"
 	"fragPos = pos.xyz;"
 
 	"shadowSpacePos = shadowProjection * shadowView * pos;"
@@ -706,6 +714,20 @@ static const char snowFragSrc[] = "#version 450 core\n"
 	"vec3 finalColor = ambient + sunLight + pointLighting + fresnelReflection;"
 
 	"fragColor = vec4(finalColor, 1.0);"
+"}";
+
+static const char updateSnowFragSrc[] = "#version 330 core\n"
+"in vec2 fragPos;"
+
+"uniform sampler2D previousDepthMap;"
+"uniform vec2 offset;"
+
+"void main()"
+"{"
+	"vec2 uv = (fragPos + 1.0) * 0.5 + offset;"
+	"float depth = texture(previousDepthMap, uv).r;"
+
+	"gl_FragDepth = depth;"
 "}";
 
 // --------------------------- CHARACTER SHADERS ---------------------------
@@ -839,6 +861,7 @@ GLuint skyShader;
 
 GLuint snowShader;
 GLuint shadowSnowShader;
+GLuint updateSnowShader;
 
 GLuint characterShader;
 GLuint shadowCharacterShader;
@@ -852,6 +875,7 @@ void initShaders() {
 
 	snowShader = compileShader(snowVertSrc, NULL, snowFragSrc);
 	shadowSnowShader = compileShader(snowVertSrc, NULL, shadowFragSrc);
+	updateSnowShader = compileShader(postVertSrc, NULL, updateSnowFragSrc);
 
 	atmosphereShader = compileShader(postVertSrc, NULL, atmosphereFragSrc);
 	skyShader = compileShader(skyVertSrc, NULL, skyFragSrc);

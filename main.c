@@ -131,6 +131,7 @@ int main(int argc, char *argv[]) {
 
 		updateLight(ftime);
 		updateAnimation(ftime);
+		updateSnow(&characterModel, (vec3){0.0f, 0.0f, 0.0f});
 
 		if (skyUpdate) updateSky(&sunPosition, &screenSize, ftime);
 		skyUpdate = !skyUpdate;
