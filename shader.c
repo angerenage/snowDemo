@@ -892,8 +892,11 @@ void cleanupShaders() {
 	glDeleteProgram(rnoiseShader);
 
 	glDeleteProgram(snowShader);
+	glDeleteProgram(shadowSnowShader);
+	glDeleteProgram(updateSnowShader);
 
 	glDeleteProgram(atmosphereShader);
+	glDeleteProgram(skyShader);
 
 	glDeleteProgram(characterShader);
 	glDeleteProgram(shadowCharacterShader);

@@ -183,4 +183,6 @@ void cleanupSnow() {
 	for (int i = 0; i < CHUNK_NBR_X; i++) {
 		glDeleteTextures(CHUNK_NBR_Z, terrainHeights[i]);
 	}
+	glDeleteTextures(2, depthTextures);
+	glDeleteFramebuffers(2, depthFBOs);
 }
