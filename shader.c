@@ -1,27 +1,53 @@
 #include "shader.h"
 
-GLuint compileShader(const char *vShaderCode, const char *gShaderCode, const char *fShaderCode) {
-	GLuint vertex = 0, geometry = 0, fragment = 0;
+GLuint compileShader(const char *vShaderCode, const char *tcsShaderCode, const char *tesShaderCode, const char *gShaderCode, const char *fShaderCode) {
+	GLuint vertex = 0, tcs = 0, tes = 0, geometry = 0, fragment = 0;
 	int success;
 	char infoLog[512];
 
-	// vertex shader
+	// Vertex shader
 	vertex = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertex, 1, &vShaderCode, NULL);
 	glCompileShader(vertex);
-	
+
 	glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
 	if (!success) {
 		glGetShaderInfoLog(vertex, 512, NULL, infoLog);
 		printf("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n%s\n", infoLog);
 	}
 
-	// geometry shader
+	// Tessellation Control Shader (TCS)
+	if (tcsShaderCode) {
+		tcs = glCreateShader(GL_TESS_CONTROL_SHADER);
+		glShaderSource(tcs, 1, &tcsShaderCode, NULL);
+		glCompileShader(tcs);
+
+		glGetShaderiv(tcs, GL_COMPILE_STATUS, &success);
+		if (!success) {
+			glGetShaderInfoLog(tcs, 512, NULL, infoLog);
+			printf("ERROR::SHADER::TESS_CONTROL::COMPILATION_FAILED\n%s\n", infoLog);
+		}
+	}
+
+	// Tessellation Evaluation Shader (TES)
+	if (tesShaderCode) {
+		tes = glCreateShader(GL_TESS_EVALUATION_SHADER);
+		glShaderSource(tes, 1, &tesShaderCode, NULL);
+		glCompileShader(tes);
+
+		glGetShaderiv(tes, GL_COMPILE_STATUS, &success);
+		if (!success) {
+			glGetShaderInfoLog(tes, 512, NULL, infoLog);
+			printf("ERROR::SHADER::TESS_EVALUATION::COMPILATION_FAILED\n%s\n", infoLog);
+		}
+	}
+
+	// Geometry shader
 	if (gShaderCode) {
 		geometry = glCreateShader(GL_GEOMETRY_SHADER);
 		glShaderSource(geometry, 1, &gShaderCode, NULL);
 		glCompileShader(geometry);
-		
+
 		glGetShaderiv(geometry, GL_COMPILE_STATUS, &success);
 		if (!success) {
 			glGetShaderInfoLog(geometry, 512, NULL, infoLog);
@@ -29,30 +55,36 @@ GLuint compileShader(const char *vShaderCode, const char *gShaderCode, const cha
 		}
 	}
 
-	// fragment shader
+	// Fragment shader
 	fragment = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragment, 1, &fShaderCode, NULL);
 	glCompileShader(fragment);
-	
+
 	glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
 	if (!success) {
 		glGetShaderInfoLog(fragment, 512, NULL, infoLog);
 		printf("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n%s\n", infoLog);
 	}
 
+	// Shader program
 	GLuint ID = glCreateProgram();
 	glAttachShader(ID, vertex);
+	if (tcsShaderCode) glAttachShader(ID, tcs);
+	if (tesShaderCode) glAttachShader(ID, tes);
 	if (gShaderCode) glAttachShader(ID, geometry);
 	glAttachShader(ID, fragment);
 	glLinkProgram(ID);
-	
+
 	glGetProgramiv(ID, GL_LINK_STATUS, &success);
 	if (!success) {
 		glGetProgramInfoLog(ID, 512, NULL, infoLog);
 		printf("ERROR::SHADER::PROGRAM::LINKING_FAILED\n%s\n", infoLog);
 	}
 
+	// Clean up shaders
 	glDeleteShader(vertex);
+	if (tcsShaderCode) glDeleteShader(tcs);
+	if (tesShaderCode) glDeleteShader(tes);
 	if (gShaderCode) glDeleteShader(geometry);
 	glDeleteShader(fragment);
 
@@ -337,7 +369,7 @@ float hgPhase(float x, float g) {
 }
 
 float miePhaseSky(float x, float depth) {
- 	return hgPhase(x, exp2(-0.000003 * depth));
+	return hgPhase(x, exp2(-0.000003 * depth));
 }
 
 float powder(float od) {
@@ -374,8 +406,8 @@ vec3 calcAtmosphericScatter(out vec3 absorbLight) {
 	vec3 absorbView = absorb(totalCoeff, opticalDepth);
 	
 	vec3 scatterLight = scatter(totalCoeff, opticalDepthLight);
-		 absorbLight = absorb(totalCoeff, opticalDepthLight);
-		 
+	absorbLight = absorb(totalCoeff, opticalDepthLight);
+
 	vec3 absorbSun = abs(absorbLight - absorbView) / d0((scatterLight - scatterView) * ln2);
 	
 	vec3 mieScatter = scatter(mieCoeff, opticalDepth) * miePhaseSky(lDotW, opticalDepth);
@@ -439,9 +471,9 @@ float getClouds(vec3 p) {
 	vec3 cloudCoord = (p * 0.001) + movement;
 	
 	float noise = Get3DNoise(cloudCoord) * 0.5;
-		  noise += Get3DNoise(cloudCoord * 2.0 + movement) * 0.25;
-		  noise += Get3DNoise(cloudCoord * 7.0 - movement) * 0.125;
-		  noise += Get3DNoise((cloudCoord + movement) * 16.0) * 0.0625;
+	noise += Get3DNoise(cloudCoord * 2.0 + movement) * 0.25;
+	noise += Get3DNoise(cloudCoord * 7.0 - movement) * 0.125;
+	noise += Get3DNoise((cloudCoord + movement) * 16.0) * 0.0625;
 	
 	const float top = 0.004;
 	const float bottom = 0.01;
@@ -450,7 +482,7 @@ float getClouds(vec3 p) {
 	float treshHold = (1.0 - exp2(-bottom * horizonHeight)) * exp2(-top * horizonHeight);
 	
 	float clouds = smoothstep(0.55, 0.6, noise);
-		  clouds *= treshHold;
+	clouds *= treshHold;
 	
 	return clouds * cloudDensity;
 }
@@ -599,49 +631,114 @@ static const char shadowFragSrc[] = "#version 330 core\n"
 static const char snowVertSrc[] = "#version 430 core\n"
 "layout(location=0) in vec3 pA;"
 
+"out vec2 uv;"
+"out vec2 texCoords;"
+"out vec3 posWorld;"
+
+"uniform float size;"
+"uniform vec3 offset;"
+"uniform vec2 updateOffset;"
+
+"void main()"
+"{"
+	"uv = vec2((pA.xz / size + 1.0) / 2.0);"
+	"texCoords = uv + (offset.xz - updateOffset) / size;"
+	"posWorld = vec3(pA) + offset;"
+	"gl_Position = vec4(posWorld, 1.0);"
+"}";
+
+static const char snowTCSSrc[] = "#version 430 core\n"
+"layout(vertices = 3) out;"
+
+"in vec2 uv[];"
+"in vec2 texCoords[];"
+"in vec3 posWorld[];"
+
+"out vec2 tcsUV[];"
+"out vec2 tcsTexCoords[];"
+"out vec3 tcsPosWorld[];"
+
+"uniform sampler2D heightTex;"
+
+"void main()"
+"{"
+	"tcsUV[gl_InvocationID] = uv[gl_InvocationID];"
+	"tcsTexCoords[gl_InvocationID] = texCoords[gl_InvocationID];"
+	"tcsPosWorld[gl_InvocationID] = posWorld[gl_InvocationID];"
+
+	"float height = texture(heightTex, texCoords[gl_InvocationID]).r;"
+
+	"if (height < 1.0f)"
+	"{"
+		"gl_TessLevelInner[0] = 4.0;"
+		"gl_TessLevelOuter[0] = 4.0;"
+		"gl_TessLevelOuter[1] = 4.0;"
+		"gl_TessLevelOuter[2] = 4.0;"
+	"}"
+	"else"
+	"{"
+		"gl_TessLevelInner[0] = 2.0;"
+		"gl_TessLevelOuter[0] = 2.0;"
+		"gl_TessLevelOuter[1] = 2.0;"
+		"gl_TessLevelOuter[2] = 2.0;"
+	"}"
+"}";
+
+static const char snowTESCSrc[] = "#version 430 core\n"
+"layout(triangles, equal_spacing, cw) in;"
+
+"in vec2 tcsUV[];"
+"in vec2 tcsTexCoords[];"
+"in vec3 tcsPosWorld[];"
+
 "out vec3 fragPos;"
 "out vec3 fragNormal;"
 "out vec4 shadowSpacePos;"
 
-"uniform mat4 projection;"
-"uniform mat4 view;"
-"uniform vec3 offset;"
-"uniform vec2 updateOffset;"
-"uniform mat4 shadowView;"
-"uniform mat4 shadowProjection;"
 "uniform sampler2D noiseTex;"
 "uniform sampler2D heightTex;"
-"uniform float size;"
+"uniform sampler2D normalTex;"
+
+"uniform mat4 projection;"
+"uniform mat4 view;"
+"uniform mat4 shadowProjection;"
+"uniform mat4 shadowView;"
 
 "const float heightScale = 1.5;"
 
 "void main()"
 "{"
-	"vec2 uv = vec2((pA.xz / size + 1.0) / 2.0);"
+	"vec2 uv = gl_TessCoord.x * tcsUV[0] + gl_TessCoord.y * tcsUV[1] + gl_TessCoord.z * tcsUV[2];"
+	"vec2 texCoords = gl_TessCoord.x * tcsTexCoords[0] + gl_TessCoord.y * tcsTexCoords[1] + gl_TessCoord.z * tcsTexCoords[2];"
+	"vec3 pos = gl_TessCoord.x * tcsPosWorld[0] + gl_TessCoord.y * tcsPosWorld[1] + gl_TessCoord.z * tcsPosWorld[2];"
+
+	"float height = texture(heightTex, texCoords).x;"
+	"vec3 normal = texture(normalTex, texCoords).xyz * 2.0 - 1.0;"
 
 	"vec3 noise = texture(noiseTex, uv).xyz;"
-
 	"vec3 perturbation = vec3("
 		"-noise.y * heightScale,"
 		"1.0,"
 		"-noise.z * heightScale"
 	");"
-
 	"noise.x = noise.x * heightScale + 0.5;"
 
-	"float height = texture(heightTex, uv + (offset.xz - updateOffset) / size).x;"
-	"if (height > noise.x || height >= 1.0)"
+	"if (height > noise.x || height >= 1.0) {"
 		"height = noise.x;"
+		"normal = normalize(perturbation);"
+	"}"
 
-	"fragNormal = normalize(perturbation);"
-	"vec4 pos = vec4(vec3(pA.x, pA.y + height, pA.z) + offset, 1.0);"
-	"fragPos = pos.xyz;"
+	"pos.y += height;"
 
-	"shadowSpacePos = shadowProjection * shadowView * pos;"
-	"gl_Position = projection * view * pos;"
+	"fragPos = pos;"
+	"fragNormal = normal;"
+
+	"vec4 worldPos = vec4(pos, 1.0);"
+	"shadowSpacePos = shadowProjection * shadowView * worldPos;"
+	"gl_Position = projection * view * worldPos;"
 "}";
 
-static const char snowFragSrc[] = "#version 450 core\n"
+static const char snowFragSrc[] = "#version 430 core\n"
 "#define M_PI 3.1415926535897932384626433832795\n"
 "#define NUM_LIGHTS 11\n"
 
@@ -717,22 +814,24 @@ static const char snowFragSrc[] = "#version 450 core\n"
 "}";
 
 static const char updateSnowFragSrc[] = "#version 330 core\n"
+"out vec4 color;"
+
 "in vec2 fragPos;"
 
 "uniform sampler2D previousDepthMap;"
+"uniform sampler2D previousNormalMap;"
 "uniform vec2 offset;"
 
 "void main()"
 "{"
 	"vec2 uv = (fragPos + 1.0) * 0.5 + offset;"
-	"float depth = texture(previousDepthMap, uv).r;"
-
-	"gl_FragDepth = depth;"
+	"color = texture(previousNormalMap, uv);"
+	"gl_FragDepth = texture(previousDepthMap, uv).r;"
 "}";
 
 // --------------------------- CHARACTER SHADERS ---------------------------
 
-static const char characterVertSrc[] = "#version 450 core\n"
+static const char characterVertSrc[] = "#version 430 core\n"
 "layout(location=0) in vec3 position;"
 "layout(location=1) in vec3 normal;"
 "layout(location=2) in uint material;"
@@ -773,11 +872,11 @@ static const char characterVertSrc[] = "#version 450 core\n"
 	"fragPos += rotation * position;"
 
 	"fragMaterial = material;"
-	"fragNormal = normalize(mat3(transpose(inverse(model))) * normal);"
+	"fragNormal = normalize(transpose(inverse(mat3(model))) * rotation * normal);"
 	"gl_Position = projection * view * model * vec4(fragPos, 1.0);"
 "}";
 
-static const char characterFragSrc[] = "#version 450 core\n"
+static const char characterFragSrc[] = "#version 430 core\n"
 "#define NUM_LIGHTS 11\n"
 
 "layout(std430, binding = 0) buffer StorageBuffer {"
@@ -826,7 +925,16 @@ static const char characterFragSrc[] = "#version 450 core\n"
 
 	"vec3 pointLighting = calculate_point_lighting(sunIntensity);"
 
-	"fragColor = vec4(ambient + pointLighting, 1.0);"
+	//"fragColor = vec4(ambient + pointLighting, 1.0);"
+	"fragColor = vec4(fragNormal, 1.0);"
+"}";
+
+static const char updateCharacterFragSrc[] = "#version 330 core\n"
+"out vec4 c;"
+"in vec3 fragNormal;"
+"void main()"
+"{"
+	"c=vec4((normalize(fragNormal)+1.)/2.,1.);"
 "}";
 
 // --------------------------- DEBUG SHADERS ---------------------------
@@ -846,7 +954,7 @@ static const char debugFragSrc[] = "#version 330 core\n"
 "uniform sampler2D tex;"
 "void main()"
 "{"
-	"c=vec4(vec3(texture(tex,fragPos).r),1.);"
+	"c=vec4(texture(tex,fragPos).xyz,1.);"
 "}";
 
 
@@ -865,23 +973,25 @@ GLuint updateSnowShader;
 
 GLuint characterShader;
 GLuint shadowCharacterShader;
+GLuint updateCharacterShader;
 
 void initShaders() {
-	debugShader = compileShader(debugVertSrc, NULL, debugFragSrc);
+	debugShader = compileShader(debugVertSrc, NULL, NULL, NULL, debugFragSrc);
 
-	textShader = compileShader(textVertSrc, NULL, textFragSrc);
-	snoiseShader = compileShader(postVertSrc, NULL, snoiseFragSrc);
-	rnoiseShader = compileShader(postVertSrc, NULL, rnoiseFragSrc);
+	textShader = compileShader(textVertSrc, NULL, NULL, NULL, textFragSrc);
+	snoiseShader = compileShader(postVertSrc, NULL, NULL, NULL, snoiseFragSrc);
+	rnoiseShader = compileShader(postVertSrc, NULL, NULL, NULL, rnoiseFragSrc);
 
-	snowShader = compileShader(snowVertSrc, NULL, snowFragSrc);
-	shadowSnowShader = compileShader(snowVertSrc, NULL, shadowFragSrc);
-	updateSnowShader = compileShader(postVertSrc, NULL, updateSnowFragSrc);
+	snowShader = compileShader(snowVertSrc, snowTCSSrc, snowTESCSrc, NULL, snowFragSrc);
+	shadowSnowShader = compileShader(snowVertSrc, NULL, NULL, NULL, shadowFragSrc);
+	updateSnowShader = compileShader(postVertSrc, NULL, NULL, NULL, updateSnowFragSrc);
 
-	atmosphereShader = compileShader(postVertSrc, NULL, atmosphereFragSrc);
-	skyShader = compileShader(skyVertSrc, NULL, skyFragSrc);
+	atmosphereShader = compileShader(postVertSrc, NULL, NULL, NULL, atmosphereFragSrc);
+	skyShader = compileShader(skyVertSrc, NULL, NULL, NULL, skyFragSrc);
 
-	characterShader = compileShader(characterVertSrc, NULL, characterFragSrc);
-	shadowCharacterShader = compileShader(characterVertSrc, NULL, shadowFragSrc);
+	characterShader = compileShader(characterVertSrc, NULL, NULL, NULL, characterFragSrc);
+	shadowCharacterShader = compileShader(characterVertSrc, NULL, NULL, NULL, shadowFragSrc);
+	updateCharacterShader = compileShader(characterVertSrc, NULL, NULL, NULL, updateCharacterFragSrc);
 }
 
 void cleanupShaders() {
@@ -900,4 +1010,5 @@ void cleanupShaders() {
 
 	glDeleteProgram(characterShader);
 	glDeleteProgram(shadowCharacterShader);
+	glDeleteProgram(updateCharacterShader);
 }

@@ -18,10 +18,11 @@ extern GLuint updateSnowShader;
 
 extern GLuint characterShader;
 extern GLuint shadowCharacterShader;
+extern GLuint updateCharacterShader;
 
 void initShaders();
 
-GLuint compileShader(const char *vShaderCode, const char *gShaderCode, const char *fShaderCode);
+GLuint compileShader(const char *vShaderCode, const char *tcsShaderCode, const char *tesShaderCode, const char *gShaderCode, const char *fShaderCode);
 GLuint compileComputeShader(const char *shaderCode);
 
 void cleanupShaders();

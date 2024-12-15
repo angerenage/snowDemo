@@ -136,6 +136,8 @@ int main(int argc, char *argv[]) {
 		if (skyUpdate) updateSky(&sunPosition, &screenSize, ftime);
 		skyUpdate = !skyUpdate;
 
+		glViewport(0, 0, screenSize.x, screenSize.y);
+
 		switch (currentSceneId) {
 			case 0: {
 				//Shadow pass
@@ -160,7 +162,14 @@ int main(int argc, char *argv[]) {
 			}
 
 			case 1:
-				
+				// DEBUG
+				glUseProgram(debugShader);
+
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, normalTextures[activeTexture]);
+				glUniform1i(glGetUniformLocation(debugShader, "tex"), 0);
+
+				renderScreenQuad();
 				break;
 		}
 

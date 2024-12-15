@@ -458,8 +458,6 @@ void renderCharacter(GLuint shader, const mat4* projection, const mat4* view, co
 	glBindVertexArray(0);
 
 	glUseProgram(0);
-
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
 void cleanupCharacter() {

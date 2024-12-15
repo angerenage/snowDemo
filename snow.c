@@ -1,6 +1,6 @@
 #include "snow.h"
 
-#define CHUNK_RESOLUTION 4096
+#define CHUNK_RESOLUTION 2048
 
 #define CHUNK_NBR_X 2
 #define CHUNK_NBR_Z 3
@@ -12,9 +12,11 @@ static const float mapCenterZ = (CHUNK_NBR_Z - 1) / 2.0f;
 static GLuint terrainHeights[CHUNK_NBR_X][CHUNK_NBR_Z];
 static Mesh terrainMesh;
 
-static GLuint depthTextures[2];
 static GLuint depthFBOs[2];
+static GLuint depthTextures[2];
+static GLuint normalTextures[2];
 static int activeTexture = 0;
+
 static vec2 previousPosition = {0.0f, 0.0f};
 static mat4 updateProjection;
 
@@ -85,7 +87,7 @@ static GLuint generateTerrainHeight(const vec2 *pos) {
 }
 
 void initSnow() {
-	terrainMesh = generateGrid((vec2){chunkSize, chunkSize}, 200, 0.0f);
+	terrainMesh = generateGrid((vec2){chunkSize, chunkSize}, 100, 0.0f);
 
 	for (int x = 0; x < CHUNK_NBR_X; x++) {
 		for (int z = 0; z < CHUNK_NBR_Z; z++) {
@@ -94,14 +96,16 @@ void initSnow() {
 	}
 
 	depthTextures[0] = createTextureDepth(CHUNK_RESOLUTION, CHUNK_RESOLUTION);
+	normalTextures[0] = createTexture(CHUNK_RESOLUTION, CHUNK_RESOLUTION);
 	depthTextures[1] = createTextureDepth(CHUNK_RESOLUTION, CHUNK_RESOLUTION);
+	normalTextures[1] = createTexture(CHUNK_RESOLUTION, CHUNK_RESOLUTION);
 
-	depthFBOs[0] = createFramebufferDepth(depthTextures[0]);
+	depthFBOs[0] = createFramebufferDepth(depthTextures[0], normalTextures[0]);
 	glBindFramebuffer(GL_FRAMEBUFFER, depthFBOs[0]);
-	glClear(GL_DEPTH_BUFFER_BIT);
-	depthFBOs[1] = createFramebufferDepth(depthTextures[1]);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	depthFBOs[1] = createFramebufferDepth(depthTextures[1], normalTextures[1]);
 	glBindFramebuffer(GL_FRAMEBUFFER, depthFBOs[1]);
-	glClear(GL_DEPTH_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 	updateProjection = orthographicMatrix(-chunkSize, chunkSize, -chunkSize, chunkSize, 0.0, 1.0);
 }
@@ -114,25 +118,30 @@ void updateSnow(const mat4 *characterModel, vec3 characterPosition) {
 	offset = vec2_scale(offset, 1.0f / chunkSize);
 	offset = vec2_scale(offset, 1.0f / CHUNK_RESOLUTION);
 
-	int nextTexture = !activeTexture;
+	int nextTexture = (activeTexture + 1) % 2;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, depthFBOs[nextTexture]);
 	glViewport(0, 0, CHUNK_RESOLUTION, CHUNK_RESOLUTION);
-	glClear(GL_DEPTH_BUFFER_BIT);
 	
 	glUseProgram(updateSnowShader);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depthTextures[activeTexture]);
-
 	glUniform1i(glGetUniformLocation(updateSnowShader, "previousDepthMap"), 0);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, normalTextures[activeTexture]);
+	glUniform1i(glGetUniformLocation(updateSnowShader, "previousNormalMap"), 1);
+
 	glUniform2fv(glGetUniformLocation(updateSnowShader, "offset"), 1, (GLfloat*)&offset);
 
 	glDepthFunc(GL_ALWAYS);
 	renderScreenQuad();
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glDepthFunc(GL_LESS);
 
-	renderCharacter(shadowCharacterShader, &updateProjection, &updateView, characterModel);
+	renderCharacter(updateCharacterShader, &updateProjection, &updateView, characterModel);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -160,7 +169,13 @@ void renderSnow(GLuint shader, const mat4 *projection, const mat4 *view) {
 	glBindTexture(GL_TEXTURE_2D, depthTextures[activeTexture]);
 	glUniform1i(glGetUniformLocation(shader, "heightTex"), 1);
 
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, normalTextures[activeTexture]);
+	glUniform1i(glGetUniformLocation(shader, "normalTex"), 2);
+
+	glPatchParameteri(GL_PATCH_VERTICES, 3);
 	glBindVertexArray(terrainMesh.VAO);
+
 	for (int x = 0; x < CHUNK_NBR_X; x++) {
 		for (int z = 0; z < CHUNK_NBR_Z; z++) {
 			glUniform3f(glGetUniformLocation(shader, "offset"), ((float)x - mapCenterX) * chunkSize, 0.0, ((float)z - mapCenterZ) * chunkSize);
@@ -169,7 +184,7 @@ void renderSnow(GLuint shader, const mat4 *projection, const mat4 *view) {
 			glBindTexture(GL_TEXTURE_2D, terrainHeights[x][z]);
 			glUniform1i(glGetUniformLocation(shader, "noiseTex"), 2);
 
-			glDrawElements(GL_TRIANGLES, terrainMesh.indexCount, GL_UNSIGNED_INT, 0);
+			glDrawElements(GL_PATCHES, terrainMesh.indexCount, GL_UNSIGNED_INT, 0);
 		}
 	}
 
