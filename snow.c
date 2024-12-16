@@ -14,10 +14,9 @@ static Mesh terrainMesh;
 
 static GLuint depthFBOs[2];
 static GLuint depthTextures[2];
-static GLuint normalTextures[2];
 static int activeTexture = 0;
 
-static vec2 previousPosition = {0.0f, 0.0f};
+static vec2 currentPosition = {0.0f, 0.0f};
 static mat4 updateProjection;
 
 static Mesh generateGrid(vec2 size, int subdivision, float yOffset) {
@@ -87,7 +86,7 @@ static GLuint generateTerrainHeight(const vec2 *pos) {
 }
 
 void initSnow() {
-	terrainMesh = generateGrid((vec2){chunkSize, chunkSize}, 100, 0.0f);
+	terrainMesh = generateGrid((vec2){chunkSize, chunkSize}, 200, 0.0f);
 
 	for (int x = 0; x < CHUNK_NBR_X; x++) {
 		for (int z = 0; z < CHUNK_NBR_Z; z++) {
@@ -96,25 +95,23 @@ void initSnow() {
 	}
 
 	depthTextures[0] = createTextureDepth(CHUNK_RESOLUTION, CHUNK_RESOLUTION);
-	normalTextures[0] = createTexture(CHUNK_RESOLUTION, CHUNK_RESOLUTION);
 	depthTextures[1] = createTextureDepth(CHUNK_RESOLUTION, CHUNK_RESOLUTION);
-	normalTextures[1] = createTexture(CHUNK_RESOLUTION, CHUNK_RESOLUTION);
 
-	depthFBOs[0] = createFramebufferDepth(depthTextures[0], normalTextures[0]);
+	depthFBOs[0] = createFramebufferDepth(depthTextures[0]);
 	glBindFramebuffer(GL_FRAMEBUFFER, depthFBOs[0]);
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-	depthFBOs[1] = createFramebufferDepth(depthTextures[1], normalTextures[1]);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	depthFBOs[1] = createFramebufferDepth(depthTextures[1]);
 	glBindFramebuffer(GL_FRAMEBUFFER, depthFBOs[1]);
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
 	updateProjection = orthographicMatrix(-chunkSize, chunkSize, -chunkSize, chunkSize, 0.0, 1.0);
 }
 
 void updateSnow(const mat4 *characterModel, vec3 characterPosition) {
-	vec2 currentPosition = {characterPosition.x, characterPosition.z};
-	mat4 updateView = viewMatrix((vec3){currentPosition.x, 0.0f, currentPosition.y}, (vec3){0.0f, 1.0f, 0.0f}, (vec3){0.0f, 0.0f, 1.0f});
+	vec2 nextPosition = {characterPosition.x, characterPosition.z};
+	mat4 updateView = viewMatrix((vec3){nextPosition.x, 0.0f, nextPosition.y}, (vec3){0.0f, 1.0f, 0.0f}, (vec3){0.0f, 0.0f, 1.0f});
 
-	vec2 offset = vec2_subtract(currentPosition, previousPosition);
+	vec2 offset = vec2_subtract(nextPosition, currentPosition);
 	offset = vec2_scale(offset, 1.0f / chunkSize);
 	offset = vec2_scale(offset, 1.0f / CHUNK_RESOLUTION);
 
@@ -129,10 +126,6 @@ void updateSnow(const mat4 *characterModel, vec3 characterPosition) {
 	glBindTexture(GL_TEXTURE_2D, depthTextures[activeTexture]);
 	glUniform1i(glGetUniformLocation(updateSnowShader, "previousDepthMap"), 0);
 
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, normalTextures[activeTexture]);
-	glUniform1i(glGetUniformLocation(updateSnowShader, "previousNormalMap"), 1);
-
 	glUniform2fv(glGetUniformLocation(updateSnowShader, "offset"), 1, (GLfloat*)&offset);
 
 	glDepthFunc(GL_ALWAYS);
@@ -140,13 +133,13 @@ void updateSnow(const mat4 *characterModel, vec3 characterPosition) {
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glDepthFunc(GL_LESS);
 
-	renderCharacter(updateCharacterShader, &updateProjection, &updateView, characterModel);
+	renderCharacter(shadowCharacterShader, &updateProjection, &updateView, characterModel);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	activeTexture = nextTexture;
-	previousPosition = currentPosition;
+	currentPosition = nextPosition;
 }
 
 void renderSnow(GLuint shader, const mat4 *projection, const mat4 *view) {
@@ -158,7 +151,7 @@ void renderSnow(GLuint shader, const mat4 *projection, const mat4 *view) {
 	glUniformMatrix4fv(glGetUniformLocation(shader, "shadowView"), 1, GL_FALSE, (GLfloat*)&shadowView);
 	glUniform3fv(glGetUniformLocation(shader, "sunPos"), 1, (GLfloat*)&sunPosition);
 	glUniform3fv(glGetUniformLocation(shader, "viewPos"), 1, (GLfloat*)&cameraPos);
-	glUniform2f(glGetUniformLocation(shader, "updateOffset"), previousPosition.x, previousPosition.y);
+	glUniform2f(glGetUniformLocation(shader, "characterPos"), currentPosition.x, currentPosition.y);
 	glUniform1f(glGetUniformLocation(shader, "size"), chunkSize);
 
 	glActiveTexture(GL_TEXTURE0);
@@ -168,10 +161,6 @@ void renderSnow(GLuint shader, const mat4 *projection, const mat4 *view) {
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, depthTextures[activeTexture]);
 	glUniform1i(glGetUniformLocation(shader, "heightTex"), 1);
-
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, normalTextures[activeTexture]);
-	glUniform1i(glGetUniformLocation(shader, "normalTex"), 2);
 
 	glPatchParameteri(GL_PATCH_VERTICES, 3);
 	glBindVertexArray(terrainMesh.VAO);

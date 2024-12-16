@@ -18,7 +18,6 @@ extern GLuint updateSnowShader;
 
 extern GLuint characterShader;
 extern GLuint shadowCharacterShader;
-extern GLuint updateCharacterShader;
 
 void initShaders();
 

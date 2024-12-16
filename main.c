@@ -162,14 +162,7 @@ int main(int argc, char *argv[]) {
 			}
 
 			case 1:
-				// DEBUG
-				glUseProgram(debugShader);
-
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, normalTextures[activeTexture]);
-				glUniform1i(glGetUniformLocation(debugShader, "tex"), 0);
-
-				renderScreenQuad();
+				
 				break;
 		}
 

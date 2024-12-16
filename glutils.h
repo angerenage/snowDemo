@@ -37,7 +37,7 @@ GLuint createTextureArray(int width, int height, int layer);
 GLuint createTextureArrayRG(int width, int height, int layer);
 GLuint createCubeMap(int width, int height);
 GLuint createFramebuffer(GLuint texture);
-GLuint createFramebufferDepth(GLuint depth, GLuint color);
+GLuint createFramebufferDepth(GLuint depth);
 GLuint createFramebufferMultisampleDepth(GLuint depth, GLuint color);
 
 GLuint createIndexedVAO(const vec3 *vertices, int vertexCount, const unsigned int *indices, unsigned int indexCount);

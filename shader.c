@@ -637,12 +637,12 @@ static const char snowVertSrc[] = "#version 430 core\n"
 
 "uniform float size;"
 "uniform vec3 offset;"
-"uniform vec2 updateOffset;"
+"uniform vec2 characterPos;"
 
 "void main()"
 "{"
 	"uv = vec2((pA.xz / size + 1.0) / 2.0);"
-	"texCoords = uv + (offset.xz - updateOffset) / size;"
+	"texCoords = uv + (offset.xz - characterPos) / size;"
 	"posWorld = vec3(pA) + offset;"
 	"gl_Position = vec4(posWorld, 1.0);"
 "}";
@@ -658,7 +658,7 @@ static const char snowTCSSrc[] = "#version 430 core\n"
 "out vec2 tcsTexCoords[];"
 "out vec3 tcsPosWorld[];"
 
-"uniform sampler2D heightTex;"
+"uniform vec2 characterPos;"
 
 "void main()"
 "{"
@@ -666,22 +666,14 @@ static const char snowTCSSrc[] = "#version 430 core\n"
 	"tcsTexCoords[gl_InvocationID] = texCoords[gl_InvocationID];"
 	"tcsPosWorld[gl_InvocationID] = posWorld[gl_InvocationID];"
 
-	"float height = texture(heightTex, texCoords[gl_InvocationID]).r;"
+	"float distance = length(characterPos - tcsPosWorld[gl_InvocationID].xz);"
+	"float tessellation = mix(2.0, 6.0, smoothstep(1.0, 3.0, distance));"
+	"tessellation = clamp(tessellation, 1.0, 6.0);"
 
-	"if (height < 1.0f)"
-	"{"
-		"gl_TessLevelInner[0] = 4.0;"
-		"gl_TessLevelOuter[0] = 4.0;"
-		"gl_TessLevelOuter[1] = 4.0;"
-		"gl_TessLevelOuter[2] = 4.0;"
-	"}"
-	"else"
-	"{"
-		"gl_TessLevelInner[0] = 2.0;"
-		"gl_TessLevelOuter[0] = 2.0;"
-		"gl_TessLevelOuter[1] = 2.0;"
-		"gl_TessLevelOuter[2] = 2.0;"
-	"}"
+	"gl_TessLevelInner[0] = tessellation;"
+	"gl_TessLevelOuter[0] = 2.0;"
+	"gl_TessLevelOuter[1] = 2.0;"
+	"gl_TessLevelOuter[2] = 2.0;"
 "}";
 
 static const char snowTESCSrc[] = "#version 430 core\n"
@@ -694,10 +686,10 @@ static const char snowTESCSrc[] = "#version 430 core\n"
 "out vec3 fragPos;"
 "out vec3 fragNormal;"
 "out vec4 shadowSpacePos;"
+"out float footDepth;"
 
 "uniform sampler2D noiseTex;"
 "uniform sampler2D heightTex;"
-"uniform sampler2D normalTex;"
 
 "uniform mat4 projection;"
 "uniform mat4 view;"
@@ -705,6 +697,12 @@ static const char snowTESCSrc[] = "#version 430 core\n"
 "uniform mat4 shadowView;"
 
 "const float heightScale = 1.5;"
+"const float heightOffset = 0.5;"
+
+"float smoothMin(float a, float b, float k) {"
+    "float h = max(k - abs(a - b), 0.0) / k;"
+    "return min(a, b) - h * h * h * k * (1.0 / 6.0);"
+"}"
 
 "void main()"
 "{"
@@ -712,26 +710,24 @@ static const char snowTESCSrc[] = "#version 430 core\n"
 	"vec2 texCoords = gl_TessCoord.x * tcsTexCoords[0] + gl_TessCoord.y * tcsTexCoords[1] + gl_TessCoord.z * tcsTexCoords[2];"
 	"vec3 pos = gl_TessCoord.x * tcsPosWorld[0] + gl_TessCoord.y * tcsPosWorld[1] + gl_TessCoord.z * tcsPosWorld[2];"
 
-	"float height = texture(heightTex, texCoords).x;"
-	"vec3 normal = texture(normalTex, texCoords).xyz * 2.0 - 1.0;"
-
-	"vec3 noise = texture(noiseTex, uv).xyz;"
+	"vec3 noise = texture(noiseTex, uv).xyz * heightScale;"
+	"noise.x += heightOffset;"
 	"vec3 perturbation = vec3("
-		"-noise.y * heightScale,"
+		"-noise.y,"
 		"1.0,"
-		"-noise.z * heightScale"
+		"-noise.z"
 	");"
-	"noise.x = noise.x * heightScale + 0.5;"
+	"fragNormal = normalize(perturbation);"
 
-	"if (height > noise.x || height >= 1.0) {"
-		"height = noise.x;"
-		"normal = normalize(perturbation);"
-	"}"
+	"float k = 0.3;"
+	"float height = texture(heightTex, texCoords).x;"
+	"float blendedHeight = smoothMin(height, noise.x, k);"
 
-	"pos.y += height;"
+	"footDepth = smoothstep(0.0, k, height - blendedHeight);"
+	"footDepth = clamp((noise.x - blendedHeight) * 5.0, 0.0, 1.0);"
 
+	"pos.y += blendedHeight;"
 	"fragPos = pos;"
-	"fragNormal = normal;"
 
 	"vec4 worldPos = vec4(pos, 1.0);"
 	"shadowSpacePos = shadowProjection * shadowView * worldPos;"
@@ -751,6 +747,7 @@ static const char snowFragSrc[] = "#version 430 core\n"
 "in vec3 fragPos;"
 "in vec3 fragNormal;"
 "in vec4 shadowSpacePos;"
+"in float footDepth;"
 
 "uniform vec3 sunPos;"
 "uniform vec3 viewPos;"
@@ -809,6 +806,7 @@ static const char snowFragSrc[] = "#version 430 core\n"
 	"vec3 fresnelReflection = vec3(0.3, 0.5, 0.7) * fresnel * sunIntensity;"
 
 	"vec3 finalColor = ambient + sunLight + pointLighting + fresnelReflection;"
+	"finalColor *= 1.0 - footDepth;"
 
 	"fragColor = vec4(finalColor, 1.0);"
 "}";
@@ -819,13 +817,11 @@ static const char updateSnowFragSrc[] = "#version 330 core\n"
 "in vec2 fragPos;"
 
 "uniform sampler2D previousDepthMap;"
-"uniform sampler2D previousNormalMap;"
 "uniform vec2 offset;"
 
 "void main()"
 "{"
 	"vec2 uv = (fragPos + 1.0) * 0.5 + offset;"
-	"color = texture(previousNormalMap, uv);"
 	"gl_FragDepth = texture(previousDepthMap, uv).r;"
 "}";
 
@@ -925,16 +921,7 @@ static const char characterFragSrc[] = "#version 430 core\n"
 
 	"vec3 pointLighting = calculate_point_lighting(sunIntensity);"
 
-	//"fragColor = vec4(ambient + pointLighting, 1.0);"
-	"fragColor = vec4(fragNormal, 1.0);"
-"}";
-
-static const char updateCharacterFragSrc[] = "#version 330 core\n"
-"out vec4 c;"
-"in vec3 fragNormal;"
-"void main()"
-"{"
-	"c=vec4((normalize(fragNormal)+1.)/2.,1.);"
+	"fragColor = vec4(ambient + pointLighting, 1.0);"
 "}";
 
 // --------------------------- DEBUG SHADERS ---------------------------
@@ -973,7 +960,6 @@ GLuint updateSnowShader;
 
 GLuint characterShader;
 GLuint shadowCharacterShader;
-GLuint updateCharacterShader;
 
 void initShaders() {
 	debugShader = compileShader(debugVertSrc, NULL, NULL, NULL, debugFragSrc);
@@ -991,7 +977,6 @@ void initShaders() {
 
 	characterShader = compileShader(characterVertSrc, NULL, NULL, NULL, characterFragSrc);
 	shadowCharacterShader = compileShader(characterVertSrc, NULL, NULL, NULL, shadowFragSrc);
-	updateCharacterShader = compileShader(characterVertSrc, NULL, NULL, NULL, updateCharacterFragSrc);
 }
 
 void cleanupShaders() {
@@ -1010,5 +995,4 @@ void cleanupShaders() {
 
 	glDeleteProgram(characterShader);
 	glDeleteProgram(shadowCharacterShader);
-	glDeleteProgram(updateCharacterShader);
 }
