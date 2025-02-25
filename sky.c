@@ -39,7 +39,7 @@ void initSky() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void updateSky(const vec3* sunPosition, const vec2* screenSize, float ftime) {
+void updateSky(const vec3* sunPosition, const vec2* screenSize, float ftime, const vec3* updateDirection) {
 	glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
 	glViewport(0, 0, SKYBOX_RESOLUTION, SKYBOX_RESOLUTION);
 
@@ -49,7 +49,7 @@ void updateSky(const vec3* sunPosition, const vec2* screenSize, float ftime) {
 		vec3 normal = {0.0f, 0.0f, 0.0f};
 		((float*)&normal)[i / 2] = (i % 2 == 0 ? 1.0f : -1.0f);
 
-		if (dotProduct(cameraDirection, normal) <= 0.0f) continue;
+		if (vec3_dot(cameraDirection, normal) <= 0.0f && vec3_dot(*updateDirection, normal) <= 0.0f) continue;
 
 		mat4 view = viewMatrix((vec3){0.0f, 0.0f, 0.0f}, vec3_scale(normal, i <= 1 ? -1.0f : 1.0f), i == 2 ? (vec3){0.0f, 0.0f, 1.0f} : (vec3){0.0f, -1.0f, 0.0f});
 
@@ -74,13 +74,13 @@ void updateSky(const vec3* sunPosition, const vec2* screenSize, float ftime) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void renderSky(const mat4* projection) {
+void renderSky(const mat4* projection, const mat4* view) {
 	glDepthFunc(GL_LEQUAL);
 
 	glUseProgram(skyShader);
 
 	glUniformMatrix4fv(glGetUniformLocation(skyShader, "projection"), 1, GL_FALSE, (GLfloat*)projection);
-	glUniformMatrix4fv(glGetUniformLocation(skyShader, "view"), 1, GL_FALSE, (GLfloat*)&view);
+	glUniformMatrix4fv(glGetUniformLocation(skyShader, "view"), 1, GL_FALSE, (GLfloat*)view);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);

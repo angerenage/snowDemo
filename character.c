@@ -75,10 +75,6 @@ typedef struct s_frame {
 static Frame* animation = NULL;
 static unsigned int animationLength = 0;
 
-static float randomFloat(float min, float max) {
-	return min + (max - min) * ((float)rand() / RAND_MAX);
-}
-
 static vec3 randomVector() {
 	float x = randomFloat(0.0f, 1.0f);
 	float y = randomFloat(0.0f, 1.0f) * 2.0f;
@@ -253,9 +249,9 @@ Face *generateCrystal(Crystal crystal, int *faceCount, int boneId) {
 		Triangle currentTriangle = innerTriangles[i];
 
 		// Scale down the inner triangle
-		innerTriangles[i].A = vec3_scale(vec3_subtract(innerTriangles[i].A, crystal.plane.point), crystal.innerScale);
-		innerTriangles[i].B = vec3_scale(vec3_subtract(innerTriangles[i].B, crystal.plane.point), crystal.innerScale);
-		innerTriangles[i].C = vec3_scale(vec3_subtract(innerTriangles[i].C, crystal.plane.point), crystal.innerScale);
+		innerTriangles[i].A = vec3_scale(vec3_sub(innerTriangles[i].A, crystal.plane.point), crystal.innerScale);
+		innerTriangles[i].B = vec3_scale(vec3_sub(innerTriangles[i].B, crystal.plane.point), crystal.innerScale);
+		innerTriangles[i].C = vec3_scale(vec3_sub(innerTriangles[i].C, crystal.plane.point), crystal.innerScale);
 
 		// Scale up the inner triangles following the plane normal
 		innerTriangles[i].A = vec3_add(crystal.plane.point, vec3_scaleAlongVector(innerTriangles[i].A, crystal.plane.normal, 1.0f / crystal.innerScale));
@@ -296,7 +292,7 @@ GLuint createCharacterVAO(const Face *faces, unsigned int faceCount) {
 	characterVertexCount = faceCount * 3;
 	Vertex *vertices = (Vertex*)malloc(sizeof(Vertex) * characterVertexCount);
 	for (unsigned int i = 0; i < faceCount; i++) {
-		vec3 normal = vec3_normalize(vec3_crossProduct(vec3_subtract(faces[i].triangle.B, faces[i].triangle.A), vec3_subtract(faces[i].triangle.C, faces[i].triangle.A)));
+		vec3 normal = vec3_normalize(vec3_cross(vec3_sub(faces[i].triangle.B, faces[i].triangle.A), vec3_sub(faces[i].triangle.C, faces[i].triangle.A)));
 		vertices[i * 3 + 0] = (Vertex){faces[i].triangle.A, normal, faces[i].material, faces[i].boneId};
 		vertices[i * 3 + 1] = (Vertex){faces[i].triangle.B, normal, faces[i].material, faces[i].boneId};
 		vertices[i * 3 + 2] = (Vertex){faces[i].triangle.C, normal, faces[i].material, faces[i].boneId};

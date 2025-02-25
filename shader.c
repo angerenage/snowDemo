@@ -1,6 +1,6 @@
 #include "shader.h"
 
-GLuint compileShader(const char *vShaderCode, const char *tcsShaderCode, const char *tesShaderCode, const char *gShaderCode, const char *fShaderCode) {
+static GLuint compileShader(const char *vShaderCode, const char *tcsShaderCode, const char *tesShaderCode, const char *gShaderCode, const char *fShaderCode) {
 	GLuint vertex = 0, tcs = 0, tes = 0, geometry = 0, fragment = 0;
 	int success;
 	char infoLog[512];
@@ -91,7 +91,7 @@ GLuint compileShader(const char *vShaderCode, const char *tcsShaderCode, const c
 	return ID;
 }
 
-GLuint compileComputeShader(const char *shaderCode) {
+static GLuint compileComputeShader(const char *shaderCode) {
 	GLuint compute;
 	int success;
 	char infoLog[512];
@@ -121,6 +121,44 @@ GLuint compileComputeShader(const char *shaderCode) {
 
 	return ID;
 }
+
+// --------------------------- DEBUG SHADERS ---------------------------
+
+static const char debugVertSrc[] = "#version 330 core\n"
+"layout(location=0) in vec3 pA;"
+"out vec2 fragPos;"
+"void main()"
+"{"
+	"fragPos=(pA.xy+1.)/2.;"
+	"gl_Position=vec4(pA,1.);"
+"}";
+
+static const char debugFragSrc[] = "#version 330 core\n"
+"out vec4 c;"
+"in vec2 fragPos;"
+"uniform sampler2D tex;"
+"void main()"
+"{"
+	"c=vec4(texture(tex,fragPos).xyz,1.);"
+"}";
+
+// --------------------------- BASIC SHADERS ---------------------------
+
+static const char basicVertSrc[] = "#version 330 core\n"
+"layout(location=0) in vec3 pA;"
+"uniform mat4 model;"
+"uniform mat4 view;"
+"uniform mat4 projection;"
+"void main()"
+"{"
+	"gl_Position=projection*view*model*vec4(pA,1.);"
+"}";
+
+static const char basicFragSrc[] = "#version 330 core\n"
+"void main()"
+"{"
+	//"gl_FragDepth = gl_FragCoord.z;"
+"}";
 
 // --------------------------- TEXT SHADERS ---------------------------
 
@@ -618,14 +656,6 @@ static const char skyFragSrc[] = "#version 330 core\n"
 	"gl_FragDepth=1.0;"
 "}";
 
-// --------------------------- SHADOW SHADERS ---------------------------
-
-static const char shadowFragSrc[] = "#version 330 core\n"
-"void main()"
-"{"
-	//"gl_FragDepth = gl_FragCoord.z;"
-"}";
-
 // --------------------------- TERRAIN SHADERS ---------------------------
 
 static const char snowVertSrc[] = "#version 430 core\n"
@@ -825,6 +855,33 @@ static const char updateSnowFragSrc[] = "#version 330 core\n"
 	"gl_FragDepth = texture(previousDepthMap, uv).r;"
 "}";
 
+// --------------------------- ICE SHADERS ---------------------------
+
+static const char iceVertSrc[] = "#version 330 core\n"
+"layout(location=0) in vec3 pA;"
+"out vec2 texCoords;"
+"uniform mat4 model;"
+"uniform mat4 view;"
+"uniform mat4 reflectionView;"
+"uniform mat4 projection;"
+"void main()"
+"{"
+	"vec4 pos=projection*view*model*vec4(pA,1.);"
+	"vec4 reflPos=projection*reflectionView*model*vec4(pA,1.);"
+	"reflPos/=reflPos.w;"
+	"texCoords=(reflPos.xy+1.)/2.;"
+	"gl_Position=pos;"
+"}";
+
+static const char iceFragSrc[] = "#version 330 core\n"
+"out vec4 fragColor;"
+"in vec2 texCoords;"
+"uniform sampler2D reflection;"
+"void main()"
+"{"
+	"fragColor=texture(reflection,texCoords);"
+"}";
+
 // --------------------------- CHARACTER SHADERS ---------------------------
 
 static const char characterVertSrc[] = "#version 430 core\n"
@@ -924,28 +981,9 @@ static const char characterFragSrc[] = "#version 430 core\n"
 	"fragColor = vec4(ambient + pointLighting, 1.0);"
 "}";
 
-// --------------------------- DEBUG SHADERS ---------------------------
-
-static const char debugVertSrc[] = "#version 330 core\n"
-"layout(location=0) in vec3 pA;"
-"out vec2 fragPos;"
-"void main()"
-"{"
-	"fragPos=(pA.xy+1.)/2.;"
-	"gl_Position=vec4(pA,1.);"
-"}";
-
-static const char debugFragSrc[] = "#version 330 core\n"
-"out vec4 c;"
-"in vec2 fragPos;"
-"uniform sampler2D tex;"
-"void main()"
-"{"
-	"c=vec4(texture(tex,fragPos).xyz,1.);"
-"}";
-
 
 GLuint debugShader;
+GLuint basicShader;
 
 GLuint textShader;
 GLuint snoiseShader;
@@ -958,25 +996,34 @@ GLuint snowShader;
 GLuint shadowSnowShader;
 GLuint updateSnowShader;
 
+GLuint iceShader;
+
 GLuint characterShader;
 GLuint shadowCharacterShader;
 
+GLuint needleShader;
+
 void initShaders() {
 	debugShader = compileShader(debugVertSrc, NULL, NULL, NULL, debugFragSrc);
+	basicShader = compileShader(basicVertSrc, NULL, NULL, NULL, basicFragSrc);
 
 	textShader = compileShader(textVertSrc, NULL, NULL, NULL, textFragSrc);
 	snoiseShader = compileShader(postVertSrc, NULL, NULL, NULL, snoiseFragSrc);
 	rnoiseShader = compileShader(postVertSrc, NULL, NULL, NULL, rnoiseFragSrc);
 
-	snowShader = compileShader(snowVertSrc, snowTCSSrc, snowTESCSrc, NULL, snowFragSrc);
-	shadowSnowShader = compileShader(snowVertSrc, NULL, NULL, NULL, shadowFragSrc);
-	updateSnowShader = compileShader(postVertSrc, NULL, NULL, NULL, updateSnowFragSrc);
-
 	atmosphereShader = compileShader(postVertSrc, NULL, NULL, NULL, atmosphereFragSrc);
 	skyShader = compileShader(skyVertSrc, NULL, NULL, NULL, skyFragSrc);
 
+	snowShader = compileShader(snowVertSrc, snowTCSSrc, snowTESCSrc, NULL, snowFragSrc);
+	shadowSnowShader = compileShader(snowVertSrc, NULL, NULL, NULL, basicFragSrc);
+	updateSnowShader = compileShader(postVertSrc, NULL, NULL, NULL, updateSnowFragSrc);
+
+	iceShader = compileShader(iceVertSrc, NULL, NULL, NULL, iceFragSrc);
+
 	characterShader = compileShader(characterVertSrc, NULL, NULL, NULL, characterFragSrc);
-	shadowCharacterShader = compileShader(characterVertSrc, NULL, NULL, NULL, shadowFragSrc);
+	shadowCharacterShader = compileShader(characterVertSrc, NULL, NULL, NULL, basicFragSrc);
+
+	needleShader = compileShader(needleVertSrc, NULL, NULL, NULL, needleFragSrc);
 }
 
 void cleanupShaders() {
@@ -986,13 +1033,15 @@ void cleanupShaders() {
 	glDeleteProgram(snoiseShader);
 	glDeleteProgram(rnoiseShader);
 
+	glDeleteProgram(atmosphereShader);
+	glDeleteProgram(skyShader);
+
 	glDeleteProgram(snowShader);
 	glDeleteProgram(shadowSnowShader);
 	glDeleteProgram(updateSnowShader);
 
-	glDeleteProgram(atmosphereShader);
-	glDeleteProgram(skyShader);
-
 	glDeleteProgram(characterShader);
 	glDeleteProgram(shadowCharacterShader);
+
+	glDeleteProgram(needleShader);
 }

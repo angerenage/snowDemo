@@ -16,8 +16,6 @@
 #define CLOCK_MONOTONIC 1
 #endif
 
-vec2 screenSize = {800.0, 600.0};
-
 bool running = true;
 int currentSceneId = 0;
 
@@ -80,7 +78,7 @@ void handleEvents(Display *display, Atom wmDelete) {
 	}
 }
 
-int main(int argc, char *argv[]) {
+int main() {
 	initWindow(screenSize);
 	
 
@@ -131,42 +129,60 @@ int main(int argc, char *argv[]) {
 
 		updateLight(ftime);
 		updateAnimation(ftime);
-		updateSnow(&characterModel, (vec3){0.0f, 0.0f, 0.0f});
+		
+		vec3 characterPosition = {0.0f, 0.0f, 0.0f};
+		vec3 reflectionDirection;
+		mat4 reflectionView = updateSnow(&reflectionDirection, &projection, &characterModel, &characterPosition);
 
-		if (skyUpdate) updateSky(&sunPosition, &screenSize, ftime);
+		if (skyUpdate) updateSky(&sunPosition, &screenSize, ftime, &reflectionDirection);
 		skyUpdate = !skyUpdate;
 
 		glViewport(0, 0, screenSize.x, screenSize.y);
 
 		switch (currentSceneId) {
 			case 0: {
-				//Shadow pass
-				glDisable(GL_CULL_FACE);
-
+				// Shadow pass
 				glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO);
 				glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 
 				renderCharacter(shadowCharacterShader, &shadowProjection, &shadowView, &characterModel);
-				//renderSnow(shadowSnowShader, &shadowProjection, &shadowView);
 
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 				glViewport(0, 0, screenSize.x, screenSize.y);
 
-				glEnable(GL_CULL_FACE);
+				// Ice pass
+				glBindFramebuffer(GL_FRAMEBUFFER, reflectionFrameBuffer);
 
-				//Render pass
-				renderCharacter(characterShader, &projection, &view, &characterModel);
-				renderSnow(snowShader, &projection, &view);
+				glEnable(GL_STENCIL_TEST);
+				glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+				glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+				renderCharacter(characterShader, &projection, &reflectionView, &characterModel);
+				renderSky(&projection, &reflectionView);
+
+				glDisable(GL_STENCIL_TEST);
+
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+				// Main pass
+				renderCharacter(characterShader, &projection, &cameraView, &characterModel);
+				renderSnow(&projection, &cameraView, &reflectionView);
 
 				break;
 			}
 
 			case 1:
-				
+				glUseProgram(debugShader);
+
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, needleTexture);
+				glUniform1i(glGetUniformLocation(debugShader, "tex"), 0);
+
+				renderScreenQuad();
 				break;
 		}
 
-		renderSky(&projection);
+		renderSky(&projection, &cameraView);
 
 
 		checkOpenGLError();

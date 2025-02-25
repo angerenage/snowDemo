@@ -109,9 +109,9 @@ mat4 orthographicMatrix(float left, float right, float bottom, float top, float 
 }
 
 mat4 viewMatrix(vec3 position, vec3 focus, vec3 up) {
-	vec3 f = vec3_normalize(vec3_subtract(focus, position));
-	vec3 r = vec3_normalize(vec3_crossProduct(f, up));
-	vec3 u = vec3_crossProduct(r, f);
+	vec3 f = vec3_normalize(vec3_sub(focus, position));
+	vec3 r = vec3_normalize(vec3_cross(f, up));
+	vec3 u = vec3_cross(r, f);
 
 	mat4 matrix = {0};
 	matrix.m[0][0] = r.x;
@@ -192,7 +192,7 @@ vec3 vec3_add(vec3 a, vec3 b) {
 	return (vec3){a.x + b.x, a.y + b.y, a.z + b.z};
 }
 
-vec3 vec3_subtract(vec3 a, vec3 b) {
+vec3 vec3_sub(vec3 a, vec3 b) {
 	return (vec3){a.x - b.x, a.y - b.y, a.z - b.z};
 }
 
@@ -213,7 +213,7 @@ vec3 vec3_normalize(vec3 v) {
 	return vec3_scale(v, 1.0f / length);
 }
 
-vec3 vec3_crossProduct(vec3 a, vec3 b) {
+vec3 vec3_cross(vec3 a, vec3 b) {
 	return (vec3){
 		a.y * b.z - a.z * b.y,
 		a.z * b.x - a.x * b.z,
@@ -223,18 +223,18 @@ vec3 vec3_crossProduct(vec3 a, vec3 b) {
 
 vec3 vec3_scaleAlongVector(vec3 p, vec3 v, float s) {
 	vec3 v_norm = vec3_normalize(v);
-	float projection_length = dotProduct(p, v_norm);
+	float projection_length = vec3_dot(p, v_norm);
 	vec3 projection = {projection_length * v_norm.x, projection_length * v_norm.y, projection_length * v_norm.z};
 	vec3 scaled_projection = {s * projection.x, s * projection.y, s * projection.z};
 	vec3 result = {p.x + (scaled_projection.x - projection.x), p.y + (scaled_projection.y - projection.y), p.z + (scaled_projection.z - projection.z)};
 	return result;
 }
 
-float dotProduct(vec3 a, vec3 b) {
+float vec3_dot(vec3 a, vec3 b) {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-float length(vec3 p) {
+float vec3_length(vec3 p) {
 	return sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
 }
 
@@ -255,11 +255,11 @@ float radians(float degrees) {
 }
 
 bool intersectEdgeWithPlane(vec3 A, vec3 B, Plane plane, vec3 *intersection) {
-	vec3 v1_to_plane = vec3_subtract(A, plane.point);
-	vec3 v2_to_plane = vec3_subtract(B, plane.point);
+	vec3 v1_to_plane = vec3_sub(A, plane.point);
+	vec3 v2_to_plane = vec3_sub(B, plane.point);
 
-	float dist1 = dotProduct(v1_to_plane, plane.normal);
-	float dist2 = dotProduct(v2_to_plane, plane.normal);
+	float dist1 = vec3_dot(v1_to_plane, plane.normal);
+	float dist2 = vec3_dot(v2_to_plane, plane.normal);
 
 	if (dist1 * dist2 < 0) {
 		float t = dist1 / (dist1 - dist2);
@@ -273,6 +273,10 @@ bool intersectEdgeWithPlane(vec3 A, vec3 B, Plane plane, vec3 *intersection) {
 #define EPSILON 0.0001f
 
 bool pointOnPlane(vec3 point, Plane plane) {
-	float a = dotProduct(vec3_subtract(point, plane.point), plane.normal);
+	float a = vec3_dot(vec3_sub(point, plane.point), plane.normal);
 	return a < EPSILON && a > -EPSILON;
+}
+
+float randomFloat(float min, float max) {
+	return min + (max - min) * ((float)rand() / RAND_MAX);
 }

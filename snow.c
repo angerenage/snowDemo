@@ -5,6 +5,14 @@
 #define CHUNK_NBR_X 2
 #define CHUNK_NBR_Z 3
 
+GLuint reflectionFrameBuffer = 0;
+static GLuint reflectionTexture = 0;
+static GLuint depthStencilTexture = 0;
+
+static const float iceHeight = 0.35f;
+static mat4 iceModel = {0};
+static vec2 texturesSize = {0};
+
 static const float chunkSize = 10.0f;
 static const float mapCenterX = (CHUNK_NBR_X - 1) / 2.0f - 0.5f;
 static const float mapCenterZ = (CHUNK_NBR_Z - 1) / 2.0f;
@@ -86,6 +94,8 @@ static GLuint generateTerrainHeight(const vec2 *pos) {
 }
 
 void initSnow() {
+	texturesSize = screenSize;
+
 	terrainMesh = generateGrid((vec2){chunkSize, chunkSize}, 200, 0.0f);
 
 	for (int x = 0; x < CHUNK_NBR_X; x++) {
@@ -105,10 +115,34 @@ void initSnow() {
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	updateProjection = orthographicMatrix(-chunkSize, chunkSize, -chunkSize, chunkSize, 0.0, 1.0);
+
+
+	reflectionTexture = createTexture(texturesSize.x, texturesSize.y);
+	depthStencilTexture = createTextureStencil(texturesSize.x, texturesSize.y);
+	
+	reflectionFrameBuffer = createFramebufferDepthStencil(depthStencilTexture, reflectionTexture);
+
+	iceModel = rotationMatrix((vec3){M_PI / 2.0f, 0.0f, 0.0f});
+	iceModel.m[3][1] = iceHeight;
 }
 
-void updateSnow(const mat4 *characterModel, vec3 characterPosition) {
-	vec2 nextPosition = {characterPosition.x, characterPosition.z};
+mat4 updateSnow(vec3 *reflectionDirection, const mat4 *projection, const mat4 *characterModel, const vec3* characterPosition) {
+	if (texturesSize.x != screenSize.x || texturesSize.y != screenSize.y) {
+		texturesSize = screenSize;
+
+		glDeleteTextures(1, &reflectionTexture);
+		glDeleteTextures(1, &depthStencilTexture);
+		glDeleteFramebuffers(1, &reflectionFrameBuffer);
+
+		reflectionTexture = createTexture(texturesSize.x, texturesSize.y);
+		depthStencilTexture = createTextureStencil(texturesSize.x, texturesSize.y);
+		
+		reflectionFrameBuffer = createFramebufferDepthStencil(depthStencilTexture, reflectionTexture);
+	}
+
+	mat4 reflectionView = reflectionCameraMatrix(reflectionDirection, &(vec3){0.0f, 1.0f, 0.0f}, iceHeight);
+	
+	vec2 nextPosition = {characterPosition->x, characterPosition->z};
 	mat4 updateView = viewMatrix((vec3){nextPosition.x, 0.0f, nextPosition.y}, (vec3){0.0f, 1.0f, 0.0f}, (vec3){0.0f, 0.0f, 1.0f});
 
 	vec2 offset = vec2_subtract(nextPosition, currentPosition);
@@ -140,38 +174,59 @@ void updateSnow(const mat4 *characterModel, vec3 characterPosition) {
 
 	activeTexture = nextTexture;
 	currentPosition = nextPosition;
+
+
+	glBindFramebuffer(GL_FRAMEBUFFER, reflectionFrameBuffer);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+	glEnable(GL_STENCIL_TEST);
+
+	glStencilFunc(GL_ALWAYS, 1, 0xFF);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+	glUseProgram(basicShader);
+
+	glUniformMatrix4fv(glGetUniformLocation(basicShader, "projection"), 1, GL_FALSE, (GLfloat*)&projection);
+	glUniformMatrix4fv(glGetUniformLocation(basicShader, "view"), 1, GL_FALSE, (GLfloat*)&reflectionView);
+	glUniformMatrix4fv(glGetUniformLocation(basicShader, "model"), 1, GL_FALSE, (GLfloat*)&iceModel);
+
+	renderScreenQuad();
+
+	glDisable(GL_STENCIL_TEST);
+
+	return reflectionView;
 }
 
-void renderSnow(GLuint shader, const mat4 *projection, const mat4 *view) {
-	glUseProgram(shader);
+void renderSnow(const mat4 *projection, const mat4 *view, const mat4 *reflectionView) {
+	glUseProgram(snowShader);
 
-	glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, (GLfloat*)projection);
-	glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, (GLfloat*)view);
-	glUniformMatrix4fv(glGetUniformLocation(shader, "shadowProjection"), 1, GL_FALSE, (GLfloat*)&shadowProjection);
-	glUniformMatrix4fv(glGetUniformLocation(shader, "shadowView"), 1, GL_FALSE, (GLfloat*)&shadowView);
-	glUniform3fv(glGetUniformLocation(shader, "sunPos"), 1, (GLfloat*)&sunPosition);
-	glUniform3fv(glGetUniformLocation(shader, "viewPos"), 1, (GLfloat*)&cameraPos);
-	glUniform2f(glGetUniformLocation(shader, "characterPos"), currentPosition.x, currentPosition.y);
-	glUniform1f(glGetUniformLocation(shader, "size"), chunkSize);
+	glUniformMatrix4fv(glGetUniformLocation(snowShader, "projection"), 1, GL_FALSE, (GLfloat*)projection);
+	glUniformMatrix4fv(glGetUniformLocation(snowShader, "view"), 1, GL_FALSE, (GLfloat*)view);
+	glUniformMatrix4fv(glGetUniformLocation(snowShader, "shadowProjection"), 1, GL_FALSE, (GLfloat*)&shadowProjection);
+	glUniformMatrix4fv(glGetUniformLocation(snowShader, "shadowView"), 1, GL_FALSE, (GLfloat*)&shadowView);
+	glUniform3fv(glGetUniformLocation(snowShader, "sunPos"), 1, (GLfloat*)&sunPosition);
+	glUniform3fv(glGetUniformLocation(snowShader, "viewPos"), 1, (GLfloat*)&cameraPos);
+	glUniform2f(glGetUniformLocation(snowShader, "characterPos"), currentPosition.x, currentPosition.y);
+	glUniform1f(glGetUniformLocation(snowShader, "size"), chunkSize);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, shadowMap);
-	glUniform1i(glGetUniformLocation(shader, "shadowMap"), 0);
+	glUniform1i(glGetUniformLocation(snowShader, "shadowMap"), 0);
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, depthTextures[activeTexture]);
-	glUniform1i(glGetUniformLocation(shader, "heightTex"), 1);
+	glUniform1i(glGetUniformLocation(snowShader, "heightTex"), 1);
 
 	glPatchParameteri(GL_PATCH_VERTICES, 3);
 	glBindVertexArray(terrainMesh.VAO);
 
 	for (int x = 0; x < CHUNK_NBR_X; x++) {
 		for (int z = 0; z < CHUNK_NBR_Z; z++) {
-			glUniform3f(glGetUniformLocation(shader, "offset"), ((float)x - mapCenterX) * chunkSize, 0.0, ((float)z - mapCenterZ) * chunkSize);
+			glUniform3f(glGetUniformLocation(snowShader, "offset"), ((float)x - mapCenterX) * chunkSize, 0.0, ((float)z - mapCenterZ) * chunkSize);
 
 			glActiveTexture(GL_TEXTURE2);
 			glBindTexture(GL_TEXTURE_2D, terrainHeights[x][z]);
-			glUniform1i(glGetUniformLocation(shader, "noiseTex"), 2);
+			glUniform1i(glGetUniformLocation(snowShader, "noiseTex"), 2);
 
 			glDrawElements(GL_PATCHES, terrainMesh.indexCount, GL_UNSIGNED_INT, 0);
 		}
@@ -179,6 +234,19 @@ void renderSnow(GLuint shader, const mat4 *projection, const mat4 *view) {
 
 	glBindVertexArray(0);
 	glUseProgram(0);
+
+	glUseProgram(iceShader);
+
+	glUniformMatrix4fv(glGetUniformLocation(iceShader, "projection"), 1, GL_FALSE, (GLfloat*)projection);
+	glUniformMatrix4fv(glGetUniformLocation(iceShader, "view"), 1, GL_FALSE, (GLfloat*)view);
+	glUniformMatrix4fv(glGetUniformLocation(iceShader, "reflectionView"), 1, GL_FALSE, (GLfloat*)reflectionView);
+	glUniformMatrix4fv(glGetUniformLocation(iceShader, "model"), 1, GL_FALSE, (GLfloat*)&iceModel);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, reflectionTexture);
+	glUniform1i(glGetUniformLocation(iceShader, "reflection"), 0);
+
+	renderScreenQuad();
 }
 
 void cleanupSnow() {
@@ -189,4 +257,8 @@ void cleanupSnow() {
 	}
 	glDeleteTextures(2, depthTextures);
 	glDeleteFramebuffers(2, depthFBOs);
+
+	glDeleteFramebuffers(1, &reflectionFrameBuffer);
+	glDeleteTextures(1, &reflectionTexture);
+	glDeleteTextures(1, &depthStencilTexture);
 }

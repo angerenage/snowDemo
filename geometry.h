@@ -59,15 +59,15 @@ mat4 scaleMatrix(vec3 scale);
 vec3 transform(mat4 matrix, vec3 v);
 
 vec3 vec3_add(vec3 a, vec3 b);
-vec3 vec3_subtract(vec3 a, vec3 b);
+vec3 vec3_sub(vec3 a, vec3 b);
 vec3 vec3_multiply(vec3 a, vec3 b);
 vec3 vec3_scale(vec3 v, float s);
 vec3 vec3_lerp(vec3 a, vec3 v, float t);
 vec3 vec3_normalize(vec3 v);
-vec3 vec3_crossProduct(vec3 a, vec3 b);
+vec3 vec3_cross(vec3 a, vec3 b);
 vec3 vec3_scaleAlongVector(vec3 p, vec3 v, float s);
-float dotProduct(vec3 a, vec3 b);
-float length(vec3 p);
+float vec3_dot(vec3 a, vec3 b);
+float vec3_length(vec3 p);
 
 vec2 vec2_subtract(vec2 a, vec2 b);
 vec2 vec2_scale(vec2 v, float s);
@@ -77,3 +77,5 @@ float radians(float degrees);
 
 bool intersectEdgeWithPlane(vec3 A, vec3 B, Plane plane, vec3 *intersection);
 bool pointOnPlane(vec3 point, Plane plane);
+
+float randomFloat(float min, float max);
