@@ -126,20 +126,24 @@ static GLuint compileComputeShader(const char *shaderCode) {
 
 static const char debugVertSrc[] = "#version 330 core\n"
 "layout(location=0) in vec3 pA;"
+"uniform mat4 model;"
+"uniform mat4 view;"
+"uniform mat4 projection;"
 "out vec2 fragPos;"
 "void main()"
 "{"
-	"fragPos=(pA.xy+1.)/2.;"
-	"gl_Position=vec4(pA,1.);"
+	"fragPos=(pA.xz+1.)/2.;"
+	"gl_Position=projection*view*model*vec4(pA,1.);"
 "}";
 
 static const char debugFragSrc[] = "#version 330 core\n"
 "out vec4 c;"
 "in vec2 fragPos;"
-"uniform sampler2D tex;"
+//"uniform sampler2D tex;"
 "void main()"
 "{"
-	"c=vec4(texture(tex,fragPos).xyz,1.);"
+	//"c=vec4(texture(tex,fragPos).xyz,1.);"
+	"c=vec4(fragPos,0,1);"
 "}";
 
 // --------------------------- BASIC SHADERS ---------------------------
@@ -979,6 +983,27 @@ static const char characterFragSrc[] = "#version 430 core\n"
 	"vec3 pointLighting = calculate_point_lighting(sunIntensity);"
 
 	"fragColor = vec4(ambient + pointLighting, 1.0);"
+"}";
+
+// --------------------------- NEEDLE SHADERS ---------------------------
+
+static const char needleVertSrc[] = "#version 330 core\n"
+"layout(location=0) in vec3 needleParameters;"
+"uniform mat4 projection;"
+"void main()"
+"{"
+	"float height = needleParameters.x;"
+	"float angle = needleParameters.y;"
+	"float tilt = needleParameters.z;"
+	"vec3 position = vec3(sin(angle) * cos(tilt), sin(tilt), cos(angle) * cos(tilt)) * height;"
+	"gl_Position = projection * vec4(position, 1.0);"
+"}";
+
+static const char needleFragSrc[] = "#version 330 core\n"
+"out vec4 c;"
+"void main()"
+"{"
+	"c=vec4(1.);"
 "}";
 
 

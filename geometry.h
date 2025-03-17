@@ -72,6 +72,7 @@ float vec3_length(vec3 p);
 vec2 vec2_subtract(vec2 a, vec2 b);
 vec2 vec2_scale(vec2 v, float s);
 
+float smoothMin(float a, float b, float k);
 float lerp(float a, float b, float t);
 float radians(float degrees);
 

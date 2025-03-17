@@ -246,6 +246,11 @@ vec2 vec2_scale(vec2 v, float s) {
 	return (vec2){v.x * s, v.y * s};
 }
 
+float smoothMin(float a, float b, float k) {
+	float res = expf(-k * a) + expf(-k * b);
+	return -logf(res) / k;
+}
+
 float lerp(float a, float b, float t) {
 	return a + (t) * (b - a);
 }

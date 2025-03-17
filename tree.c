@@ -1,211 +1,239 @@
 #include "tree.h"
 
-Mesh modelFromParams(unsigned int seed, const TreeParameters* params) {
-	srand(seed);
+typedef struct geometry_s {
+	vec3* vertices;
+	unsigned int vertexCount;
+	unsigned int* indices;
+	unsigned int indexCount;
+} Geometry;
 
-	vec3 *crownPoints = (vec3*)malloc(params->crown_point_count * sizeof(vec3));
+typedef struct point_s {
+	vec3 position;
+	float radius;
+} Point;
 
-	vec3 center = params->crown_center;
-	vec3 size = params->crown_size;
-	for (unsigned int i = 0; i < params->crown_point_count; i++) {
-		crownPoints[i] = (vec3){
-			center.x + fmodf(rand(), size.x) - size.x * 0.5f,
-			center.y + fmodf(rand(), size.y) - size.y * 0.5f,
-			center.z + fmodf(rand(), size.z) - size.z * 0.5f
-		};
-	}
-	
-	printf("got the crown!\n");
+static Geometry generateSplineMesh(const Point *points, int numPoints, float generalRadius, int resolution, const vec3 *up) {
+	int totalVertices = numPoints * resolution;
+	vec3 *vertices = (vec3*)malloc(totalVertices * sizeof(vec3));
 
-	TreeGenerator gen = {
-		params->gen_max_dist,
-		params->gen_min_dist,
-		params->branch_length,
-		params->gen_max_dist * params->gen_max_dist,
-		params->gen_min_dist * params->gen_min_dist,
-		NULL,
-		0,
-		NULL,
-		0
-	};
+	vec3 dir = vec3_normalize(vec3_sub(points[1].position, points[0].position));
 
-	for (unsigned int i = 0; i < params->trunk_count; i++) {
-		addTrunk(params->trunks[i], params, &gen, crownPoints);
-		printf("got the trunk at: %f %f %f\n", params->trunks[i].x, params->trunks[i].y, params->trunks[i].z);
-	}
+	for (int i = 0; i < numPoints; i++) {
+		Point p = points[i];
+		float radius = p.radius * generalRadius;
 
-	printf("starting generation!\n");
-	processAll(100, crownPoints, params->crown_point_count, &gen);
+		vec3 right = vec3_cross(dir, *up);
 
-	// TODO: add gravity
+		for (int j = 0; j < resolution; j++) {
+			float angle = (2.0f * M_PI * j) / resolution;
+			float cosA = cos(angle);
+			float sinA = sin(angle);
 
-	printf("finished generation! %ld branches\n", gen.branchCount);
-
-	vec3 *vertices = (vec3*)malloc(gen.branchCount * 2 * sizeof(vec3));
-	for (unsigned int i = 0; i < gen.branchCount; i++) {
-		Branch br = gen.branches[i];
-
-		vertices[i * 2] = br.position;
-		vertices[i * 2 + 1] = (vec3){
-			br.position.x + br.growDirection.x,
-			br.position.y + br.growDirection.y,
-			br.position.z + br.growDirection.z
-		};
-	}
-
-	GLuint vao = createVAO(vertices, gen.branchCount * 2);
-
-	free(vertices);
-
-	/*Urho3D::SharedPtr<Urho3D::Model> treemodel = Tree::tModel(context_, gen, params);*/
-	return (Mesh){vao, gen.branchCount * 2, 0};
-}
-
-void addTrunk(vec3 base, const TreeParameters* params, TreeGenerator *gen, const vec3 *crowPoints) {
-	gen->trunkCount++;
-	gen->trunks = (unsigned int*)realloc(gen->trunks, gen->trunkCount * sizeof(unsigned int));
-	gen->trunks[gen->trunkCount - 1] = gen->branchCount;
-
-	gen->branchCount++;
-	gen->branches = (Branch*)realloc(gen->branches, gen->branchCount * sizeof(Branch));
-	gen->branches[gen->branchCount - 1] = (Branch){
-		(vec3){0, 0, 0},
-		0,
-		base,
-		0,
-		NULL,
-		0
-	};
-
-	while (true) {
-		Branch *LB = &gen->branches[gen->branchCount - 1];
-
-		for (unsigned int i = 0; i < params->crown_point_count; i++) {
-			vec3 point = crowPoints[i];
-			float distSQ =	(point.x - LB->position.x) * (point.x - LB->position.x) +
-							(point.y - LB->position.y) * (point.y - LB->position.y) +
-							(point.z - LB->position.z) * (point.z - LB->position.z);
-
-			if (distSQ < gen->maxDistanceSQ) return;
-		}
-
-		//printf("test\n");
-
-		LB->childrenCount++;
-		LB->childrenID = (unsigned int*)realloc(LB->childrenID, LB->childrenCount * sizeof(unsigned int));
-		LB->childrenID[LB->childrenCount - 1] = gen->branchCount;
-
-		gen->branchCount++;
-		gen->branches = (Branch*)realloc(gen->branches, gen->branchCount * sizeof(Branch));
-		LB = &gen->branches[gen->branchCount - 2];
-
-		gen->branches[gen->branchCount - 1] = (Branch){
-			(vec3){0, 0, 0},
-			0,
-			(vec3){LB->position.x, LB->position.y + params->branch_length, LB->position.z},
-			gen->branchCount - 1,
-			NULL,
-			0
-		};
-	}
-
-	printf("trunk added!\n");
-}
-
-void erase_point(vec3** points, size_t* pointsCount, size_t i) {
-	if (i >= *pointsCount) return;
-
-	for (size_t j = i; j < *pointsCount - 1; j++) {
-		(*points)[j] = (*points)[j + 1];
-	}
-
-	(*pointsCount)--;
-}
-
-unsigned int process(vec3* crownPoints, size_t crownPointsCount, TreeGenerator* gen) {
-	unsigned int BranchesAdded = 0;
-
-	for (unsigned int i = crownPointsCount - 1; i > 0; i--) {
-		vec3 point = crownPoints[i];
-
-		float closeDistSQ = gen->maxDistanceSQ * 2;
-		Branch* closeBranch = NULL;
-
-		for (unsigned int j = 0; j < gen->branchCount; j++) {
-			Branch br = gen->branches[j];
-			float distSQ =	(point.x - br.position.x) * (point.x - br.position.x) +
-							(point.y - br.position.y) * (point.y - br.position.y) +
-							(point.z - br.position.z) * (point.z - br.position.z);
-
-			if (distSQ > gen->maxDistanceSQ) {
-				continue;
-			}
-			else if (distSQ < gen->minDistanceSQ) {
-				erase_point(&crownPoints, &crownPointsCount, i);
-				closeBranch = NULL;
-				break;
-			}
-			else if (distSQ < closeDistSQ) {
-				closeDistSQ = distSQ;
-				closeBranch = &gen->branches[j];
-			}
-		}
-
-		if (closeBranch != NULL) {
-			closeBranch->growCount++;
-
-			vec3 originalDir = closeBranch->growDirection;
-			closeBranch->growDirection = (vec3) {
-				originalDir.x + (point.x - closeBranch->position.x),
-				originalDir.y + (point.y - closeBranch->position.y),
-				originalDir.z + (point.z - closeBranch->position.z)
-			};
+			vertices[i * resolution + j].x = p.position.x + radius * (cosA * right.x + sinA * up->x);
+			vertices[i * resolution + j].y = p.position.y + radius * (cosA * right.y + sinA * up->y);
+			vertices[i * resolution + j].z = p.position.z + radius * (cosA * right.z + sinA * up->z);
 		}
 	}
 
-	for (unsigned int i = 0; i < gen->branchCount; i++) {
-		Branch br = gen->branches[i];
-		if (br.growCount > 0) {
-			br.childrenCount++;
-			br.childrenID = (unsigned int*)realloc(br.childrenID, br.childrenCount * sizeof(unsigned int));
-			br.childrenID[br.childrenCount - 1] = gen->branchCount;
+	int totalIndices = (numPoints - 1) * resolution * 6;
+	unsigned int *indices = (unsigned int*)malloc(totalIndices * sizeof(unsigned int));
 
-			gen->branchCount++;
-			gen->branches = (Branch*)realloc(gen->branches, gen->branchCount * sizeof(Branch));
-			gen->branches[gen->branchCount - 1] = growBranch(&br, gen->branchLength, i);
+	int index = 0;
 
-			BranchesAdded++;
+	for (int i = 0; i < numPoints - 1; i++) {
+		for (int j = 0; j < resolution; j++) {
+			unsigned int nextJ = (j + 1) % resolution;
+			unsigned int current = i * resolution + j;
+			unsigned int next = i * resolution + nextJ;
+			unsigned int nextRow = (i + 1) * resolution + j;
+			unsigned int nextRowNext = (i + 1) * resolution + nextJ;
+
+			indices[index++] = next;
+			indices[index++] = current;
+			indices[index++] = nextRow;
+
+			indices[index++] = nextRowNext;
+			indices[index++] = next;
+			indices[index++] = nextRow;
 		}
 	}
 
-	return BranchesAdded;
+	return (Geometry) {
+		.vertices = vertices,
+		.vertexCount = totalVertices,
+		.indices = indices,
+		.indexCount = totalIndices
+	};
 }
 
-void processAll(const unsigned maxIter, vec3* crownPoints, size_t crownPointsCount, TreeGenerator* gen) {
-	if (maxIter == 0) {
-		while (process(crownPoints, crownPointsCount, gen) != 0);
+static Geometry mergeGeometries(Geometry *geometries, int count) {
+	unsigned int totalVertices = 0, totalIndices = 0;
+
+	for (int i = 0; i < count; i++) {
+		totalVertices += geometries[i].vertexCount;
+		totalIndices += geometries[i].indexCount;
 	}
-	else {
-		for (unsigned i = 0; i < maxIter && process(crownPoints, crownPointsCount, gen) != 0; i++);
+
+	vec3 *mergedVertices = (vec3*)malloc(totalVertices * sizeof(vec3));
+	unsigned int *mergedIndices = (unsigned int*)malloc(totalIndices * sizeof(unsigned int));
+
+	unsigned int vertexOffset = 0, indexOffset = 0;
+
+	for (int i = 0; i < count; i++) {
+		Geometry g = geometries[i];
+
+		for (unsigned int j = 0; j < g.vertexCount; j++) {
+			mergedVertices[vertexOffset + j] = g.vertices[j];
+		}
+
+		for (unsigned int j = 0; j < g.indexCount; j++) {
+			mergedIndices[indexOffset + j] = g.indices[j] + vertexOffset;
+		}
+
+		vertexOffset += g.vertexCount;
+		indexOffset += g.indexCount;
 	}
+
+	return (Geometry) {
+		.vertices = mergedVertices,
+		.vertexCount = totalVertices,
+		.indices = mergedIndices,
+		.indexCount = totalIndices
+	};
 }
 
-Branch growBranch(Branch* branch, float branchLength, unsigned int parentID) {
-	vec3 dir = vec3_scale(vec3_normalize(branch->growDirection), branchLength);
-	vec3 newposition = (vec3){
-		dir.x + branch->position.x + (((float)(rand() % 10000) / 5000.0f - 1.0f) * branchLength * 0.1f),
-		dir.y + branch->position.y + (((float)(rand() % 10000) / 5000.0f - 1.0f) * branchLength * 0.1f),
-		dir.z + branch->position.z + (((float)(rand() % 10000) / 5000.0f - 1.0f) * branchLength * 0.1f)
-	};
-	branch->growCount = 0;
-	branch->growDirection = (vec3){0, 0, 0};
+static void freeGeometry(Geometry g) {
+	free(g.vertices);
+	free(g.indices);
+}
 
-	return (Branch){
-		dir,
-		0,
-		newposition,
-		parentID,
-		NULL,
-		0
+static float taper(float t, float length) {
+	float linearTerm = 3.0f - (3.0f * t);
+	float logTerm = 1.0f - log1pf(t * length) / log1pf(length * 2);
+	return fmax(0.0f, smoothMin(linearTerm, logTerm, 7.0f));
+}
+
+static float branchLength(float t, float baseBranchLength) {
+	if (t <= 0.05f) return baseBranchLength * (0.8f + t * 5.0f);
+	else return baseBranchLength * (1.2f * (1.0f - t)) + 0.3f;
+}
+
+static float gravityEffect(float x, float length) {
+	return (-expf(-2.0f * x) + 1.0f) * length * 0.2f;
+}
+
+static float growthForce(float t) {
+	return 0.4f * t;
+}
+
+Geometry generateBranch(Point* trunkPoints, int trunkSegments, float trunkHeight, float t, float rotationAngle, float baseBranchLength, int segments) {
+	Point* points = (Point*)malloc((segments + 1) * sizeof(Point));
+	float branchLengthValue = branchLength(t, baseBranchLength);
+
+	float firstPointY = trunkPoints[1].position.y;
+	float lastPointY = trunkPoints[trunkSegments - 2].position.y + firstPointY / 3.0f;
+	firstPointY += firstPointY / 3.0f;
+
+	float attachHeight = firstPointY + (lastPointY - firstPointY) * t;
+	float h = attachHeight / trunkHeight;
+	int pointIndex = (int)(h * (trunkSegments - 1));
+	float factor = (h * (trunkSegments - 1)) - pointIndex;
+
+	vec3 trunkPos = {
+		trunkPoints[pointIndex].position.x * (1 - factor) + trunkPoints[pointIndex + 1].position.x * factor,
+		trunkPoints[pointIndex].position.y * (1 - factor) + trunkPoints[pointIndex + 1].position.y * factor,
+		trunkPoints[pointIndex].position.z * (1 - factor) + trunkPoints[pointIndex + 1].position.z * factor
 	};
+
+	float randomOffsetZ = 0.0f;
+
+	for (int i = 0; i <= segments; i++) {
+		float x = (float)i / segments;
+		float radius = taper(x, branchLengthValue) * 0.1f;
+
+		float gravity = gravityEffect(x, branchLengthValue);
+		float growth = growthForce(t) * x;
+
+		float randomOffsetX = randomFloat(-0.01f, 0.01f) * branchLengthValue * (1.0f - x);
+		randomOffsetZ += randomFloat(-0.01f, 0.01f) * branchLengthValue * (1.0f - x);
+		float randomOffsetY = randomFloat(-0.01f, 0.01f) * branchLengthValue * (1.0f - x);
+
+		float endX = trunkPos.x + x * branchLengthValue + randomOffsetX;
+		float endY = trunkPos.y - gravity + growth + randomOffsetY;
+		float endZ = trunkPos.z + randomOffsetZ;
+
+		float rotatedX = cos(rotationAngle) * (endX - trunkPos.x) - sin(rotationAngle) * (endZ - trunkPos.z) + trunkPos.x;
+		float rotatedZ = sin(rotationAngle) * (endX - trunkPos.x) + cos(rotationAngle) * (endZ - trunkPos.z) + trunkPos.z;
+
+		points[i].position = (vec3){rotatedX, endY, rotatedZ};
+		points[i].radius = radius;
+	}
+
+	float radius = (2.0f - t) / 2.0f * fmin(1.0f, (1.0f - t) + 0.8f);
+
+	Geometry branch = generateSplineMesh(points, segments + 1, radius, 8, &(vec3){0.0f, 1.0f, 0.0f});
+	free(points);
+	return branch;
+}
+
+Geometry generateTrunk(float height, float scaleFactor, int segments, int numBranches, float baseBranchLength) {
+	Point* points = (Point*)malloc(++segments * sizeof(Point));
+	float lastX = 0, lastZ = 0;
+
+	const float randomness = 0.3f;
+
+	for (int i = 0; i < segments; i++) {
+		float t = (float)i / (segments - 1);
+		float heightPos = height * t;
+		float radius = taper(t, height);
+
+		float angle = randomFloat(0, 2 * M_PI);
+		float offsetX = cos(angle) * t * randomness * radius;
+		float offsetZ = sin(angle) * t * randomness * radius;
+		lastX += offsetX;
+		lastZ += offsetZ;
+
+		points[i].position = (vec3){lastX, heightPos, lastZ};
+		points[i].radius = radius;
+	}
+
+	Geometry trunk = generateSplineMesh(points, segments, scaleFactor, 16, &(vec3){1.0f, 0.0f, 0.0f});
+	Geometry* branches = (Geometry*)malloc(numBranches * sizeof(Geometry));
+
+	float rotationAngle = randomFloat(0, 2 * M_PI);
+
+	for (int i = 0; i < numBranches; i++) {
+		float t = powf((float)i / (numBranches - 1), 0.8f) + randomFloat(-0.01f, 0.01f);
+		rotationAngle += (M_PI / 3) + randomFloat(-M_PI / 6, M_PI / 6);
+		branches[i] = generateBranch(points, segments, height, t, rotationAngle, baseBranchLength, 5);
+	}
+
+	Geometry tree = mergeGeometries(branches, numBranches);
+	tree = mergeGeometries((Geometry[]){trunk, tree}, 2);
+
+	for (int i = 0; i < numBranches; i++) {
+		freeGeometry(branches[i]);
+	}
+	free(branches);
+	free(points);
+	freeGeometry(trunk);
+
+	return tree;
+}
+
+static Mesh meshFromGeometry(Geometry g) {
+	GLuint VAO = createIndexedVAO(g.vertices, g.vertexCount, g.indices, g.indexCount);
+
+	return (Mesh) {
+		.VAO = VAO,
+		.vertexCount = g.vertexCount,
+		.indexCount = g.indexCount
+	};
+}
+
+Mesh generateTree(float height, float scaleFactor, int segments, int numBranches, float baseBranchLength) {
+	Geometry treeGeometry = generateTrunk(height, scaleFactor, segments, numBranches, baseBranchLength);
+	Mesh treeMesh = meshFromGeometry(treeGeometry);
+	freeGeometry(treeGeometry);
+	return treeMesh;
 }

@@ -11,6 +11,7 @@
 #include "snow.h"
 #include "character.h"
 #include "sky.h"
+#include "tree.h"
 
 #ifndef CLOCK_MONOTONIC
 #define CLOCK_MONOTONIC 1
@@ -102,6 +103,10 @@ int main() {
 	glViewport(0, 0, screenSize.x, screenSize.y);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+
+	Mesh tree = generateTree(10.0f, 0.4f, 10, 100, 3.0f);
+	mat4 treeModel = translationMatrix((vec3){0.0f, -5.0f, 0.0f});
+
 	
 	mat4 characterModel = rotationMatrix((vec3){0.0f, -M_PI / 2.0f, 0.0f});
 	loadAnimation("ressources/running.anim.xz");
@@ -173,12 +178,12 @@ int main() {
 
 			case 1:
 				glUseProgram(debugShader);
+				glUniformMatrix4fv(glGetUniformLocation(debugShader, "projection"), 1, GL_FALSE, (GLfloat*)&projection);
+				glUniformMatrix4fv(glGetUniformLocation(debugShader, "view"), 1, GL_FALSE, (GLfloat*)&cameraView);
+				glUniformMatrix4fv(glGetUniformLocation(debugShader, "model"), 1, GL_FALSE, (GLfloat*)&treeModel);
 
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, needleTexture);
-				glUniform1i(glGetUniformLocation(debugShader, "tex"), 0);
-
-				renderScreenQuad();
+				glBindVertexArray(tree.VAO);
+				glDrawElements(GL_TRIANGLES, tree.indexCount, GL_UNSIGNED_INT, 0);
 				break;
 		}
 
@@ -192,7 +197,9 @@ int main() {
 		glXSwapBuffers(display, window);
 	}
 
-	cleanupSnow();	
+	freeMesh(tree);
+
+	cleanupSnow();
 	cleanupCharacter();
 	cleanupShadow();
 	cleanupSky();
