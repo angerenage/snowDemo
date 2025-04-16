@@ -2,7 +2,9 @@
 
 mat4 shadowProjection;
 mat4 shadowView;
-vec3 sunPosition;
+vec3 lightPosition;
+static vec3 sunPosition;
+static vec3 moonPosition = {0.6f, 1.0f, 0.8f};
 
 GLuint shadowMap;
 GLuint shadowFBO;
@@ -32,10 +34,12 @@ void clearShadow() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void updateLight(float time) {
+void updateLight(float time, bool isDay) {
 	const float sunTime = time / 20.0f;
-	sunPosition = (vec3){sin(sunTime) + cos(sunTime), cos(sunTime) - sin(sunTime), 0.0};
-	shadowView = viewMatrix(sunPosition, (vec3){0.0, 0.0, 0.0}, (vec3){0.0, 1.0, 0.0});
+	sunPosition = (vec3){sinf(sunTime) + cosf(sunTime), cosf(sunTime) - sinf(sunTime), 0.0};
+	lightPosition = isDay ? sunPosition : moonPosition;
+
+	shadowView = viewMatrix(lightPosition, (vec3){0.0, 0.0, 0.0}, (vec3){0.0, 1.0, 0.0});
 }
 
 void cleanupShadow() {

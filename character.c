@@ -166,7 +166,7 @@ static int reconstructHalfCrystal(Crystal crystal, Plane plane, Triangle *triang
 	vec3 topVertex = (vec3){0.0f, 0.0f, 0.0f};
 	vec3 bottomVertex = (vec3){0.0f, -crystal.bottomHeight - crystal.topHeight, 0.0f};
 
-	vec3 ring[crystal.segments];
+	vec3 *ring = malloc(sizeof(vec3) * crystal.segments);
 	for (int i = 0; i < crystal.segments; i++) {
 		float angle = 2.0f * M_PI * i / crystal.segments;
 		ring[i].x = crystal.radius * cos(angle);
@@ -187,11 +187,13 @@ static int reconstructHalfCrystal(Crystal crystal, Plane plane, Triangle *triang
 		}
 	}
 
+	free(ring);
+
 	return triangleCount;
 }
 
 static int reconstructInnerCrystal(Crystal crystal, Plane plane1, Plane plane2, Triangle *triangles) {
-	Triangle outerTriangles[crystal.segments * 8];
+	Triangle *outerTriangles = (Triangle*)malloc(sizeof(Triangle) * crystal.segments * 8);
 	int innerFaceCount = 0;
 	
 	for (int i = 0; i < reconstructHalfCrystal(crystal, plane2, outerTriangles, false); i++) {
@@ -216,6 +218,8 @@ static int reconstructInnerCrystal(Crystal crystal, Plane plane1, Plane plane2, 
 		}
 	}
 
+	free(outerTriangles);
+
 	return innerFaceCount;
 }
 
@@ -231,14 +235,14 @@ Face *generateCrystal(Crystal crystal, int *faceCount, int boneId) {
 	Plane plane1 = {vec3_add(crystal.plane.point, vec3_scale(crystal.plane.normal, crystal.gap / 2.0f)), crystal.plane.normal};
 	Plane plane2 = {vec3_add(crystal.plane.point, vec3_scale(crystal.plane.normal,  -crystal.gap / 2.0f)), crystal.plane.normal};
 
-	Triangle triangles[crystal.segments * 12];
+	Triangle *triangles = (Triangle*)malloc(sizeof(Triangle) * crystal.segments * 12);
 
 	// Construct the outer crystal
 	int triangleCount = reconstructHalfCrystal(crystal, plane1, triangles, false);
 	triangleCount += reconstructHalfCrystal(crystal, plane2, &triangles[triangleCount], true);
 
 	// Construct the inner crystal
-	Triangle innerTriangles[crystal.segments * 10];
+	Triangle *innerTriangles = (Triangle*)malloc(sizeof(Triangle) * crystal.segments * 10);
 	int innerTriangleCount = reconstructInnerCrystal(crystal, plane1, plane2, innerTriangles);
 
 	for (int i = 0; i < innerTriangleCount; i++) {
@@ -277,6 +281,9 @@ Face *generateCrystal(Crystal crystal, int *faceCount, int boneId) {
 	for (int i = 0; i < innerTriangleCount; i++) {
 		faces[triangleCount + i] = (Face){innerTriangles[i], 1, boneId};
 	}
+
+	free(triangles);
+	free(innerTriangles);
 
 	return faces;
 }
@@ -399,6 +406,7 @@ void initCharacter() {
 	free(faces);
 
 	pointLightSSBO = createSSBO(sizeof(float) * 4 * boneNumber, 0); // padded to 4 floats by openGL
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, pointLightSSBO);
 }
 
 void loadAnimation(const char* path) {
@@ -406,7 +414,7 @@ void loadAnimation(const char* path) {
 
 	size_t animationSize;
 	loadRessource(path, (void**)&animation, &animationSize);
-	animationLength = animationSize / sizeof(Frame);
+	animationLength = (unsigned int)(animationSize / sizeof(Frame));
 }
 
 void updateAnimation(float time) {
@@ -432,7 +440,7 @@ void renderCharacter(GLuint shader, const mat4* projection, const mat4* view, co
 	glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, (GLfloat*)view);
 	glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, (GLfloat*)model);
 
-	glUniform3fv(glGetUniformLocation(shader, "sunPos"), 1, (GLfloat*)&sunPosition);
+	glUniform3fv(glGetUniformLocation(shader, "lightPos"), 1, (GLfloat*)&lightPosition);
 
 	for (int i = 0; i < boneNumber; i++) {
 		char uniformName[32];

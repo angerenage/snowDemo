@@ -1,7 +1,7 @@
 #include "geometry.h"
 
 Quaternion quat_normalize(Quaternion q) {
-    float magnitude = sqrt(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
+    float magnitude = sqrtf(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
     q.w /= magnitude;
     q.x /= magnitude;
     q.y /= magnitude;
@@ -81,7 +81,7 @@ mat4 mat4_multiply(const mat4 *a, const mat4 *b) {
 mat4 projectionMatrix(float fov, float aspectRatio, float nearPlane, float farPlane) {
 	mat4 matrix = {0};
 	
-	float yScale = 1.0f / tan(fov / 2.0f);
+	float yScale = 1.0f / tanf(fov / 2.0f);
 	float xScale = yScale / aspectRatio;
 	float frustumLength = farPlane - nearPlane;
 
@@ -143,12 +143,12 @@ mat4 translationMatrix(vec3 translation) {
 mat4 rotationMatrix(vec3 rotation) {
 	mat4 matrix = mat4_identity();
 
-	float cp = cos(rotation.x);
-	float sp = sin(rotation.x);
-	float cy = cos(rotation.y);
-	float sy = sin(rotation.y);
-	float cr = cos(rotation.z);
-	float sr = sin(rotation.z);
+	float cp = cosf(rotation.x);
+	float sp = sinf(rotation.x);
+	float cy = cosf(rotation.y);
+	float sy = sinf(rotation.y);
+	float cr = cosf(rotation.z);
+	float sr = sinf(rotation.z);
 
 	matrix.m[0][0] = cr * cy;
 	matrix.m[0][1] = cr * sy * sp - sr * cp;
@@ -169,6 +169,15 @@ mat4 scaleMatrix(vec3 scale) {
 	matrix.m[1][1] = scale.y;
 	matrix.m[2][2] = scale.z;
 	return matrix;
+}
+
+mat4 transformMatrix(vec3 translation, vec3 rotation, vec3 scale) {
+	mat4 translationMat = translationMatrix(translation);
+	mat4 rotationMat = rotationMatrix(rotation);
+	mat4 scaleMat = scaleMatrix(scale);
+
+	mat4 tempMat = mat4_multiply(&scaleMat, &rotationMat);
+	return mat4_multiply(&tempMat, &translationMat);
 }
 
 vec3 transform(mat4 matrix, vec3 v) {
@@ -209,7 +218,7 @@ vec3 vec3_lerp(vec3 a, vec3 b, float t) {
 }
 
 vec3 vec3_normalize(vec3 v) {
-	float length = sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+	float length = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
 	return vec3_scale(v, 1.0f / length);
 }
 
@@ -235,7 +244,7 @@ float vec3_dot(vec3 a, vec3 b) {
 }
 
 float vec3_length(vec3 p) {
-	return sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+	return sqrtf(p.x * p.x + p.y * p.y + p.z * p.z);
 }
 
 vec2 vec2_subtract(vec2 a, vec2 b) {
@@ -256,7 +265,7 @@ float lerp(float a, float b, float t) {
 }
 
 float radians(float degrees) {
-	return degrees * (M_PI / 180);
+	return degrees * (M_PI / 180.0f);
 }
 
 bool intersectEdgeWithPlane(vec3 A, vec3 B, Plane plane, vec3 *intersection) {

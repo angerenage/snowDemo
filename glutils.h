@@ -1,10 +1,6 @@
 #pragma once
 
 #include <glad/glad.h>
-#include <X11/Xlib.h>
-#include <GL/glx.h>
-#include <GL/gl.h>
-
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -17,14 +13,15 @@ typedef struct mesh_s {
 	int indexCount;
 } Mesh;
 
-extern Display *display;
-extern Window window;
-extern Atom wmDelete;
+typedef struct instancedMesh_s {
+	GLuint VAO;
+	GLuint instanceVBO;
+	int vertexCount;
+	int indexCount;
+	int instanceCount;
+} InstancedMesh;
 
 extern GLuint rnoiseTexture;
-
-void initWindow(vec2 size);
-void cleanupWindow();
 
 void initUtils();
 
@@ -51,3 +48,4 @@ GLuint createSSBO(size_t size, GLuint index);
 void checkOpenGLError();
 void cleanupUtils();
 void freeMesh(Mesh m);
+void freeInstancedMesh(InstancedMesh m);

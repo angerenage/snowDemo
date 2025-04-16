@@ -37,7 +37,9 @@ int main() {
 
 
 	Mesh tree = generateTree(10.0f, 0.4f, 10, 100, 3.0f);
-	mat4 treeModel = translationMatrix((vec3){0.0f, -5.0f, 0.0f});
+	InstancedMesh treeInstances = bindTreeInstances(&tree, generateTreeInstances(10, 10, 3.0f), 100);
+	float treeScale = 0.7f;
+	mat4 treeModel = transformMatrix((vec3){15.0f, 0.1f, 0.0f}, (vec3){0.0f, 0.0f, 0.0f}, (vec3){treeScale, treeScale, treeScale});
 
 	
 	mat4 characterModel = rotationMatrix((vec3){0.0f, -M_PI / 2.0f, 0.0f});
@@ -62,14 +64,14 @@ int main() {
 		glClear(GL_DEPTH_BUFFER_BIT);
 		clearShadow();
 
-		updateLight(ftime);
+		updateLight(ftime, false);
 		updateAnimation(ftime);
 		
 		vec3 characterPosition = {0.0f, 0.0f, 0.0f};
 		vec3 reflectionDirection;
 		mat4 reflectionView = updateSnow(&reflectionDirection, &projection, &characterModel, &characterPosition);
 
-		if (skyUpdate) updateSky(&sunPosition, &screenSize, ftime, &reflectionDirection);
+		if (skyUpdate) updateSky(&lightPosition, ftime, &reflectionDirection);
 		skyUpdate = !skyUpdate;
 
 		glViewport(0, 0, screenSize.x, screenSize.y);
@@ -81,6 +83,7 @@ int main() {
 				glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 
 				renderCharacter(shadowCharacterShader, &shadowProjection, &shadowView, &characterModel);
+				renderTrees(shadowTreeShader, &treeInstances, &shadowProjection, &shadowView, &treeModel, &lightPosition);
 
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 				glViewport(0, 0, screenSize.x, screenSize.y);
@@ -93,6 +96,7 @@ int main() {
 				glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 				renderCharacter(characterShader, &projection, &reflectionView, &characterModel);
+				renderTrees(treeShader, &treeInstances, &projection, &cameraView, &treeModel, &lightPosition);
 				renderSky(&projection, &reflectionView);
 
 				glDisable(GL_STENCIL_TEST);
@@ -101,6 +105,7 @@ int main() {
 
 				// Main pass
 				renderCharacter(characterShader, &projection, &cameraView, &characterModel);
+				renderTrees(treeShader, &treeInstances, &projection, &cameraView, &treeModel, &lightPosition);
 				renderSnow(&projection, &cameraView, &reflectionView);
 
 				break;
@@ -122,6 +127,7 @@ int main() {
 	}
 
 	freeMesh(tree);
+	freeInstancedMesh(treeInstances);
 
 	cleanupSnow();
 	cleanupCharacter();

@@ -6,7 +6,7 @@
 
 extern mat4 shadowProjection;
 extern mat4 shadowView;
-extern vec3 sunPosition;
+extern vec3 lightPosition;
 
 extern GLuint shadowMap;
 extern GLuint shadowFBO;
@@ -14,6 +14,6 @@ extern GLuint shadowFBO;
 void initShadow();
 void clearShadow();
 
-void updateLight(float time);
+void updateLight(float time, bool isDay);
 
 void cleanupShadow();

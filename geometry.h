@@ -9,7 +9,7 @@
 #include <stdbool.h>
 
 #ifndef M_PI
-	#define M_PI 3.1415926535897932384626433832795
+	#define M_PI 3.1415926535897932384626433832795f
 #endif
 
 typedef struct s_vec2 {
@@ -19,6 +19,10 @@ typedef struct s_vec2 {
 typedef struct s_vec3 {
 	float x, y, z;
 } vec3;
+
+typedef struct s_vec4 {
+	float x, y, z, w;
+} vec4;
 
 typedef struct s_quaternion {
 	float w;
@@ -55,6 +59,7 @@ mat4 viewMatrix(vec3 position, vec3 focus, vec3 up);
 mat4 translationMatrix(vec3 translation);
 mat4 rotationMatrix(vec3 rotation);
 mat4 scaleMatrix(vec3 scale);
+mat4 transformMatrix(vec3 translation, vec3 rotation, vec3 scale);
 
 vec3 transform(mat4 matrix, vec3 v);
 

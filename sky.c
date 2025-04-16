@@ -39,7 +39,7 @@ void initSky() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void updateSky(const vec3* sunPosition, const vec2* screenSize, float ftime, const vec3* updateDirection) {
+void updateSky(const vec3* sunPosition, float ftime, const vec3* updateDirection) {
 	glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
 	glViewport(0, 0, SKYBOX_RESOLUTION, SKYBOX_RESOLUTION);
 
@@ -70,7 +70,7 @@ void updateSky(const vec3* sunPosition, const vec2* screenSize, float ftime, con
 		renderScreenQuad();
 	}
 
-	glViewport(0, 0, screenSize->x, screenSize->y);
+	glViewport(0, 0, (GLsizei)screenSize.x, (GLsizei)screenSize.y);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 

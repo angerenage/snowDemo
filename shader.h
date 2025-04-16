@@ -22,6 +22,8 @@ extern GLuint iceShader;
 extern GLuint characterShader;
 extern GLuint shadowCharacterShader;
 
+extern GLuint treeShader;
+extern GLuint shadowTreeShader;
 extern GLuint needleShader;
 
 void initShaders();

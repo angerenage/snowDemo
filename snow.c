@@ -2,7 +2,7 @@
 
 #define CHUNK_RESOLUTION 2048
 
-#define CHUNK_NBR_X 2
+#define CHUNK_NBR_X 3
 #define CHUNK_NBR_Z 3
 
 GLuint reflectionFrameBuffer = 0;
@@ -19,6 +19,7 @@ static const float mapCenterZ = (CHUNK_NBR_Z - 1) / 2.0f;
 
 static GLuint terrainHeights[CHUNK_NBR_X][CHUNK_NBR_Z];
 static Mesh terrainMesh;
+static mat4 terrainModel = {0};
 
 static GLuint depthFBOs[2];
 static GLuint depthTextures[2];
@@ -53,13 +54,13 @@ static Mesh generateGrid(vec2 size, int subdivision, float yOffset) {
 					int bottomRight = (x + 1) + (y + 1) * (width + 1);
 
 					// First triangle
-					indices[index++] = topLeft;
 					indices[index++] = bottomLeft;
+					indices[index++] = topLeft;
 					indices[index++] = topRight;
 
 					// Second triangle
-					indices[index++] = topRight;
 					indices[index++] = bottomLeft;
+					indices[index++] = topRight;
 					indices[index++] = bottomRight;
 				}
 			}
@@ -96,6 +97,7 @@ static GLuint generateTerrainHeight(const vec2 *pos) {
 void initSnow() {
 	texturesSize = screenSize;
 
+	terrainModel = translationMatrix((vec3){3.0, 0.0, 0.0});
 	terrainMesh = generateGrid((vec2){chunkSize, chunkSize}, 200, 0.0f);
 
 	for (int x = 0; x < CHUNK_NBR_X; x++) {
@@ -202,9 +204,10 @@ void renderSnow(const mat4 *projection, const mat4 *view, const mat4 *reflection
 
 	glUniformMatrix4fv(glGetUniformLocation(snowShader, "projection"), 1, GL_FALSE, (GLfloat*)projection);
 	glUniformMatrix4fv(glGetUniformLocation(snowShader, "view"), 1, GL_FALSE, (GLfloat*)view);
+	glUniformMatrix4fv(glGetUniformLocation(snowShader, "model"), 1, GL_FALSE, (GLfloat*)&terrainModel);
 	glUniformMatrix4fv(glGetUniformLocation(snowShader, "shadowProjection"), 1, GL_FALSE, (GLfloat*)&shadowProjection);
 	glUniformMatrix4fv(glGetUniformLocation(snowShader, "shadowView"), 1, GL_FALSE, (GLfloat*)&shadowView);
-	glUniform3fv(glGetUniformLocation(snowShader, "sunPos"), 1, (GLfloat*)&sunPosition);
+	glUniform3fv(glGetUniformLocation(snowShader, "lightPos"), 1, (GLfloat*)&lightPosition);
 	glUniform3fv(glGetUniformLocation(snowShader, "viewPos"), 1, (GLfloat*)&cameraPos);
 	glUniform2f(glGetUniformLocation(snowShader, "characterPos"), currentPosition.x, currentPosition.y);
 	glUniform1f(glGetUniformLocation(snowShader, "size"), chunkSize);

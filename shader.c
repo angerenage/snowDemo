@@ -132,18 +132,17 @@ static const char debugVertSrc[] = "#version 330 core\n"
 "out vec2 fragPos;"
 "void main()"
 "{"
-	"fragPos=(pA.xz+1.)/2.;"
+	"fragPos=(pA.xy+1.)/2.;"
 	"gl_Position=projection*view*model*vec4(pA,1.);"
 "}";
 
 static const char debugFragSrc[] = "#version 330 core\n"
 "out vec4 c;"
 "in vec2 fragPos;"
-//"uniform sampler2D tex;"
+"uniform sampler2D tex;"
 "void main()"
 "{"
-	//"c=vec4(texture(tex,fragPos).xyz,1.);"
-	"c=vec4(fragPos,0,1);"
+	"c=vec4(texture(tex,fragPos).xyz,1.);"
 "}";
 
 // --------------------------- BASIC SHADERS ---------------------------
@@ -304,338 +303,163 @@ static const char rnoiseFragSrc[] = "#version 330 core\n"
 // --------------------------- ATMOSPHERE ---------------------------
 
 // https://www.shadertoy.com/view/MstBWs
-static const char atmosphereFragSrc[] = R"glsl(#version 330 core
-out vec4 fragColor;
-
-in vec2 fragPos;
-
-uniform mat4 view;
-uniform float iTime;
-uniform vec2 iResolution;
-uniform vec3 sunPosition;
-uniform sampler2D rnoise;
-
-const float cloudSpeed = 0.02;
-const float cloudHeight = 1600.0;
-const float cloudThickness = 200.0;
-const float cloudDensity = 0.01;
-const float fogDensity = 0.00001;
-
-const int volumetricCloudSteps = 13;
-const int volumetricLightSteps = 6;
-
-const vec3 rayleighCoeff = vec3(0.27, 0.5, 1.0) * 1e-5;
-const vec3 mieCoeff = vec3(0.5e-6);
-
-const float sunBrightness = 3.0;
-const float earthRadius = 6371000.0;
-
-float bayer2(vec2 a){
-	a = floor(a);
-	return fract(dot(a, vec2(.5, a.y * .75)));
-}
-
-vec2 rsi(vec3 position, vec3 direction, float radius) {
-	float PoD = dot(position, direction);
-	float radiusSquared = radius * radius;
-
-	float delta = PoD * PoD + radiusSquared - dot(position, position);
-	if (delta < 0.0) return vec2(-1.0);
-		delta = sqrt(delta);
-
-	return -PoD + vec2(-delta, delta);
-}
-
-#define bayer4(a)   (bayer2( .5*(a))*.25+bayer2(a))
-#define bayer8(a)   (bayer4( .5*(a))*.25+bayer2(a))
-#define bayer16(a)  (bayer8( .5*(a))*.25+bayer2(a))
-#define bayer32(a)  (bayer16(.5*(a))*.25+bayer2(a))
-#define bayer64(a)  (bayer32(.5*(a))*.25+bayer2(a))
-#define bayer128(a) (bayer64(.5*(a))*.25+bayer2(a))
-
-//////////////////////////////////////////////////////////////////
-
-const float cloudMinHeight = cloudHeight;
-const float cloudMaxHeight = cloudThickness + cloudMinHeight;
-
-const float pi = acos(-1.0);
-const float rPi = 1.0 / pi;
-const float hPi = pi * 0.5;
-const float tau = pi * 2.0;
-const float rLOG2 = 1.0 / log(2.0);
-
-vec3 worldPosition;
-vec3 worldVector;
-vec3 sunVector;
-
-#define d0(x) (abs(x) + 1e-8)
-#define d02(x) (abs(x) + 1e-3)
-
-const vec3 totalCoeff = rayleighCoeff + mieCoeff;
-
-vec3 scatter(vec3 coeff, float depth) {
-	return coeff * depth;
-}
-
-vec3 absorb(vec3 coeff, float depth) {
-	return exp2(scatter(coeff, -depth));
-}
-
-float calcParticleThickness(float depth) {
-	depth = depth * 2.0;
-	depth = max(depth + 0.01, 0.01);
-	depth = 1.0 / depth;
-	
-	return 100000.0 * depth;
-}
-
-float calcParticleThicknessH(float depth) {
-	depth = depth * 2.0 + 0.1;
-	depth = max(depth + 0.01, 0.01);
-	depth = 1.0 / depth;
-	
-	return 100000.0 * depth;   
-}
-
-float calcParticleThicknessConst(const float depth) {
-	return 100000.0 / max(depth * 2.0 - 0.01, 0.01);   
-}
-
-float rayleighPhase(float x) {
-	return 0.375 * (1.0 + x*x);
-}
-
-float hgPhase(float x, float g) {
-	float g2 = g*g;
-	return 0.25 * ((1.0 - g2) * pow(1.0 + g2 - 2.0*g*x, -1.5));
-}
-
-float miePhaseSky(float x, float depth) {
-	return hgPhase(x, exp2(-0.000003 * depth));
-}
-
-float powder(float od) {
-	return 1.0 - exp2(-od * 2.0);
-}
-
-float calculateScatterIntergral(float opticalDepth, float coeff) {
-	float a = -coeff * rLOG2;
-	float b = -1.0 / coeff;
-	float c =  1.0 / coeff;
-
-	return exp2(a * opticalDepth) * b + c;
-}
-
-vec3 calculateScatterIntergral(float opticalDepth, vec3 coeff){
-	vec3 a = -coeff * rLOG2;
-	vec3 b = -1.0 / coeff;
-	vec3 c =  1.0 / coeff;
-
-	return exp2(a * opticalDepth) * b + c;
-}
-
-vec3 calcAtmosphericScatter(out vec3 absorbLight) {
-	const float ln2 = log(2.0);
-	
-	float lDotW = dot(sunVector, worldVector);
-	float lDotU = dot(sunVector, vec3(0.0, 1.0, 0.0));
-	float uDotW = dot(vec3(0.0, 1.0, 0.0), worldVector);
-	
-	float opticalDepth = calcParticleThickness(uDotW);
-	float opticalDepthLight = calcParticleThickness(lDotU);
-	
-	vec3 scatterView = scatter(totalCoeff, opticalDepth);
-	vec3 absorbView = absorb(totalCoeff, opticalDepth);
-	
-	vec3 scatterLight = scatter(totalCoeff, opticalDepthLight);
-	absorbLight = absorb(totalCoeff, opticalDepthLight);
-
-	vec3 absorbSun = abs(absorbLight - absorbView) / d0((scatterLight - scatterView) * ln2);
-	
-	vec3 mieScatter = scatter(mieCoeff, opticalDepth) * miePhaseSky(lDotW, opticalDepth);
-	vec3 rayleighScatter = scatter(rayleighCoeff, opticalDepth) * rayleighPhase(lDotW);
-	
-	vec3 scatterSun = mieScatter + rayleighScatter;
-	
-	vec3 sunSpot = smoothstep(0.9999, 0.99993, lDotW) * absorbView * sunBrightness;
-	
-	return (scatterSun * absorbSun + sunSpot) * sunBrightness;
-}
-
-vec3 calcAtmosphericScatterTop() {
-	const float ln2 = log(2.0);
-	
-	float lDotU = dot(sunVector, vec3(0.0, 1.0, 0.0));
-	
-	float opticalDepth = calcParticleThicknessConst(1.0);
-	float opticalDepthLight = calcParticleThickness(lDotU);
-	
-	vec3 scatterView = scatter(totalCoeff, opticalDepth);
-	vec3 absorbView = absorb(totalCoeff, opticalDepth);
-	
-	vec3 scatterLight = scatter(totalCoeff, opticalDepthLight);
-	vec3 absorbLight = absorb(totalCoeff, opticalDepthLight);
-	
-	vec3 absorbSun = d02(absorbLight - absorbView) / d02((scatterLight - scatterView) * ln2);
-	
-	vec3 mieScatter = scatter(mieCoeff, opticalDepth) * 0.25;
-	vec3 rayleighScatter = scatter(rayleighCoeff, opticalDepth) * 0.375;
-	
-	vec3 scatterSun = mieScatter + rayleighScatter;
-	
-	return (scatterSun * absorbSun) * sunBrightness;
-}
-
-float Get3DNoise(vec3 pos) {
-	float p = floor(pos.z);
-	float f = pos.z - p;
-	
-	const float invNoiseRes = 1.0 / 64.0;
-	
-	float zStretch = 17.0 * invNoiseRes;
-	
-	vec2 coord = pos.xy * invNoiseRes + (p * zStretch);
-	
-	vec2 noise = vec2(texture(rnoise, coord).x, texture(rnoise, coord + zStretch).x);
-	
-	return mix(noise.x, noise.y, f);
-}
-
-float getClouds(vec3 p) {
-	p = vec3(p.x, length(p + vec3(0.0, earthRadius, 0.0)) - earthRadius, p.z);
-	
-	if (p.y < cloudMinHeight || p.y > cloudMaxHeight)
-		return 0.0;
-	
-	float time = iTime * cloudSpeed;
-	vec3 movement = vec3(time, 0.0, time);
-	
-	vec3 cloudCoord = (p * 0.001) + movement;
-	
-	float noise = Get3DNoise(cloudCoord) * 0.5;
-	noise += Get3DNoise(cloudCoord * 2.0 + movement) * 0.25;
-	noise += Get3DNoise(cloudCoord * 7.0 - movement) * 0.125;
-	noise += Get3DNoise((cloudCoord + movement) * 16.0) * 0.0625;
-	
-	const float top = 0.004;
-	const float bottom = 0.01;
-	
-	float horizonHeight = p.y - cloudMinHeight;
-	float treshHold = (1.0 - exp2(-bottom * horizonHeight)) * exp2(-top * horizonHeight);
-	
-	float clouds = smoothstep(0.55, 0.6, noise);
-	clouds *= treshHold;
-	
-	return clouds * cloudDensity;
-}
-	
-float getCloudShadow(vec3 p) {
-	float rSteps = cloudThickness / abs(sunVector.y);
-	
-	vec3 increment = sunVector * rSteps;
-	vec3 position = sunVector * (cloudMinHeight - p.y) / sunVector.y + p;
-
-	return exp2(-getClouds(position) * rSteps);
-}
-
-float getSunVisibility(vec3 p) {
-	vec3 increment = sunVector * cloudThickness;
-	vec3 position = increment * 0.5 + p;
-	
-	return exp2(-getClouds(position) * cloudThickness);
-}
-
-float phase2Lobes(float x) {
-	const float m = 0.6;
-	const float gm = 0.8;
-	
-	float lobe1 = hgPhase(x, 0.8 * gm);
-	float lobe2 = hgPhase(x, -0.5 * gm);
-	
-	return mix(lobe2, lobe1, m);
-}
-
-vec3 getVolumetricCloudsScattering(float opticalDepth, float phase, vec3 p, vec3 sunColor, vec3 skyLight) {
-	float intergal = calculateScatterIntergral(opticalDepth, 1.11);
-	
-	float beersPowder = powder(opticalDepth * log(2.0));
-	
-	vec3 sunlighting = (sunColor * getSunVisibility(p) * beersPowder) * phase * hPi * sunBrightness;
-	vec3 skylighting = skyLight * 0.25 * rPi;
-	
-	return (sunlighting + skylighting) * intergal * pi;
-}
-
-float getHeightFogOD(float height) {
-	const float falloff = 0.001;
-	
-	return exp2(-height * falloff) * fogDensity;
-}
-
-vec3 calculateVolumetricClouds(vec3 color, float dither, vec3 sunColor) {
-	const int steps = volumetricCloudSteps;
-	const float iSteps = 1.0 / float(steps);
-	
-	float bottomSphere = rsi(vec3(0.0, 1.0, 0.0) * earthRadius, worldVector, earthRadius + cloudMinHeight).y;
-	float topSphere = rsi(vec3(0.0, 1.0, 0.0) * earthRadius, worldVector, earthRadius + cloudMaxHeight).y;
-	
-	vec3 startPosition = worldVector * bottomSphere;
-	vec3 endPosition = worldVector * topSphere;
-	
-	vec3 increment = (endPosition - startPosition) * iSteps;
-	vec3 cloudPosition = increment * dither + startPosition;
-	
-	float stepLength = length(increment);
-	
-	vec3 scattering = vec3(0.0);
-	float transmittance = 1.0;
-	
-	float lDotW = dot(sunVector, worldVector);
-	float phase = phase2Lobes(lDotW);
-	
-	vec3 skyLight = calcAtmosphericScatterTop();
-	
-	for (int i = 0; i < steps; i++, cloudPosition += increment){
-		float opticalDepth = getClouds(cloudPosition) * stepLength;
-		
-		if (opticalDepth <= 0.0)
-			continue;
-		
-		scattering += getVolumetricCloudsScattering(opticalDepth, phase, cloudPosition, sunColor, skyLight) * transmittance;
-		transmittance *= exp2(-opticalDepth);
-	}
-	
-	return mix(color * transmittance + scattering, color, clamp(length(startPosition) * 0.00001, 0.0, 1.0));
-}
-
-vec3 robobo1221Tonemap(vec3 color) {
-	#define rTOperator(x) (x / sqrt(x*x+1.0))
-
-	float l = length(color);
-
-	color = mix(color, color * 0.5, l / (l+1.0));
-	color = rTOperator(color);
-
-	return color;
-}
-
-void main() {
-	worldPosition = normalize(vec3(fragPos, 1.0));
-	worldPosition = mat3(view) * worldPosition;
-
-	sunVector = normalize(sunPosition);
-	worldVector = normalize(worldPosition);
-
-	vec3 lightAbsorb = vec3(0.0);
-
-	vec3 color = calcAtmosphericScatter(lightAbsorb);
-	color = calculateVolumetricClouds(color, bayer16(fragPos * iResolution), lightAbsorb);
-
-	color = robobo1221Tonemap(color * 0.5);
-	color = pow(color, vec3(1.0 / 2.2));
-
-	fragColor = vec4(color, 1.0);
-})glsl";
+static const char atmosphereFragSrc[] = "#version 330 core\n"
+"out vec4 fragColor;"
+"in vec2 fragPos;"
+"uniform mat4 view;"
+"uniform float iTime;"
+"uniform vec2 iResolution;"
+"uniform vec3 sunPosition;"
+"uniform sampler2D rnoise;"
+"const vec3 v=vec3(.27,.5,1)*1e-5,a=vec3(5e-7);"
+"vec2 e(vec3 a,float v)"
+"{"
+	"vec3 x=vec3(0,1,0)*6.371e6;"
+	"float d=dot(x,a);"
+	"v=d*d+v*v-dot(x,x);"
+	"if(v<0.)"
+		"return vec2(-1);"
+	"v=sqrt(v);"
+	"return-d+vec2(-v,v);"
+"}"
+"float bayer2(vec2 a)"
+"{"
+	"a=floor(a);"
+	"return fract(dot(a,vec2(.5,a.y*.75)));"
+"}\n"
+"#define bayer4(a)(bayer2(.5*(a))*.25+bayer2(a))\n"
+"#define bayer8(a)(bayer4(.5*(a))*.25+bayer2(a))\n"
+"#define bayer16(a)(bayer8(.5*(a))*.25+bayer2(a))\n"
+"#define bayer32(a)(bayer16(.5*(a))*.25+bayer2(a))\n"
+"#define bayer64(a)(bayer32(.5*(a))*.25+bayer2(a))\n"
+"#define bayer128(a)(bayer64(.5*(a))*.25+bayer2(a))\n"
+"const float d=acos(-1.),f=1./d,l=d*.5,b=d*2.,s=1./log(2.);"
+"vec3 r,x,i;\n"
+"#define d0(x)(abs(x)+1e-8)\n"
+"#define d02(x)(abs(x)+1e-3)\n"
+"const vec3 m=v+a;"
+"vec3 t(vec3 v,float a)"
+"{"
+	"return v*a;"
+"}"
+"vec3 n(vec3 v,float a)"
+"{"
+	"return exp2(t(v,-a));"
+"}"
+"float e(float a)"
+"{"
+	"a=1./max(a*2.+.01,.01);"
+	"return 1e5*a;"
+"}"
+"float n(float a)"
+"{"
+	"return.375*(1.+a*a);"
+"}"
+"float g(float v,float a)"
+"{"
+	"float b=a*a;"
+	"return(1.-b)*pow(1.+b-2.*a*v,-1.5)*.25;"
+"}"
+"float h(float a,float v)"
+"{"
+	"return exp2(-v*s*a)*(-1./v)+1./v;"
+"}"
+"vec3 h(float a,vec3 v)"
+"{"
+	"return exp2(-v*s*a)*(-1./v)+1./v;"
+"}"
+"vec3 g(out vec3 f)"
+"{"
+	"float b=dot(i,x),r=dot(i,vec3(0,1,0)),l=dot(vec3(0,1,0),x);"
+	"l=e(l);"
+	"r=e(r);"
+	"vec3 d=n(m,l);"
+	"f=n(m,r);"
+	"vec3 s=abs(f-d)/d0((t(m,r)-t(m,l))*log(2.));"
+	"return((t(a,l)*g(b,exp2(-3e-6*l))+t(v,l)*n(b))*s+smoothstep(.9999,.99993,b)*d*3.)*3.;"
+"}"
+"vec3 e()"
+"{"
+	"float f=dot(i,vec3(0,1,0)),l=1e5/max(1.99,.01);"
+	"f=e(f);"
+	"vec3 d=d02(n(m,f)-n(m,l))/d02((t(m,f)-t(m,l))*log(2.));"
+	"return(t(a,l)*.25+t(v,l)*.375)*d*3.;"
+"}"
+"float h(vec3 a)"
+"{"
+	"float v=floor(a.z);"
+	"const float d=1./64.;"
+	"float b=17.*d;"
+	"vec2 f=a.xy*d+v*b;"
+	"f=vec2(texture(rnoise,f).x,texture(rnoise,f+b));"
+	"return mix(f.x,f.y,a.z-v);"
+"}"
+"float t(vec3 a)"
+"{"
+	"a=vec3(a.x,length(a+vec3(0,6371000,0))-6.371e6,a.z);"
+	"if(a.y<1600.||a.y>1800.)"
+		"return 0.;"
+	"float v=iTime*.02;"
+	"vec3 b=vec3(v,0,v),f=a*.001+b;"
+	"v=h(f)*.5+h(f*2.+b)*.25+h(f*7.-b)*.125+h((f+b)*16.)*.0625;"
+	"float d=a.y-1600.;"
+	"v=(1.-exp2(-.01*d))*exp2(-.004*d)*smoothstep(.55,.6,v);"
+	"return v*.01;"
+"}"
+"float p(vec3 a)"
+"{"
+	"vec3 v=i*2e2;"
+	"return exp2(-t(v*.5+a)*2e2);"
+"}"
+"float w(float a)"
+"{"
+	"return mix(g(a,-.4),g(a,.64),.6);"
+"}"
+"vec3 e(float v,float a,vec3 x,vec3 m,vec3 b)"
+"{"
+	"float s=h(v,1.11);"
+	"return(m*p(x)*(1.-exp2(-v*log(2.)*2.))*a*l*3.+b*.25*f)*s*d;"
+"}"
+"vec3 e(vec3 v,float f,vec3 a)"
+"{"
+	"float d=e(x,6372600.).y,l=e(x,6372800.).y;"
+	"vec3 b=x*d,r=x*l;"
+	"r=(r-b)*(1./float(13));"
+	"vec3 m=r*f+b;"
+	"d=length(r);"
+	"vec3 s=vec3(0);"
+	"l=1.;"
+	"f=w(dot(i,x));"
+	"vec3 c=e();"
+	"for(int v=0;v<13;v++,m+=r)"
+		"{"
+			"float b=t(m)*d;"
+			"if(b<=0.)"
+				"continue;"
+			"s+=e(b,f,m,a,c)*l;"
+			"l*=exp2(-b);"
+		"}"
+	"return mix(v*l+s,v,clamp(length(b)*1e-5,0.,1.));"
+"}"
+"vec3 c(vec3 v)"
+"{"
+	"\n#define rTOperator(x)(x/sqrt(x*x+1.0))\n"
+	"float a=length(v);"
+	"v=mix(v,v*.5,a/(a+1.));"
+	"return rTOperator(v);"
+"}"
+"void main()"
+"{"
+	"r=normalize(vec3(fragPos,1));"
+	"r=mat3(view)*r;"
+	"i=normalize(sunPosition);"
+	"x=normalize(r);"
+	"vec3 a=vec3(0),v=g(a);"
+	"v=e(v,bayer16(fragPos*iResolution),a);"
+	"v=c(v*.5);"
+	"v=pow(v,vec3(1./2.2));"
+	"fragColor=vec4(v,1);"
+"}";
 
 // --------------------------- SKY SHADERS ---------------------------
 
@@ -669,16 +493,18 @@ static const char snowVertSrc[] = "#version 430 core\n"
 "out vec2 texCoords;"
 "out vec3 posWorld;"
 
+"uniform mat4 model;"
 "uniform float size;"
 "uniform vec3 offset;"
 "uniform vec2 characterPos;"
 
 "void main()"
 "{"
-	"uv = vec2((pA.xz / size + 1.0) / 2.0);"
-	"texCoords = uv + (offset.xz - characterPos) / size;"
-	"posWorld = vec3(pA) + offset;"
-	"gl_Position = vec4(posWorld, 1.0);"
+	"vec4 pos = model * vec4(pA, 1.0);"
+	"uv = vec2((pos.xz / size + 1.0) / 2.0);"
+	"posWorld = pos.xyz + offset;"
+	"texCoords = ((posWorld.xz - characterPos) / size + 1.0) / 2.0;"
+	"gl_Position = pos;"
 "}";
 
 static const char snowTCSSrc[] = "#version 430 core\n"
@@ -717,6 +543,7 @@ static const char snowTESCSrc[] = "#version 430 core\n"
 "in vec2 tcsTexCoords[];"
 "in vec3 tcsPosWorld[];"
 
+"out vec2 tesUV;"
 "out vec3 fragPos;"
 "out vec3 fragNormal;"
 "out vec4 shadowSpacePos;"
@@ -743,6 +570,8 @@ static const char snowTESCSrc[] = "#version 430 core\n"
 	"vec2 uv = gl_TessCoord.x * tcsUV[0] + gl_TessCoord.y * tcsUV[1] + gl_TessCoord.z * tcsUV[2];"
 	"vec2 texCoords = gl_TessCoord.x * tcsTexCoords[0] + gl_TessCoord.y * tcsTexCoords[1] + gl_TessCoord.z * tcsTexCoords[2];"
 	"vec3 pos = gl_TessCoord.x * tcsPosWorld[0] + gl_TessCoord.y * tcsPosWorld[1] + gl_TessCoord.z * tcsPosWorld[2];"
+
+	"tesUV = texCoords;"
 
 	"vec3 noise = texture(noiseTex, uv).xyz * heightScale;"
 	"noise.x += heightOffset;"
@@ -783,7 +612,9 @@ static const char snowFragSrc[] = "#version 430 core\n"
 "in vec4 shadowSpacePos;"
 "in float footDepth;"
 
-"uniform vec3 sunPos;"
+"in vec2 tesUV;"
+
+"uniform vec3 lightPos;"
 "uniform vec3 viewPos;"
 "uniform sampler2D shadowMap;"
 
@@ -797,24 +628,24 @@ static const char snowFragSrc[] = "#version 430 core\n"
 	"float closestDepth = texture(shadowMap, projCoords.xy).r;"
 	"float currentDepth = projCoords.z;"
 
-	"float bias = 0.0;"//max(0.001 * (1.0 - dot(fragNormal, normalize(-sunPos))), 0.0001);"
+	"float bias = 0.0;"//max(0.001 * (1.0 - dot(fragNormal, normalize(-lightPos))), 0.0001);"
 	"return currentDepth - bias > closestDepth ? 0.0 : 1.0;"
 "}"
 
-"vec3 calculate_point_lighting(float sunIntensity)"
+"vec3 calculate_point_lighting(float moonIntensity)"
 "{"
 	"vec3 color = vec3(0.0);"
 
 	"for (int i = 0; i < NUM_LIGHTS; i++) {"
-		"vec3 lightPos = lightPositions[i];"
+		"vec3 pointLightPos = lightPositions[i];"
 
-		"vec3 lightDir = normalize(lightPos - fragPos);"
+		"vec3 lightDir = normalize(pointLightPos - fragPos);"
 
 		"float diff = max(dot(fragNormal, lightDir), 0.0);"
-		"float attenuation = 1.0 / (1.0 + 0.09 * length(lightPos - fragPos));"
+		"float attenuation = 1.0 / (1.0 + 0.09 * length(pointLightPos - fragPos));"
 		"vec3 lightColor = vec3(1.0, 0.5, 0.0) / NUM_LIGHTS;"
 
-		"color += diff * lightColor * attenuation * (1.0 - sunIntensity);"
+		"color += diff * lightColor * attenuation * (1.0 - moonIntensity);"
 	"}"
 
 	"return color;"
@@ -822,24 +653,21 @@ static const char snowFragSrc[] = "#version 430 core\n"
 
 "void main()"
 "{"
-	"vec3 baseAmbient = vec3(0.1);"
-
-	"vec3 lightDir = normalize(sunPos);"
-	"float sunIntensity = max(dot(lightDir, vec3(0.0, 1.0, 0.0)), 0.0);"
-	"vec3 ambient = baseAmbient + vec3(0.3, 0.3, 0.4) * sunIntensity * 0.7;"
-
+	"vec3 lightDir = normalize(lightPos);"
+	"float moonIntensity = max(dot(lightDir, vec3(0.0, 1.0, 0.0)), 0.0);"
+	
 	"float diff = max(dot(fragNormal, lightDir), 0.0);"
 
 	"float shadow = shadowCalculation();"
-
-	"vec3 sunLight = shadow * (diff * vec3(1.0, 1.0, 0.9));"
-	"vec3 pointLighting = calculate_point_lighting(sunIntensity);"
+	
+	"vec3 ambient = vec3(0.1) * shadow * clamp(1.0 - fragPos.x / 10.0, 0.0, 1.0);"
+	"vec3 pointLighting = calculate_point_lighting(moonIntensity * 0.5);"
 
 	"vec3 viewDir = normalize(viewPos - fragPos);"
 	"float fresnel = pow(1.0 - max(dot(viewDir, fragNormal), 0.0), 5.0);"
-	"vec3 fresnelReflection = vec3(0.3, 0.5, 0.7) * fresnel * sunIntensity;"
+	"vec3 fresnelReflection = vec3(0.3, 0.5, 0.7) * fresnel * moonIntensity * 0.3;"
 
-	"vec3 finalColor = ambient + sunLight + pointLighting + fresnelReflection;"
+	"vec3 finalColor = ambient + pointLighting + fresnelReflection;"
 	"finalColor *= 1.0 - footDepth;"
 
 	"fragColor = vec4(finalColor, 1.0);"
@@ -946,23 +774,23 @@ static const char characterFragSrc[] = "#version 430 core\n"
 
 "out vec4 fragColor;"
 
-"uniform vec3 sunPos;"
+"uniform vec3 lightPos;"
 
-"vec3 calculate_point_lighting(float sunIntensity)"
+"vec3 calculate_point_lighting(float lightIntensity)"
 "{"
 	"vec3 color = vec3(0.0);"
 
 	"for (int i = 0; i < NUM_LIGHTS; i++) {"
-		"vec3 lightPos = lightPositions[i];"
+		"vec3 pointLightPos = lightPositions[i];"
 
-		"vec3 lightDir = normalize(lightPos - fragPos);"
+		"vec3 lightDir = normalize(pointLightPos - fragPos);"
 
 		"float diff = max(dot(fragNormal, lightDir), 0.0);"
 
-		"float attenuation = 1.0 / (1.0 + 0.09 * length(lightPos - fragPos));"
+		"float attenuation = 1.0 / (1.0 + 0.09 * length(pointLightPos - fragPos));"
 		"vec3 lightColor = vec3(1.0, 0.5, 0.0) / NUM_LIGHTS;"
 
-		"color += diff * lightColor * attenuation * (1.0 - sunIntensity);"
+		"color += diff * lightColor * attenuation * (1.0 - lightIntensity);"
 	"}"
 
 	"return color;"
@@ -977,15 +805,90 @@ static const char characterFragSrc[] = "#version 430 core\n"
 
 	"vec3 baseAmbient = vec3(0.05);"
 
-	"float sunIntensity = max(dot(normalize(sunPos), vec3(0.0, 1.0, 0.0)), 0.0);"
-	"vec3 ambient = baseAmbient + min(vec3(0.3, 0.3, 0.4) * sunIntensity, 1.0) * 0.05;"
+	"float lightIntensity = max(dot(normalize(lightPos), vec3(0.0, 1.0, 0.0)), 0.0);"
+	"vec3 ambient = baseAmbient + min(vec3(0.3, 0.3, 0.4) * lightIntensity, 1.0) * 0.05;"
 
-	"vec3 pointLighting = calculate_point_lighting(sunIntensity);"
+	"vec3 pointLighting = calculate_point_lighting(lightIntensity);"
 
 	"fragColor = vec4(ambient + pointLighting, 1.0);"
 "}";
 
-// --------------------------- NEEDLE SHADERS ---------------------------
+// --------------------------- TREE SHADERS ---------------------------
+
+static const char treeVertSrc[] = "#version 330 core\n"
+"layout(location=0) in vec3 aPosition;"
+"layout(location=1) in vec3 aNormal;"
+"layout (location = 3) in mat4 instanceModel;"
+
+"out vec3 fragPos;"
+"out vec3 fragNormal;"
+
+"uniform mat4 model;"
+"uniform mat4 view;"
+"uniform mat4 projection;"
+
+"void main()"
+"{"
+	"mat4 modelInstance = model * instanceModel;"
+
+	"vec4 pos = modelInstance * vec4(aPosition, 1.0);"
+	"fragPos = pos.xyz;"
+
+	"mat3 normalMatrix = transpose(inverse(mat3(modelInstance)));"
+	"fragNormal = normalize(normalMatrix * aNormal);"
+
+	"gl_Position = projection * view * pos;"
+"}";
+
+static const char treeFragSrc[] = "#version 430 core\n"
+"#define NUM_LIGHTS 11\n"
+
+"layout(std430, binding = 0) buffer StorageBuffer {"
+	"vec3 lightPositions[];"
+"};"
+
+"out vec4 fragColor;"
+
+"in vec3 fragPos;"
+"in vec3 fragNormal;"
+
+"uniform vec3 lightPos;"
+
+"vec3 calculate_point_lighting(vec3 normal, float moonIntensity)"
+"{"
+	"vec3 color = vec3(0.0);"
+
+	"for (int i = 0; i < NUM_LIGHTS; i++) {"
+		"vec3 pointLightPos = lightPositions[i];"
+
+		"vec3 lightDir = normalize(pointLightPos - fragPos);"
+
+		"float diff = max(dot(normal, lightDir), 0.0);"
+		"float distance = length(pointLightPos - fragPos);"
+		"float fade = 1.0 - smoothstep(0.0, 8.0, distance);"
+		"float attenuation = fade / (1.0 + 0.09 * distance);"
+		"vec3 lightColor = vec3(1.0, 0.5, 0.0) / NUM_LIGHTS;"
+
+		"color += diff * lightColor * attenuation * (1.0 - moonIntensity);"
+	"}"
+
+	"return color;"
+"}"
+
+"void main()"
+"{"
+	"vec3 bumpedNormal = normalize(fragNormal + 0.5 * (vec3( "
+		"fract(sin(dot(floor(fragPos.xy * 50.0), vec2(12.9898, 78.233))) * 43758.5453), "
+		"fract(sin(dot(floor(fragPos.yz * 50.0), vec2(93.9898, 67.345))) * 43758.5453), "
+		"fract(sin(dot(floor(fragPos.zx * 50.0), vec2(56.789, 43.321))) * 43758.5453)"
+	") - 0.5));"
+	"vec3 lightDir = normalize(lightPos - fragPos);"
+
+	"float moonIntensity = max(dot(bumpedNormal, lightDir), 0.0);"
+	"vec3 pointLighting = calculate_point_lighting(bumpedNormal, moonIntensity);"
+
+	"fragColor = vec4(pointLighting * 0.5, 1.0);"
+"}";
 
 static const char needleVertSrc[] = "#version 330 core\n"
 "layout(location=0) in vec3 needleParameters;"
@@ -1026,6 +929,8 @@ GLuint iceShader;
 GLuint characterShader;
 GLuint shadowCharacterShader;
 
+GLuint treeShader;
+GLuint shadowTreeShader;
 GLuint needleShader;
 
 void initShaders() {
@@ -1048,6 +953,8 @@ void initShaders() {
 	characterShader = compileShader(characterVertSrc, NULL, NULL, NULL, characterFragSrc);
 	shadowCharacterShader = compileShader(characterVertSrc, NULL, NULL, NULL, basicFragSrc);
 
+	treeShader = compileShader(treeVertSrc, NULL, NULL, NULL, treeFragSrc);
+	shadowTreeShader = compileShader(treeVertSrc, NULL, NULL, NULL, basicFragSrc);
 	needleShader = compileShader(needleVertSrc, NULL, NULL, NULL, needleFragSrc);
 }
 
@@ -1065,8 +972,11 @@ void cleanupShaders() {
 	glDeleteProgram(shadowSnowShader);
 	glDeleteProgram(updateSnowShader);
 
+	glDeleteProgram(iceShader);
+
 	glDeleteProgram(characterShader);
 	glDeleteProgram(shadowCharacterShader);
 
+	glDeleteProgram(treeShader);
 	glDeleteProgram(needleShader);
 }
