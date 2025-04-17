@@ -35,9 +35,14 @@ endif()
 # Compiler specific flags and linking
 if(MSVC)
 	target_compile_options(snow PRIVATE 
-		$<$<CONFIG:Debug>:/W4 /Zi>
-		$<$<CONFIG:Release>:/W4 /O2 /DNDEBUG>
+		$<$<CONFIG:Debug>:/W4 /Zi /MTd>
+		$<$<CONFIG:Release>:/W4 /O2 /DNDEBUG /MT>
 	)
+
+	set_target_properties(snow PROPERTIES
+		LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /RELEASE /DEBUG:NONE /INCREMENTAL:NO"
+	)
+
 	target_link_libraries(snow user32 gdi32 opengl32)
 
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
@@ -57,7 +62,6 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 		endif()
 	endif()
 
-	# Link Windows system libs or X11/GL on Unix
 	if(WIN32)
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mwindows")
 		target_link_libraries(snow user32 gdi32 opengl32)
