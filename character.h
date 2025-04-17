@@ -8,6 +8,10 @@
 #include "ressource.h"
 #include "shadow.h"
 
+enum animation {
+	ANIM_RUNNING,
+};
+
 typedef struct s_bone {
 	vec3 position;
 	vec3 lightPosition;
@@ -16,7 +20,7 @@ typedef struct s_bone {
 } Bone;
 
 void initCharacter();
-void loadAnimation(const char* path);
+void loadAnimation(const Ressource *anim);
 void updateAnimation(float time);
 void renderCharacter(GLuint shader, const mat4* projection, const mat4* view, const mat4* model);
 void cleanupCharacter();

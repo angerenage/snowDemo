@@ -32,7 +32,7 @@ int main() {
 	initCharacter();
 	initSnow();
 
-	glViewport(0, 0, screenSize.x, screenSize.y);
+	glViewport(0, 0, (GLsizei)screenSize.x, (GLsizei)screenSize.y);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
@@ -42,11 +42,11 @@ int main() {
 	mat4 treeModel = transformMatrix((vec3){15.0f, 0.1f, 0.0f}, (vec3){0.0f, 0.0f, 0.0f}, (vec3){treeScale, treeScale, treeScale});
 
 	
-	mat4 characterModel = rotationMatrix((vec3){0.0f, -M_PI / 2.0f, 0.0f});
-	loadAnimation("resources/running.anim.xz");
+	mat4 characterModel = rotationMatrix((vec3){0.0f, -(float)M_PI / 2.0f, 0.0f});
+	loadAnimation(&res_running_anim);
 	
 
-	projection = projectionMatrix(M_PI / 4.0, screenSize.x / screenSize.y, 0.001f, 1000.0f);
+	projection = projectionMatrix((float)M_PI / 4.0f, screenSize.x / screenSize.y, 0.001f, 1000.0f);
 
 	updateCamera(0.0f, 0.0f);
 
@@ -74,7 +74,7 @@ int main() {
 		if (skyUpdate) updateSky(&lightPosition, ftime, &reflectionDirection);
 		skyUpdate = !skyUpdate;
 
-		glViewport(0, 0, screenSize.x, screenSize.y);
+		glViewport(0, 0, (GLsizei)screenSize.x, (GLsizei)screenSize.y);
 
 		switch (currentSceneId) {
 			case 0: {
@@ -86,7 +86,7 @@ int main() {
 				renderTrees(shadowTreeShader, &treeInstances, &shadowProjection, &shadowView, &treeModel, &lightPosition);
 
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
-				glViewport(0, 0, screenSize.x, screenSize.y);
+				glViewport(0, 0, (GLsizei)screenSize.x, (GLsizei)screenSize.y);
 
 				// Ice pass
 				glBindFramebuffer(GL_FRAMEBUFFER, reflectionFrameBuffer);

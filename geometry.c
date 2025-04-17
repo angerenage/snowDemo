@@ -265,7 +265,7 @@ float lerp(float a, float b, float t) {
 }
 
 float radians(float degrees) {
-	return degrees * (M_PI / 180.0f);
+	return degrees * ((float)M_PI / 180.0f);
 }
 
 bool intersectEdgeWithPlane(vec3 A, vec3 B, Plane plane, vec3 *intersection) {

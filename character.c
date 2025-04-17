@@ -84,12 +84,12 @@ static vec3 randomVector() {
 
 static vec3 axisToRotation(Axis axis) {
 	bool invert = axis & MINUS;
-	float halfPi = (invert ? -1.0f : 1.0f) * (M_PI / 2.0f);
+	float halfPi = (invert ? -1.0f : 1.0f) * ((float)M_PI / 2.0f);
 	switch (axis & ~MINUS & ~DOWN & ~INVERT) {
 		case X:
 			return (vec3){0.0, 0.0f, halfPi};
 		case Y:
-			return (vec3){invert ? M_PI : 0.0f, 0.0f, 0.0f};
+			return (vec3){invert ? (float)M_PI : 0.0f, 0.0f, 0.0f};
 		case Z:
 			return (vec3){halfPi, 0.0f, 0.0f};
 	}
@@ -168,10 +168,10 @@ static int reconstructHalfCrystal(Crystal crystal, Plane plane, Triangle *triang
 
 	vec3 *ring = malloc(sizeof(vec3) * crystal.segments);
 	for (int i = 0; i < crystal.segments; i++) {
-		float angle = 2.0f * M_PI * i / crystal.segments;
-		ring[i].x = crystal.radius * cos(angle);
+		float angle = 2.0f * (float)M_PI * i / crystal.segments;
+		ring[i].x = crystal.radius * cosf(angle);
 		ring[i].y = -crystal.topHeight;
-		ring[i].z = crystal.radius * sin(angle);
+		ring[i].z = crystal.radius * sinf(angle);
 	}
 
 	int triangleCount = 0;
@@ -231,7 +231,7 @@ static int foundPointsOnPlane(int *pointsId, Triangle triangle, Plane plane) {
 	return pointCount;
 }
 
-Face *generateCrystal(Crystal crystal, int *faceCount, int boneId) {
+Face *generateCrystal(Crystal crystal, int *faceCount, uint8_t boneId) {
 	Plane plane1 = {vec3_add(crystal.plane.point, vec3_scale(crystal.plane.normal, crystal.gap / 2.0f)), crystal.plane.normal};
 	Plane plane2 = {vec3_add(crystal.plane.point, vec3_scale(crystal.plane.normal,  -crystal.gap / 2.0f)), crystal.plane.normal};
 
@@ -336,7 +336,7 @@ void initCharacter() {
 
 	for (int i = 0; i < boneNumber; i++) {
 		// Create the mesh
-		const float topHeight = characterDefinition[i].length * randomFloat(0.1, 0.4);
+		const float topHeight = characterDefinition[i].length * randomFloat(0.1f, 0.4f);
 		Crystal crystal = {
 			characterDefinition[i].radius / 2.0f,
 			topHeight,
@@ -352,7 +352,7 @@ void initCharacter() {
 		transformation = mat4_multiply(&transformation, &rotation);
 
 		int newFaceCount = 0;
-		Face *newFaces = generateCrystal(crystal, &newFaceCount, i);
+		Face *newFaces = generateCrystal(crystal, &newFaceCount, (uint8_t)i);
 
 
 #ifdef EXPORT_TO_BLENDER
@@ -409,12 +409,9 @@ void initCharacter() {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, pointLightSSBO);
 }
 
-void loadAnimation(const char* path) {
-	if (animation) free(animation);
-
-	size_t animationSize;
-	loadRessource(path, (void**)&animation, &animationSize);
-	animationLength = (unsigned int)(animationSize / sizeof(Frame));
+void loadAnimation(const Ressource *anim) {
+	animation = (Frame*)anim->data;
+	animationLength = (unsigned int)(anim->size / sizeof(Frame));
 }
 
 void updateAnimation(float time) {
@@ -467,5 +464,4 @@ void renderCharacter(GLuint shader, const mat4* projection, const mat4* view, co
 void cleanupCharacter() {
 	glDeleteVertexArrays(1, &characterVAO);
 	glDeleteBuffers(1, &pointLightSSBO);
-	if (animation) free(animation);
 }

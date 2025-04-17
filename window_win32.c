@@ -7,7 +7,7 @@
 #include <glad/glad.h>
 #include <GL/wglext.h>
 
-static HWND hwnd;
+static HWND hwindow;
 static HDC hdc;
 static HGLRC hglrc;
 
@@ -27,6 +27,10 @@ float getTime() {
 extern int main(void);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+	(void)hInstance;
+	(void)hPrevInstance;
+	(void)lpCmdLine;
+	(void)nCmdShow;
 	return main();
 }
 
@@ -46,7 +50,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			int height = HIWORD(lParam);
 			glViewport(0, 0, width, height);
 			screenSize = (vec2){ (float)width, (float)height };
-			projection = projectionMatrix(M_PI / 4.0f, screenSize.x / screenSize.y, 0.1f, 1000.0f);
+			projection = projectionMatrix((float)M_PI / 4.0f, screenSize.x / screenSize.y, 0.1f, 1000.0f);
 			break;
 		}
 
@@ -74,7 +78,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			if (mouseHeld) {
 				int x = GET_X_LPARAM(lParam);
 				int y = GET_Y_LPARAM(lParam);
-				updateCamera(x, y);
+				updateCamera((float)x, (float)y);
 			}
 			break;
 	}
@@ -85,18 +89,6 @@ static PROC getWGLProc(const char *name) {
 	HMODULE opengl32 = LoadLibraryA("opengl32.dll");
 	PROC p = wglGetProcAddress(name);
 	if (!p) p = GetProcAddress(opengl32, name);
-	return p;
-}
-
-void* glad_debug_loader(const char *name) {
-	void* p = (void*)wglGetProcAddress(name);
-	if (!p) {
-		HMODULE ogl = LoadLibraryA("opengl32.dll");
-		p = (void*)GetProcAddress(ogl, name);
-	}
-	if (!p) {
-		printf("Missing symbol: %s\n", name);
-	}
 	return p;
 }
 
@@ -111,8 +103,7 @@ void initWindow(vec2 size) {
 	wc.hbrBackground = NULL;
 	RegisterClass(&wc);
 
-	HWND tempHwnd = CreateWindowEx(0, CLASS_NAME, "Temp", WS_OVERLAPPEDWINDOW,
-		0, 0, 1, 1, NULL, NULL, wc.hInstance, NULL);
+	HWND tempHwnd = CreateWindowEx(0, CLASS_NAME, "Temp", WS_OVERLAPPEDWINDOW, 0, 0, 1, 1, NULL, NULL, wc.hInstance, NULL);
 	if (!tempHwnd) {
 		MessageBoxA(NULL, "Failed to create temp window", "Error", MB_ICONERROR);
 		exit(1);
@@ -154,14 +145,16 @@ void initWindow(vec2 size) {
 	ReleaseDC(tempHwnd, tempDC);
 	DestroyWindow(tempHwnd);
 
-	hwnd = CreateWindowEx(0, CLASS_NAME, "Snow Demo", WS_OVERLAPPEDWINDOW,
+	hwindow = CreateWindowEx(
+		0, CLASS_NAME, "Snow Demo", WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT, (int)size.x, (int)size.y,
-		NULL, NULL, wc.hInstance, NULL);
-	if (!hwnd) {
+		NULL, NULL, wc.hInstance, NULL
+	);
+	if (!hwindow) {
 		MessageBoxA(NULL, "Failed to create real window", "Error", MB_ICONERROR);
 		exit(1);
 	}
-	hdc = GetDC(hwnd);
+	hdc = GetDC(hwindow);
 
 	int pixelAttribs[] = {
 		WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
@@ -200,22 +193,17 @@ void initWindow(vec2 size) {
 	}
 	wglMakeCurrent(hdc, hglrc);
 
-	PROC sym = wglGetProcAddress("glGenBuffers");
-	if (!sym) {
-		MessageBoxA(NULL, "glGenBuffers is NULL! Context may not support OpenGL 2.0+", "Error", MB_ICONERROR);
-	}
-
-	if (!gladLoadGLLoader((GLADloadproc)glad_debug_loader)) {
+	if (!gladLoadGLLoader((GLADloadproc)getWGLProc)) {
 		MessageBoxA(NULL, "Failed to initialize GLAD", "Error", MB_ICONERROR);
 		exit(1);
 	}
 
-	ShowWindow(hwnd, SW_SHOW);
-	UpdateWindow(hwnd);
+	ShowWindow(hwindow, SW_SHOW);
+	UpdateWindow(hwindow);
 
 	running = true;
 	screenSize = size;
-	projection = projectionMatrix(M_PI / 4.0f, size.x / size.y, 0.1f, 1000.0f);
+	projection = projectionMatrix((float)M_PI / 4.0f, size.x / size.y, 0.1f, 1000.0f);
 }
 
 void handleEvents() {
@@ -233,8 +221,8 @@ void swapBuffers() {
 void cleanupWindow() {
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(hglrc);
-	ReleaseDC(hwnd, hdc);
-	DestroyWindow(hwnd);
+	ReleaseDC(hwindow, hdc);
+	DestroyWindow(hwindow);
 }
 
 #endif

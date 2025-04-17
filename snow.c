@@ -45,7 +45,7 @@ static Mesh generateGrid(vec2 size, int subdivision, float yOffset) {
 				float posX = size.x * ((float)x / (float)width);
 				float posZ = size.y * ((float)y / (float)width);
 
-				positions[x + y * (width + 1)] = (vec3){posX - size.x / 2.0, yOffset, posZ - size.y / 2.0};
+				positions[x + y * (width + 1)] = (vec3){posX - size.x / 2.0f, yOffset, posZ - size.y / 2.0f};
 
 				if (x < width && y < width) {
 					int topLeft = x + y * (width + 1);
@@ -119,12 +119,12 @@ void initSnow() {
 	updateProjection = orthographicMatrix(-chunkSize, chunkSize, -chunkSize, chunkSize, 0.0, 1.0);
 
 
-	reflectionTexture = createTexture(texturesSize.x, texturesSize.y);
-	depthStencilTexture = createTextureStencil(texturesSize.x, texturesSize.y);
+	reflectionTexture = createTexture((int)texturesSize.x, (int)texturesSize.y);
+	depthStencilTexture = createTextureStencil((int)texturesSize.x, (int)texturesSize.y);
 	
 	reflectionFrameBuffer = createFramebufferDepthStencil(depthStencilTexture, reflectionTexture);
 
-	iceModel = rotationMatrix((vec3){M_PI / 2.0f, 0.0f, 0.0f});
+	iceModel = rotationMatrix((vec3){(float)M_PI / 2.0f, 0.0f, 0.0f});
 	iceModel.m[3][1] = iceHeight;
 }
 
@@ -136,8 +136,8 @@ mat4 updateSnow(vec3 *reflectionDirection, const mat4 *projection, const mat4 *c
 		glDeleteTextures(1, &depthStencilTexture);
 		glDeleteFramebuffers(1, &reflectionFrameBuffer);
 
-		reflectionTexture = createTexture(texturesSize.x, texturesSize.y);
-		depthStencilTexture = createTextureStencil(texturesSize.x, texturesSize.y);
+		reflectionTexture = createTexture((int)texturesSize.x, (int)texturesSize.y);
+		depthStencilTexture = createTextureStencil((int)texturesSize.x, (int)texturesSize.y);
 		
 		reflectionFrameBuffer = createFramebufferDepthStencil(depthStencilTexture, reflectionTexture);
 	}

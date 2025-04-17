@@ -27,7 +27,7 @@ static Geometry generateSplineMesh(const Point *points, int numPoints, float gen
 		vec3 right = vec3_cross(dir, *up);
 
 		for (int j = 0; j < resolution; j++) {
-			float angle = (2.0f * M_PI * j) / (float)resolution;
+			float angle = (2.0f * (float)M_PI * j) / (float)resolution;
 			float cosA = cosf(angle);
 			float sinA = sinf(angle);
 
@@ -201,7 +201,7 @@ Geometry generateTrunk(float height, float scaleFactor, int segments, int numBra
 		float heightPos = height * t;
 		float radius = taper(t, height);
 
-		float angle = randomFloat(0.0f, 2.0f * M_PI);
+		float angle = randomFloat(0.0f, 2.0f * (float)M_PI);
 		float offsetX = cosf(angle) * t * randomness * radius;
 		float offsetZ = sinf(angle) * t * randomness * radius;
 		lastX += offsetX;
@@ -214,11 +214,11 @@ Geometry generateTrunk(float height, float scaleFactor, int segments, int numBra
 	Geometry trunk = generateSplineMesh(points, segments, scaleFactor, 16, &(vec3){1.0f, 0.0f, 0.0f});
 	Geometry* branches = (Geometry*)malloc(numBranches * sizeof(Geometry));
 
-	float rotationAngle = randomFloat(0.0f, 2.0f * M_PI);
+	float rotationAngle = randomFloat(0.0f, 2.0f * (float)M_PI);
 
 	for (int i = 0; i < numBranches; i++) {
 		float t = powf((float)i / (numBranches - 1), 0.8f) + randomFloat(-0.01f, 0.01f);
-		rotationAngle += (M_PI / 3.0f) + randomFloat(-M_PI / 6.0f, M_PI / 6.0f);
+		rotationAngle += ((float)M_PI / 3.0f) + randomFloat(-(float)M_PI / 6.0f, (float)M_PI / 6.0f);
 		branches[i] = generateBranch(points, segments, height, t, rotationAngle, baseBranchLength, 5);
 	}
 
@@ -294,7 +294,7 @@ mat4* generateTreeInstances(int rows, int cols, float spacing) {
 			float scale = 0.8f + (rand() % 40) / 100.0f;
 			float angle = (float)(rand() % 360);
 
-			instances[index++] = transformMatrix((vec3){x, y, z}, (vec3){0.0f, angle * (M_PI / 180.0f), 0.0f}, (vec3){scale, scale, scale});
+			instances[index++] = transformMatrix((vec3){x, y, z}, (vec3){0.0f, angle * ((float)M_PI / 180.0f), 0.0f}, (vec3){scale, scale, scale});
 		}
 	}
 	return instances;
