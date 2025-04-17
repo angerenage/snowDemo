@@ -61,15 +61,19 @@ int main() {
 
 		updateLight(ftime, false);
 		updateAnimation(ftime);
-		
-		vec3 characterPosition = {0.0f, 0.0f, 0.0f};
+		updateCamera();
+
+		characterModel.m[3][2] = characterPosition.z;
+
 		vec3 reflectionDirection;
-		mat4 reflectionView = updateSnow(&reflectionDirection, &projection, &characterModel, &characterPosition);
+		mat4 reflectionView = updateSnow(&reflectionDirection, &projection, &characterModel);
 
 		if (skyUpdate) updateSky(&lightPosition, ftime, &reflectionDirection);
 		skyUpdate = !skyUpdate;
 
 		glViewport(0, 0, (GLsizei)screenSize.x, (GLsizei)screenSize.y);
+
+		int currentChunkZ = (int)(characterPosition.z / CHUNK_SIZE);
 
 		switch (currentSceneId) {
 			case 0: {
@@ -78,7 +82,7 @@ int main() {
 				glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 
 				renderCharacter(shadowCharacterShader, &shadowProjection, &shadowView, &characterModel);
-				renderTrees(shadowTreeShader, &shadowProjection, &shadowView, &lightPosition, 0);
+				renderTrees(shadowTreeShader, &shadowProjection, &shadowView, &lightPosition, currentChunkZ);
 
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 				glViewport(0, 0, (GLsizei)screenSize.x, (GLsizei)screenSize.y);
@@ -91,7 +95,7 @@ int main() {
 				glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 				renderCharacter(characterShader, &projection, &reflectionView, &characterModel);
-				renderTrees(treeShader, &projection, &cameraView, &lightPosition, 0);
+				renderTrees(treeShader, &projection, &cameraView, &lightPosition, currentChunkZ);
 				renderSky(&projection, &reflectionView);
 
 				glDisable(GL_STENCIL_TEST);
@@ -100,14 +104,14 @@ int main() {
 
 				// Main pass
 				renderCharacter(characterShader, &projection, &cameraView, &characterModel);
-				renderTrees(treeShader, &projection, &cameraView, &lightPosition, 0);
-				renderSnow(&projection, &cameraView, &reflectionView, 0);
+				renderTrees(treeShader, &projection, &cameraView, &lightPosition, currentChunkZ);
+				renderSnow(&projection, &cameraView, &reflectionView, currentChunkZ);
 
 				break;
 			}
 
 			case 1:
-				
+
 				break;
 		}
 

@@ -10,7 +10,7 @@ GLuint shadowMap;
 GLuint shadowFBO;
 
 void initShadow() {
-	shadowProjection = orthographicMatrix(-10.0f, 10.0f, -10.0f, 10.0f, -100.0f, 100.0f);
+	shadowProjection = orthographicMatrix(-30.0f, 10.0f, -30.0f, 10.0f, -100.0f, 100.0f);
 	
 	shadowMap = createTextureDepth(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 
@@ -39,7 +39,7 @@ void updateLight(float time, bool isDay) {
 	sunPosition = (vec3){sinf(sunTime) + cosf(sunTime), cosf(sunTime) - sinf(sunTime), 0.0};
 	lightPosition = isDay ? sunPosition : moonPosition;
 
-	shadowView = viewMatrix(lightPosition, (vec3){0.0, 0.0, 0.0}, (vec3){0.0, 1.0, 0.0});
+	shadowView = viewMatrix(vec3_add(characterPosition, lightPosition), characterPosition, (vec3){0.0, 1.0, 0.0});
 }
 
 void cleanupShadow() {

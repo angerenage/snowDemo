@@ -12,7 +12,7 @@ mat4 cameraView = {0};
 vec3 cameraPos = {0};
 vec3 cameraDirection = {0};
 
-void updateCamera(float xoffset, float yoffset) {
+void moveCamera(float xoffset, float yoffset) {
 	if (firstMouse) {
 		lastMouseX = xoffset;
 		lastMouseY = yoffset;
@@ -31,8 +31,7 @@ void updateCamera(float xoffset, float yoffset) {
 	if (cameraPitch > 1.57f) cameraPitch = 1.57f;
 	if (cameraPitch < -1.57f) cameraPitch = -1.57f;
 
-	defaultCameraTransforms(&cameraPos, &cameraDirection, 10.0f, (vec2){cameraYaw, cameraPitch});
-	cameraView = viewMatrix(cameraPos, (vec3){0.0, 0.0, 0.0}, (vec3){0.0f, 1.0f, 0.0f});
+	updateCamera();
 }
 
 void defaultCameraTransforms(vec3 *pos, vec3 *dir, float distance, vec2 angles) {
@@ -43,10 +42,15 @@ void defaultCameraTransforms(vec3 *pos, vec3 *dir, float distance, vec2 angles) 
 	float z = sinf(yaw) * cosf(pitch);
 
 	vec3 direction = (vec3){x, y, z};
-	vec3 position = vec3_scale(direction, -distance);
+	vec3 position = vec3_add(characterPosition, vec3_scale(direction, -distance));
 	
 	*pos = position;
 	*dir = direction;
+}
+
+void updateCamera() {
+	defaultCameraTransforms(&cameraPos, &cameraDirection, 10.0f, (vec2){cameraYaw, cameraPitch});
+	cameraView = viewMatrix(cameraPos, characterPosition, (vec3){0.0f, 1.0f, 0.0f});
 }
 
 mat4 reflectionCameraMatrix(vec3 *reflectionDirection, const vec3 *normal, float distance) {

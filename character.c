@@ -75,6 +75,8 @@ typedef struct s_frame {
 static Frame* animation = NULL;
 static unsigned int animationLength = 0;
 
+vec3 characterPosition = {0.0f, 0.0f, 0.0f};
+
 static vec3 randomVector() {
 	float x = randomFloat(0.0f, 1.0f);
 	float y = randomFloat(0.0f, 1.0f) * 2.0f;
@@ -428,6 +430,8 @@ void updateAnimation(float time) {
 		Quaternion rot = quat_lerp(currentFrame.rotations[i], nextFrame.rotations[i], time - (int)time);
 		bones[i].rotation = mat3_quaternion(rot);
 	}
+
+	characterPosition.z = time * 3.5f;
 }
 
 void renderCharacter(GLuint shader, const mat4* projection, const mat4* view, const mat4* model) {

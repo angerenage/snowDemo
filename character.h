@@ -19,6 +19,8 @@ typedef struct s_bone {
 	uint8_t parentID;
 } Bone;
 
+extern vec3 characterPosition;
+
 void initCharacter();
 void loadAnimation(const Ressource *anim);
 void updateAnimation(float time);

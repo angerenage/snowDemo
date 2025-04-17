@@ -753,7 +753,7 @@ static const char characterVertSrc[] = "#version 430 core\n"
 	"}"
 
 	"mat3 rotation = bones[bone].rotation;"
-	"lightPositions[bone] = fragPos + rotation * bones[bone].lightPosition;"
+	"lightPositions[bone] = vec3(model * vec4(fragPos + rotation * bones[bone].lightPosition, 1.0));"
 	"fragPos += rotation * position;"
 
 	"fragMaterial = material;"

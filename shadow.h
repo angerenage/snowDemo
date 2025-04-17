@@ -1,6 +1,7 @@
 #pragma once
 
 #include "glutils.h"
+#include "character.h"
 
 #define SHADOW_MAP_SIZE 8192
 

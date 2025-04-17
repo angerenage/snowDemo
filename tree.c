@@ -1,8 +1,5 @@
 #include "tree.h"
 
-#define TREE_CHUNK_NBR 10
-#define TREE_CHUNK_SIZE 10.0f
-
 typedef struct geometry_s {
 	vec3* vertices;
 	vec3* normals;
@@ -17,9 +14,9 @@ typedef struct point_s {
 } Point;
 
 static const float treeScale = 0.7f;
-static Mesh treeMeshs[TREE_CHUNK_NBR];
-static InstancedMesh treeInstances[TREE_CHUNK_NBR];
-static mat4 treeModels[TREE_CHUNK_NBR];
+static Mesh treeMeshs[CHUNK_NBR_Z];
+static InstancedMesh treeInstances[CHUNK_NBR_Z];
+static mat4 treeModels[CHUNK_NBR_Z];
 
 static Geometry generateSplineMesh(const Point *points, int numPoints, float generalRadius, int resolution, const vec3 *up) {
 	int totalVertices = numPoints * resolution;
@@ -352,22 +349,22 @@ static void renderTreeChunk(GLuint shader, const InstancedMesh* trees, const mat
 }
 
 void initTrees() {
-	for (int i = 0; i < TREE_CHUNK_NBR; i++) {
+	for (int i = 0; i < CHUNK_NBR_Z; i++) {
 		Mesh tree = generateTree(10.0f, 0.4f, 10, 100, 3.0f);
 		treeMeshs[i] = tree;
 		treeInstances[i] = bindTreeInstances(&tree, generateTreeInstances(10, 10, 3.0f), 50);
-		treeModels[i] = transformMatrix((vec3){15.0f, 0.1f, i * TREE_CHUNK_SIZE}, (vec3){0.0f, 0.0f, 0.0f}, (vec3){treeScale, treeScale, treeScale});
+		treeModels[i] = transformMatrix((vec3){15.0f, 0.1f, i * CHUNK_SIZE}, (vec3){0.0f, 0.0f, 0.0f}, (vec3){treeScale, treeScale, treeScale});
 	}
 }
 
 void renderTrees(GLuint shader, const mat4* projection, const mat4* view, const vec3* lightPos, int chunkZ) {
-	for (int i = chunkZ; i < TREE_CHUNK_NBR; i++) {
+	for (int i = chunkZ; i < CHUNK_NBR_Z; i++) {
 		renderTreeChunk(shader, &treeInstances[i], projection, view, &treeModels[i], lightPos);
 	}
 }
 
 void cleanupTrees() {
-	for (int i = 0; i < TREE_CHUNK_NBR; i++) {
+	for (int i = 0; i < CHUNK_NBR_Z; i++) {
 		freeMesh(treeMeshs[i]);
 		freeInstancedMesh(treeInstances[i]);
 	}

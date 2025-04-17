@@ -3,7 +3,6 @@
 #define CHUNK_RESOLUTION 2048
 
 #define CHUNK_NBR_X 3
-#define CHUNK_NBR_Z 10
 
 GLuint reflectionFrameBuffer = 0;
 static GLuint reflectionTexture = 0;
@@ -13,7 +12,6 @@ static const float iceHeight = 0.35f;
 static mat4 iceModel = {0};
 static vec2 texturesSize = {0};
 
-static const float chunkSize = 10.0f;
 static const float mapCenterX = (CHUNK_NBR_X - 1) / 2.0f - 0.5f;
 static const float mapCenterZ = (CHUNK_NBR_Z - 1) / 2.0f;
 
@@ -97,8 +95,8 @@ static GLuint generateTerrainHeight(const vec2 *pos) {
 void initSnow() {
 	texturesSize = screenSize;
 
-	terrainModel = translationMatrix((vec3){3.0, 0.0, CHUNK_NBR_Z * chunkSize / 2.0f - chunkSize});
-	terrainMesh = generateGrid((vec2){chunkSize, chunkSize}, 200, 0.0f);
+	terrainModel = translationMatrix((vec3){3.0, 0.0, CHUNK_NBR_Z * CHUNK_SIZE / 2.0f - CHUNK_SIZE});
+	terrainMesh = generateGrid((vec2){CHUNK_SIZE, CHUNK_SIZE}, 200, 0.0f);
 
 	for (int x = 0; x < CHUNK_NBR_X; x++) {
 		for (int z = 0; z < CHUNK_NBR_Z; z++) {
@@ -116,7 +114,7 @@ void initSnow() {
 	glBindFramebuffer(GL_FRAMEBUFFER, depthFBOs[1]);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	updateProjection = orthographicMatrix(-chunkSize, chunkSize, -chunkSize, chunkSize, 0.0, 1.0);
+	updateProjection = orthographicMatrix(-CHUNK_SIZE, CHUNK_SIZE, -CHUNK_SIZE, CHUNK_SIZE, 0.0, 1.0);
 
 
 	reflectionTexture = createTexture((int)texturesSize.x, (int)texturesSize.y);
@@ -128,7 +126,7 @@ void initSnow() {
 	iceModel.m[3][1] = iceHeight;
 }
 
-mat4 updateSnow(vec3 *reflectionDirection, const mat4 *projection, const mat4 *characterModel, const vec3* characterPosition) {
+mat4 updateSnow(vec3 *reflectionDirection, const mat4 *projection, const mat4 *characterModel) {
 	if (texturesSize.x != screenSize.x || texturesSize.y != screenSize.y) {
 		texturesSize = screenSize;
 
@@ -144,12 +142,11 @@ mat4 updateSnow(vec3 *reflectionDirection, const mat4 *projection, const mat4 *c
 
 	mat4 reflectionView = reflectionCameraMatrix(reflectionDirection, &(vec3){0.0f, 1.0f, 0.0f}, iceHeight);
 	
-	vec2 nextPosition = {characterPosition->x, characterPosition->z};
-	mat4 updateView = viewMatrix((vec3){nextPosition.x, 0.0f, nextPosition.y}, (vec3){0.0f, 1.0f, 0.0f}, (vec3){0.0f, 0.0f, 1.0f});
+	vec2 nextPosition = {characterPosition.x, characterPosition.z};
+	mat4 updateView = viewMatrix((vec3){nextPosition.x, 0.0f, nextPosition.y}, (vec3){nextPosition.x, 1.0f, nextPosition.y}, (vec3){0.0f, 0.0f, 1.0f});
 
 	vec2 offset = vec2_subtract(nextPosition, currentPosition);
-	offset = vec2_scale(offset, 1.0f / chunkSize);
-	offset = vec2_scale(offset, 1.0f / CHUNK_RESOLUTION);
+	offset = vec2_scale(offset, 0.5f / CHUNK_SIZE);
 
 	int nextTexture = (activeTexture + 1) % 2;
 
@@ -210,7 +207,7 @@ void renderSnow(const mat4 *projection, const mat4 *view, const mat4 *reflection
 	glUniform3fv(glGetUniformLocation(snowShader, "lightPos"), 1, (GLfloat*)&lightPosition);
 	glUniform3fv(glGetUniformLocation(snowShader, "viewPos"), 1, (GLfloat*)&cameraPos);
 	glUniform2f(glGetUniformLocation(snowShader, "characterPos"), currentPosition.x, currentPosition.y);
-	glUniform1f(glGetUniformLocation(snowShader, "size"), chunkSize);
+	glUniform1f(glGetUniformLocation(snowShader, "size"), CHUNK_SIZE);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, shadowMap);
@@ -225,7 +222,7 @@ void renderSnow(const mat4 *projection, const mat4 *view, const mat4 *reflection
 
 	for (int x = 0; x < CHUNK_NBR_X; x++) {
 		for (int z = chunkZ; z < CHUNK_NBR_Z; z++) {
-			glUniform3f(glGetUniformLocation(snowShader, "offset"), ((float)x - mapCenterX) * chunkSize, 0.0, ((float)z - mapCenterZ) * chunkSize);
+			glUniform3f(glGetUniformLocation(snowShader, "offset"), ((float)x - mapCenterX) * CHUNK_SIZE, 0.0, ((float)z - mapCenterZ) * CHUNK_SIZE);
 
 			glActiveTexture(GL_TEXTURE2);
 			glBindTexture(GL_TEXTURE_2D, terrainHeights[x][z]);

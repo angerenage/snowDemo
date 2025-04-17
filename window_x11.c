@@ -174,7 +174,7 @@ void handleEvents() {
 
 			case MotionNotify:
 				if (mouseHeld)
-					updateCamera(event.xmotion.x, event.xmotion.y);
+					moveCamera(event.xmotion.x, event.xmotion.y);
 				break;
 		}
 	}

@@ -78,7 +78,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			if (mouseHeld) {
 				int x = GET_X_LPARAM(lParam);
 				int y = GET_Y_LPARAM(lParam);
-				updateCamera((float)x, (float)y);
+				moveCamera((float)x, (float)y);
 			}
 			break;
 	}
