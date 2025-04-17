@@ -1,5 +1,8 @@
 #include "tree.h"
 
+#define TREE_CHUNK_NBR 10
+#define TREE_CHUNK_SIZE 10.0f
+
 typedef struct geometry_s {
 	vec3* vertices;
 	vec3* normals;
@@ -12,6 +15,11 @@ typedef struct point_s {
 	vec3 position;
 	float radius;
 } Point;
+
+static const float treeScale = 0.7f;
+static Mesh treeMeshs[TREE_CHUNK_NBR];
+static InstancedMesh treeInstances[TREE_CHUNK_NBR];
+static mat4 treeModels[TREE_CHUNK_NBR];
 
 static Geometry generateSplineMesh(const Point *points, int numPoints, float generalRadius, int resolution, const vec3 *up) {
 	int totalVertices = numPoints * resolution;
@@ -140,7 +148,7 @@ static float growthForce(float t) {
 	return 0.4f * t;
 }
 
-Geometry generateBranch(Point* trunkPoints, int trunkSegments, float trunkHeight, float t, float rotationAngle, float baseBranchLength, int segments) {
+static Geometry generateBranch(Point* trunkPoints, int trunkSegments, float trunkHeight, float t, float rotationAngle, float baseBranchLength, int segments) {
 	Point* points = (Point*)malloc((segments + 1) * sizeof(Point));
 	float branchLengthValue = branchLength(t, baseBranchLength);
 
@@ -190,7 +198,7 @@ Geometry generateBranch(Point* trunkPoints, int trunkSegments, float trunkHeight
 	return branch;
 }
 
-Geometry generateTrunk(float height, float scaleFactor, int segments, int numBranches, float baseBranchLength) {
+static Geometry generateTrunk(float height, float scaleFactor, int segments, int numBranches, float baseBranchLength) {
 	Point* points = (Point*)malloc(++segments * sizeof(Point));
 	float lastX = 0, lastZ = 0;
 
@@ -269,14 +277,14 @@ static Mesh meshFromGeometry(Geometry g) {
 	};
 }
 
-Mesh generateTree(float height, float scaleFactor, int segments, int numBranches, float baseBranchLength) {
+static Mesh generateTree(float height, float scaleFactor, int segments, int numBranches, float baseBranchLength) {
 	Geometry treeGeometry = generateTrunk(height, scaleFactor, segments, numBranches, baseBranchLength);
 	Mesh treeMesh = meshFromGeometry(treeGeometry);
 	freeGeometry(treeGeometry);
 	return treeMesh;
 }
 
-mat4* generateTreeInstances(int rows, int cols, float spacing) {
+static mat4* generateTreeInstances(int rows, int cols, float spacing) {
 	int count = rows * cols;
 	mat4* instances = malloc(sizeof(mat4) * count);
 	if (!instances) return NULL;
@@ -300,7 +308,7 @@ mat4* generateTreeInstances(int rows, int cols, float spacing) {
 	return instances;
 }
 
-InstancedMesh bindTreeInstances(const Mesh* tree, const mat4* instances, int instanceCount) {
+static InstancedMesh bindTreeInstances(const Mesh* tree, const mat4* instances, int instanceCount) {
 	GLuint instanceVBO;
 	glGenBuffers(1, &instanceVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
@@ -325,7 +333,7 @@ InstancedMesh bindTreeInstances(const Mesh* tree, const mat4* instances, int ins
 	};
 }
 
-void renderTrees(GLuint shader, const InstancedMesh* trees, const mat4* projection, const mat4* view, const mat4* model, const vec3* lightPos) {
+static void renderTreeChunk(GLuint shader, const InstancedMesh* trees, const mat4* projection, const mat4* view, const mat4* model, const vec3* lightPos) {
 	glUseProgram(shader);
 	glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, (GLfloat*)projection);
 	glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, (GLfloat*)view);
@@ -341,4 +349,26 @@ void renderTrees(GLuint shader, const InstancedMesh* trees, const mat4* projecti
 
 	glBindVertexArray(trees->VAO);
 	glDrawElementsInstanced(GL_TRIANGLES, trees->indexCount, GL_UNSIGNED_INT, 0, trees->instanceCount);
+}
+
+void initTrees() {
+	for (int i = 0; i < TREE_CHUNK_NBR; i++) {
+		Mesh tree = generateTree(10.0f, 0.4f, 10, 100, 3.0f);
+		treeMeshs[i] = tree;
+		treeInstances[i] = bindTreeInstances(&tree, generateTreeInstances(10, 10, 3.0f), 50);
+		treeModels[i] = transformMatrix((vec3){15.0f, 0.1f, i * TREE_CHUNK_SIZE}, (vec3){0.0f, 0.0f, 0.0f}, (vec3){treeScale, treeScale, treeScale});
+	}
+}
+
+void renderTrees(GLuint shader, const mat4* projection, const mat4* view, const vec3* lightPos, int chunkZ) {
+	for (int i = chunkZ; i < TREE_CHUNK_NBR; i++) {
+		renderTreeChunk(shader, &treeInstances[i], projection, view, &treeModels[i], lightPos);
+	}
+}
+
+void cleanupTrees() {
+	for (int i = 0; i < TREE_CHUNK_NBR; i++) {
+		freeMesh(treeMeshs[i]);
+		freeInstancedMesh(treeInstances[i]);
+	}
 }

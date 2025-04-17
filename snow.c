@@ -3,7 +3,7 @@
 #define CHUNK_RESOLUTION 2048
 
 #define CHUNK_NBR_X 3
-#define CHUNK_NBR_Z 3
+#define CHUNK_NBR_Z 10
 
 GLuint reflectionFrameBuffer = 0;
 static GLuint reflectionTexture = 0;
@@ -97,7 +97,7 @@ static GLuint generateTerrainHeight(const vec2 *pos) {
 void initSnow() {
 	texturesSize = screenSize;
 
-	terrainModel = translationMatrix((vec3){3.0, 0.0, 0.0});
+	terrainModel = translationMatrix((vec3){3.0, 0.0, CHUNK_NBR_Z * chunkSize / 2.0f - chunkSize});
 	terrainMesh = generateGrid((vec2){chunkSize, chunkSize}, 200, 0.0f);
 
 	for (int x = 0; x < CHUNK_NBR_X; x++) {
@@ -199,7 +199,7 @@ mat4 updateSnow(vec3 *reflectionDirection, const mat4 *projection, const mat4 *c
 	return reflectionView;
 }
 
-void renderSnow(const mat4 *projection, const mat4 *view, const mat4 *reflectionView) {
+void renderSnow(const mat4 *projection, const mat4 *view, const mat4 *reflectionView, int chunkZ) {
 	glUseProgram(snowShader);
 
 	glUniformMatrix4fv(glGetUniformLocation(snowShader, "projection"), 1, GL_FALSE, (GLfloat*)projection);
@@ -224,7 +224,7 @@ void renderSnow(const mat4 *projection, const mat4 *view, const mat4 *reflection
 	glBindVertexArray(terrainMesh.VAO);
 
 	for (int x = 0; x < CHUNK_NBR_X; x++) {
-		for (int z = 0; z < CHUNK_NBR_Z; z++) {
+		for (int z = chunkZ; z < CHUNK_NBR_Z; z++) {
 			glUniform3f(glGetUniformLocation(snowShader, "offset"), ((float)x - mapCenterX) * chunkSize, 0.0, ((float)z - mapCenterZ) * chunkSize);
 
 			glActiveTexture(GL_TEXTURE2);

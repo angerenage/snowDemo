@@ -31,17 +31,12 @@ int main() {
 	initShadow();
 	initCharacter();
 	initSnow();
+	initTrees();
 
 	glViewport(0, 0, (GLsizei)screenSize.x, (GLsizei)screenSize.y);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
-	Mesh tree = generateTree(10.0f, 0.4f, 10, 100, 3.0f);
-	InstancedMesh treeInstances = bindTreeInstances(&tree, generateTreeInstances(10, 10, 3.0f), 100);
-	float treeScale = 0.7f;
-	mat4 treeModel = transformMatrix((vec3){15.0f, 0.1f, 0.0f}, (vec3){0.0f, 0.0f, 0.0f}, (vec3){treeScale, treeScale, treeScale});
-
 	
+
 	mat4 characterModel = rotationMatrix((vec3){0.0f, -(float)M_PI / 2.0f, 0.0f});
 	loadAnimation(&res_running_anim);
 	
@@ -83,7 +78,7 @@ int main() {
 				glViewport(0, 0, SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
 
 				renderCharacter(shadowCharacterShader, &shadowProjection, &shadowView, &characterModel);
-				renderTrees(shadowTreeShader, &treeInstances, &shadowProjection, &shadowView, &treeModel, &lightPosition);
+				renderTrees(shadowTreeShader, &shadowProjection, &shadowView, &lightPosition, 0);
 
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 				glViewport(0, 0, (GLsizei)screenSize.x, (GLsizei)screenSize.y);
@@ -96,7 +91,7 @@ int main() {
 				glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 				renderCharacter(characterShader, &projection, &reflectionView, &characterModel);
-				renderTrees(treeShader, &treeInstances, &projection, &cameraView, &treeModel, &lightPosition);
+				renderTrees(treeShader, &projection, &cameraView, &lightPosition, 0);
 				renderSky(&projection, &reflectionView);
 
 				glDisable(GL_STENCIL_TEST);
@@ -105,8 +100,8 @@ int main() {
 
 				// Main pass
 				renderCharacter(characterShader, &projection, &cameraView, &characterModel);
-				renderTrees(treeShader, &treeInstances, &projection, &cameraView, &treeModel, &lightPosition);
-				renderSnow(&projection, &cameraView, &reflectionView);
+				renderTrees(treeShader, &projection, &cameraView, &lightPosition, 0);
+				renderSnow(&projection, &cameraView, &reflectionView, 0);
 
 				break;
 			}
@@ -126,9 +121,7 @@ int main() {
 		swapBuffers();
 	}
 
-	freeMesh(tree);
-	freeInstancedMesh(treeInstances);
-
+	cleanupTrees();
 	cleanupSnow();
 	cleanupCharacter();
 	cleanupShadow();
