@@ -1,0 +1,15 @@
+#version 330 core
+
+layout(location=0) in vec3 position;
+
+out float id;
+
+uniform mat4 model;
+uniform float aspectRatio;
+
+void main() {
+	id = position.z;
+	vec2 pos = position.xy;
+	pos.y *= aspectRatio;
+	gl_Position = model * vec4(pos, -1.0, 1.0);
+}

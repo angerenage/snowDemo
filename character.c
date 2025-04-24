@@ -437,24 +437,24 @@ void updateAnimation(float time) {
 void renderCharacter(GLuint shader, const mat4* projection, const mat4* view, const mat4* model) {
 	glUseProgram(shader);
 
-	glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, (GLfloat*)projection);
-	glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, (GLfloat*)view);
-	glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, (GLfloat*)model);
+	glUniformMatrix4fv(glGetUniformLocation(shader, uniform_projection), 1, GL_FALSE, (GLfloat*)projection);
+	glUniformMatrix4fv(glGetUniformLocation(shader, uniform_view), 1, GL_FALSE, (GLfloat*)view);
+	glUniformMatrix4fv(glGetUniformLocation(shader, uniform_model), 1, GL_FALSE, (GLfloat*)model);
 
-	glUniform3fv(glGetUniformLocation(shader, "lightPos"), 1, (GLfloat*)&lightPosition);
+	glUniform3fv(glGetUniformLocation(shader, uniform_lightPos), 1, (GLfloat*)&lightPosition);
 
 	for (int i = 0; i < boneNumber; i++) {
 		char uniformName[32];
-		snprintf(uniformName, sizeof(uniformName), "bones[%d].position", i);
+		snprintf(uniformName, sizeof(uniformName), "%s[%d].position", uniform_bones, i);
 		glUniform3fv(glGetUniformLocation(shader, uniformName), 1, (GLfloat*)&bones[i].position);
 
-		snprintf(uniformName, sizeof(uniformName), "bones[%d].lightPosition", i);
+		snprintf(uniformName, sizeof(uniformName), "%s[%d].lightPosition", uniform_bones, i);
 		glUniform3fv(glGetUniformLocation(shader, uniformName), 1, (GLfloat*)&bones[i].lightPosition);
 
-		snprintf(uniformName, sizeof(uniformName), "bones[%d].rotation", i);
+		snprintf(uniformName, sizeof(uniformName), "%s[%d].rotation", uniform_bones, i);
 		glUniformMatrix3fv(glGetUniformLocation(shader, uniformName), 1, GL_FALSE, (GLfloat*)&bones[i].rotation);
 		
-		snprintf(uniformName, sizeof(uniformName), "bones[%d].parent", i);
+		snprintf(uniformName, sizeof(uniformName), "%s[%d].parent", uniform_bones, i);
 		glUniform1ui(glGetUniformLocation(shader, uniformName), bones[i].parentID);
 	}
 

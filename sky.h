@@ -2,6 +2,7 @@
 
 #include "glutils.h"
 #include "cameraController.h"
+#include "shader.h"
 
 void initSky();
 

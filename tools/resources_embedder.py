@@ -8,8 +8,8 @@ def embed_file(fpath, root_dir):
 	with open(fpath, "rb") as f:
 		content = f.read()
 
-	rel_path = os.path.relpath(fpath, root_dir).replace('\\', '/')
-	sym_name = sanitize_symbol(rel_path)
+	file_name = os.path.basename(fpath)
+	sym_name = sanitize_symbol(file_name)
 
 	data_lines = []
 	for i in range(0, len(content), 12):
@@ -18,7 +18,7 @@ def embed_file(fpath, root_dir):
 		data_lines.append("\t" + line)
 
 	return {
-		"name": rel_path,
+		"name": file_name,
 		"symbol": sym_name,
 		"size": len(content),
 		"data": "\n".join(data_lines)
@@ -27,7 +27,7 @@ def embed_file(fpath, root_dir):
 def generate(files, out_c, out_h):
 	with open(out_c, "w") as fc, open(out_h, "w") as fh:
 		# HEADER
-		fh.write("#pragma once\n")
+		fh.write("#pragma once\n\n")
 		fh.write("#include <stddef.h>\n\n")
 		fh.write("typedef struct {\n\tvoid* data;\n\tsize_t size;\n} Ressource;\n\n")
 
@@ -39,21 +39,22 @@ def generate(files, out_c, out_h):
 			fh.write(f"extern const Ressource res_{res['symbol']};\n")
 
 			# Implementation
-			fc.write(f"static const unsigned char res_{res['symbol']}_data[] = {{\n{res['data']}\n}};\n")
-			fc.write(f"const Ressource res_{res['symbol']} = {{ (void*)res_{res['symbol']}_data, {res['size']} }};\n")
+			fc.write(f"static const unsigned char res_{res['symbol']}_data[] = {{\n{res['data']}\n}};\n\n")
+			fc.write(f"const Ressource res_{res['symbol']} = {{ (void*)res_{res['symbol']}_data, {res['size']} }};\n\n")
 
 def main():
-	if len(sys.argv) != 4:
-		print("Usage: resources_embedder.py <resource_dir> <output.c> <output.h>")
+	if len(sys.argv) < 4:
+		print("Usage: resources_embedder.py <output.c> <output.h> <file1> [file2 ...]")
 		sys.exit(1)
 
-	resource_dir, out_c, out_h = sys.argv[1:]
-	files = []
+	out_c = sys.argv[1]
+	out_h = sys.argv[2]
+	file_paths = sys.argv[3:]
 
-	for root, _, fnames in os.walk(resource_dir):
-		for fname in fnames:
-			full = os.path.join(root, fname)
-			files.append(embed_file(full, resource_dir))
+	# Find common prefix to act as "root"
+	root_dir = os.path.commonpath(file_paths)
+
+	files = [embed_file(path, root_dir) for path in file_paths]
 
 	generate(files, out_c, out_h)
 

@@ -4,24 +4,54 @@ project(Snow C)
 # Find Python3 to run the resource embedder
 find_package(Python3 REQUIRED)
 
-# Output paths for generated C and header
-set(GENERATED_C "${CMAKE_BINARY_DIR}/generated_resources.c")
-set(GENERATED_H "${CMAKE_SOURCE_DIR}/ressource.h")
+include(${CMAKE_SOURCE_DIR}/tools/ToolDownloader.cmake)
 
-# Embed all files from ./resources into generated C and H files
+# Paths
+set(SHADER_DIR "${CMAKE_SOURCE_DIR}/resources/shaders")
+set(SHADER_PACK "${CMAKE_BINARY_DIR}/shaders.pack")
+set(CRUSHED_HEADER "${CMAKE_SOURCE_DIR}/glsl_unpacker.h")
+set(CRUSHED_SOURCE "${CMAKE_BINARY_DIR}/glsl_unpacker.c")
+set(GENERATED_C "${CMAKE_BINARY_DIR}/generated_resources.c")
+set(GENERATED_H "${CMAKE_SOURCE_DIR}/resources.h")
+
+# Collect shader files
+file(GLOB SHADER_FILES "${SHADER_DIR}/*.glsl")
+
+# Run GLSL-Crusher
+add_custom_command(
+	OUTPUT ${SHADER_PACK} ${CRUSHED_HEADER} ${CRUSHED_SOURCE}
+	COMMAND ${GLSL_CRUSHER_EXECUTABLE}
+		${SHADER_FILES}
+		-p ${SHADER_PACK}
+		-h ${CRUSHED_HEADER}
+		-c ${CRUSHED_SOURCE}
+		--max-token-size $<IF:$<CONFIG:Release>,500,10>
+		--core
+	DEPENDS ${SHADER_FILES}
+	COMMENT "Crushing shaders..."
+	VERBATIM
+	COMMAND_EXPAND_LISTS
+)
+
+# Find all other resources (excluding shaders)
+file(GLOB_RECURSE ALL_RESOURCES "${CMAKE_SOURCE_DIR}/resources/*")
+list(FILTER ALL_RESOURCES EXCLUDE REGEX "\\.glsl$")
+
+# Embed resources
 add_custom_command(
 	OUTPUT ${GENERATED_C} ${GENERATED_H}
+	COMMAND echo ${ALL_RESOURCES}
 	COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/resources_embedder.py
-		${CMAKE_SOURCE_DIR}/resources
-		${GENERATED_C}
-		${GENERATED_H}
-	DEPENDS ${CMAKE_SOURCE_DIR}/tools/resources_embedder.py
+		${GENERATED_C} ${GENERATED_H}
+		${SHADER_PACK} ${ALL_RESOURCES}
+	DEPENDS ${CMAKE_SOURCE_DIR}/tools/resources_embedder.py ${ALL_RESOURCES} ${SHADER_PACK}
 	COMMENT "Embedding resources..."
 )
 
 # Source files + generated resources
 file(GLOB SRC_FILES "*.c" "./include/glad.c")
 list(APPEND SRC_FILES ${GENERATED_C})
+list(APPEND SRC_FILES ${CRUSHED_SOURCE})
 add_executable(snow ${SRC_FILES})
 
 # Include project and third-party headers
@@ -49,7 +79,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 	target_compile_options(snow PRIVATE -Wall -Wextra -Wno-unused-function -fdiagnostics-color=always -msse)
 
 	if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-		target_compile_options(snow PRIVATE -g)  # Debug: enable symbols only
+		target_compile_options(snow PRIVATE -g "-DDEBUG")  # Debug: enable symbols only
 	else()
 		if(NOT WIN32)
 			# Aggressive release flags (non-Windows only)

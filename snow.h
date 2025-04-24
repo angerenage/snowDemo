@@ -10,6 +10,9 @@
 
 extern GLuint reflectionFrameBuffer;
 
+extern GLuint depthTextures[2];
+extern int activeTexture;
+
 void initSnow();
 
 mat4 updateSnow(vec3 *reflectionDirection, const mat4 *projection, const mat4 *characterModel);

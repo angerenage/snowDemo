@@ -5,8 +5,9 @@
 
 #include "geometry.h"
 #include "glutils.h"
-#include "ressource.h"
+#include "resources.h"
 #include "shadow.h"
+#include "shader.h"
 
 enum animation {
 	ANIM_RUNNING,

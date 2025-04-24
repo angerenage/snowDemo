@@ -332,17 +332,17 @@ static InstancedMesh bindTreeInstances(const Mesh* tree, const mat4* instances, 
 
 static void renderTreeChunk(GLuint shader, const InstancedMesh* trees, const mat4* projection, const mat4* view, const mat4* model, const vec3* lightPos) {
 	glUseProgram(shader);
-	glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, (GLfloat*)projection);
-	glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, (GLfloat*)view);
-	glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, (GLfloat*)model);
-	glUniform3fv(glGetUniformLocation(shader, "lightPos"), 1, (GLfloat*)lightPos);
+	glUniformMatrix4fv(glGetUniformLocation(shader, uniform_projection), 1, GL_FALSE, (GLfloat*)projection);
+	glUniformMatrix4fv(glGetUniformLocation(shader, uniform_view), 1, GL_FALSE, (GLfloat*)view);
+	glUniformMatrix4fv(glGetUniformLocation(shader, uniform_model), 1, GL_FALSE, (GLfloat*)model);
+	glUniform3fv(glGetUniformLocation(shader, uniform_lightPos), 1, (GLfloat*)lightPos);
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, shadowMap);
 
-	glUniform1i(glGetUniformLocation(shader, "shadowMap"), 0);
-	glUniformMatrix4fv(glGetUniformLocation(shader, "shadowProjection"), 1, GL_FALSE, (GLfloat*)&shadowProjection);
-	glUniformMatrix4fv(glGetUniformLocation(shader, "shadowView"), 1, GL_FALSE, (GLfloat*)&shadowView);
+	glUniform1i(glGetUniformLocation(shader, uniform_shadowMap), 0);
+	glUniformMatrix4fv(glGetUniformLocation(shader, uniform_shadowProjection), 1, GL_FALSE, (GLfloat*)&shadowProjection);
+	glUniformMatrix4fv(glGetUniformLocation(shader, uniform_shadowView), 1, GL_FALSE, (GLfloat*)&shadowView);
 
 	glBindVertexArray(trees->VAO);
 	glDrawElementsInstanced(GL_TRIANGLES, trees->indexCount, GL_UNSIGNED_INT, 0, trees->instanceCount);

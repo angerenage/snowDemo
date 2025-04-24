@@ -1,7 +1,11 @@
 #pragma once
 
 #include <glad/glad.h>
+#include <stdlib.h>
 #include <stdio.h>
+
+#include "resources.h"
+#include "glsl_unpacker.h"
 
 extern GLuint debugShader;
 extern GLuint basicShader;
@@ -24,7 +28,6 @@ extern GLuint shadowCharacterShader;
 
 extern GLuint treeShader;
 extern GLuint shadowTreeShader;
-extern GLuint needleShader;
 
 void initShaders();
 void cleanupShaders();

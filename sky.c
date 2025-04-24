@@ -58,14 +58,14 @@ void updateSky(const vec3* sunPosition, float ftime, const vec3* updateDirection
 		glClear(GL_DEPTH_BUFFER_BIT);
 
 		glUseProgram(atmosphereShader);
-		glUniformMatrix4fv(glGetUniformLocation(atmosphereShader, "view"), 1, GL_FALSE, (GLfloat*)&view);
-		glUniform3fv(glGetUniformLocation(atmosphereShader, "sunPosition"), 1, (GLfloat*)sunPosition);
-		glUniform2f(glGetUniformLocation(atmosphereShader, "iResolution"), SKYBOX_RESOLUTION, SKYBOX_RESOLUTION);
-		glUniform1f(glGetUniformLocation(atmosphereShader, "iTime"), ftime);
+		glUniformMatrix4fv(glGetUniformLocation(atmosphereShader, uniform_view), 1, GL_FALSE, (GLfloat*)&view);
+		glUniform3fv(glGetUniformLocation(atmosphereShader, uniform_sunPosition), 1, (GLfloat*)sunPosition);
+		glUniform2f(glGetUniformLocation(atmosphereShader, uniform_resolution), SKYBOX_RESOLUTION, SKYBOX_RESOLUTION);
+		glUniform1f(glGetUniformLocation(atmosphereShader, uniform_time), ftime);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, rnoiseTexture);
-		glUniform1i(glGetUniformLocation(atmosphereShader, "rnoise"), 0);
+		glUniform1i(glGetUniformLocation(atmosphereShader, uniform_noiseTex), 0);
 		
 		renderScreenQuad();
 	}
@@ -79,12 +79,12 @@ void renderSky(const mat4* projection, const mat4* view) {
 
 	glUseProgram(skyShader);
 
-	glUniformMatrix4fv(glGetUniformLocation(skyShader, "projection"), 1, GL_FALSE, (GLfloat*)projection);
-	glUniformMatrix4fv(glGetUniformLocation(skyShader, "view"), 1, GL_FALSE, (GLfloat*)view);
+	glUniformMatrix4fv(glGetUniformLocation(skyShader, uniform_projection), 1, GL_FALSE, (GLfloat*)projection);
+	glUniformMatrix4fv(glGetUniformLocation(skyShader, uniform_view), 1, GL_FALSE, (GLfloat*)view);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
-	glUniform1i(glGetUniformLocation(skyShader, "skybox"), 0);
+	glUniform1i(glGetUniformLocation(skyShader, uniform_skybox), 0);
 
 	glBindVertexArray(skyboxVAO);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);

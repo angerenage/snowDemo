@@ -1,4 +1,5 @@
 #pragma once
+
 #include <stddef.h>
 
 typedef struct {
@@ -6,4 +7,5 @@ typedef struct {
 	size_t size;
 } Ressource;
 
+extern const Ressource res_shaders_pack;
 extern const Ressource res_running_anim;

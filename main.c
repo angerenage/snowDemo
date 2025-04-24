@@ -111,14 +111,27 @@ int main() {
 			}
 
 			case 1:
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+				glUseProgram(debugShader);
+				glUniformMatrix4fv(glGetUniformLocation(debugShader, uniform_projection), 1, GL_FALSE, (GLfloat*)&projection);
+				glUniformMatrix4fv(glGetUniformLocation(debugShader, uniform_view), 1, GL_FALSE, (GLfloat*)&cameraView);
+				glUniformMatrix4fv(glGetUniformLocation(debugShader, uniform_model), 1, GL_FALSE, (GLfloat*)&characterModel);
+
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, depthTextures[activeTexture]);
+				glUniform1i(glGetUniformLocation(debugShader, uniform_tex), 0);
+
+				renderScreenQuad();
 				break;
 		}
 
 		renderSky(&projection, &cameraView);
 
 
+#ifdef DEBUG
 		checkOpenGLError();
+#endif
 		
 		//lastTime = ftime;
 
