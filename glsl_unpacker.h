@@ -1,29 +1,29 @@
 #pragma once
 
 enum ShaderOffset {
-	shader_atmosphereFragSrc = 152,
-	shader_basicFragSrc = 5721,
-	shader_basicVertSrc = 5747,
-	shader_debugFragSrc = 5771,
-	shader_snoiseFragSrc = 5792,
-	shader_postVertSrc = 7009,
-	shader_characterFragSrc = 7026,
-	shader_debugVertSrc = 7176,
-	shader_characterVertSrc = 7201,
-	shader_iceFragSrc = 7442,
-	shader_iceVertSrc = 7461,
-	shader_rnoiseFragSrc = 7516,
-	shader_skyFragSrc = 7536,
-	shader_skyVertSrc = 7575,
-	shader_snowFragSrc = 7614,
-	shader_snowTCSSrc = 8021,
-	shader_snowTESCSrc = 8196,
-	shader_snowVertSrc = 8617,
-	shader_textFragSrc = 8704,
-	shader_textVertSrc = 8794,
-	shader_treeFragSrc = 8846,
-	shader_treeVertSrc = 9048,
-	shader_updateSnowFragSrc = 9133,
+	shader_atmosphereFragSrc = 0,
+	shader_basicFragSrc = 8630,
+	shader_basicVertSrc = 8668,
+	shader_debugFragSrc = 8710,
+	shader_snoiseFragSrc = 8745,
+	shader_postVertSrc = 10644,
+	shader_characterFragSrc = 10689,
+	shader_debugVertSrc = 11506,
+	shader_characterVertSrc = 11584,
+	shader_iceFragSrc = 12250,
+	shader_iceVertSrc = 12281,
+	shader_rnoiseFragSrc = 12434,
+	shader_skyFragSrc = 12500,
+	shader_skyVertSrc = 12556,
+	shader_snowFragSrc = 12634,
+	shader_snowTCSSrc = 14135,
+	shader_snowTESCSrc = 14758,
+	shader_snowVertSrc = 15936,
+	shader_textFragSrc = 16219,
+	shader_textVertSrc = 16377,
+	shader_treeFragSrc = 16480,
+	shader_treeVertSrc = 17515,
+	shader_updateSnowFragSrc = 17768,
 };
 
 extern const char* uniform_projection;
@@ -44,6 +44,7 @@ extern const char* uniform_skybox;
 extern const char* uniform_characterPos;
 extern const char* uniform_offset;
 extern const char* uniform_viewPos;
+extern const char* uniform_heightmapArray;
 extern const char* uniform_heightTex;
 extern const char* uniform_shadowView;
 extern const char* uniform_size;

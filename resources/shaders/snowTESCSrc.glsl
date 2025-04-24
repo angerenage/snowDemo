@@ -5,6 +5,7 @@ layout(triangles, equal_spacing, cw) in;
 in vec2 tcsUV[];
 in vec2 tcsTexCoords[];
 in vec3 tcsPosWorld[];
+in flat int tcsInstanceIndex[];
 
 out vec2 tesUV;
 out vec3 fragPos;
@@ -12,7 +13,7 @@ out vec3 fragNormal;
 out vec4 shadowSpacePos;
 out float footDepth;
 
-uniform sampler2D noiseTex;
+uniform sampler2DArray heightmapArray;
 uniform sampler2D heightTex;
 
 uniform mat4 projection;
@@ -24,8 +25,8 @@ const float heightScale = 1.5;
 const float heightOffset = 0.5;
 
 float smoothMin(float a, float b, float k) {
-    float h = max(k - abs(a - b), 0.0) / k;
-    return min(a, b) - h * h * h * k * (1.0 / 6.0);
+	float h = max(k - abs(a - b), 0.0) / k;
+	return min(a, b) - h * h * h * k * (1.0 / 6.0);
 }
 
 void main() {
@@ -35,7 +36,7 @@ void main() {
 
 	tesUV = texCoords;
 
-	vec3 noise = texture(noiseTex, uv).xyz * heightScale;
+	vec3 noise = texture(heightmapArray, vec3(uv, tcsInstanceIndex[0])).xyz * heightScale;
 	noise.x += heightOffset;
 	vec3 perturbation = vec3(
 		-noise.y,

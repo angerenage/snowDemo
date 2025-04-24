@@ -15,9 +15,10 @@ static vec2 texturesSize = {0};
 static const float mapCenterX = (CHUNK_NBR_X - 1) / 2.0f - 0.5f;
 static const float mapCenterZ = (CHUNK_NBR_Z - 1) / 2.0f;
 
-static GLuint terrainHeights[CHUNK_NBR_X][CHUNK_NBR_Z];
+static GLuint heightmapTextureArray = 0;
 static Mesh terrainMesh;
 static mat4 terrainModel = {0};
+static GLuint instanceVBO = 0;
 
 static GLuint depthFBOs[2];
 GLuint depthTextures[2];
@@ -72,37 +73,53 @@ static Mesh generateGrid(vec2 size, int subdivision, float yOffset) {
 	return (Mesh){vao, vertexNbr, indexNbr};
 }
 
-static GLuint generateTerrainHeight(const vec2 *pos) {
-	GLuint terrainHeight = createTexture(CHUNK_RESOLUTION, CHUNK_RESOLUTION);
-	GLuint noiseFBO = createFramebuffer(terrainHeight);
-
-	glViewport(0, 0, CHUNK_RESOLUTION, CHUNK_RESOLUTION);
-	glBindFramebuffer(GL_FRAMEBUFFER, noiseFBO);
-	glClear(GL_DEPTH_BUFFER_BIT);
-
-	glUseProgram(snoiseShader);
-
-	glUniform2f(glGetUniformLocation(snoiseShader, uniform_resolution), CHUNK_RESOLUTION, CHUNK_RESOLUTION);
-	glUniform2fv(glGetUniformLocation(snoiseShader, uniform_offset), 1, (GLfloat*)pos);
-
-	renderScreenQuad();
-
-	glDeleteFramebuffers(1, &noiseFBO);
-
-	return terrainHeight;
-}
-
 void initSnow() {
 	texturesSize = screenSize;
 
 	terrainModel = translationMatrix((vec3){3.0, 0.0, CHUNK_NBR_Z * CHUNK_SIZE / 2.0f - CHUNK_SIZE});
-	terrainMesh = generateGrid((vec2){CHUNK_SIZE, CHUNK_SIZE}, 200, 0.0f);
+	terrainMesh = generateGrid((vec2){CHUNK_SIZE, CHUNK_SIZE}, 50, 0.0f);
 
-	for (int x = 0; x < CHUNK_NBR_X; x++) {
-		for (int z = 0; z < CHUNK_NBR_Z; z++) {
-			terrainHeights[x][z] = generateTerrainHeight(&(vec2){(float)x, (float)z});
+	glGenTextures(1, &heightmapTextureArray);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, heightmapTextureArray);
+	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGB8, CHUNK_RESOLUTION, CHUNK_RESOLUTION, CHUNK_NBR_X * CHUNK_NBR_Z);
+
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	GLuint framebuffer;
+	glGenFramebuffers(1, &framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+	glViewport(0, 0, CHUNK_RESOLUTION, CHUNK_RESOLUTION);
+
+	const int instanceCount = CHUNK_NBR_X * CHUNK_NBR_Z;
+	vec3 *offsets = (vec3*)malloc(sizeof(vec3) * instanceCount);
+	int instanceIndex = 0;
+	for (int z = 0; z < CHUNK_NBR_Z; z++) {
+		for (int x = 0; x < CHUNK_NBR_X; x++) {
+			glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, heightmapTextureArray, 0, instanceIndex);
+			glClear(GL_COLOR_BUFFER_BIT);
+
+			glUseProgram(snoiseShader);
+			glUniform2f(glGetUniformLocation(snoiseShader, uniform_resolution), CHUNK_RESOLUTION, CHUNK_RESOLUTION);
+			glUniform2f(glGetUniformLocation(snoiseShader, uniform_offset), (float)x, (float)z);
+			renderScreenQuad();
+
+			offsets[instanceIndex] = (vec3){
+				((float)x - mapCenterX) * CHUNK_SIZE,
+				(float)instanceIndex,
+				((float)z - mapCenterZ) * CHUNK_SIZE
+			};
+
+			instanceIndex++;
 		}
 	}
+
+	instanceVBO = setupInstanceBuffer(terrainMesh.VAO, offsets, instanceCount);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glDeleteFramebuffers(1, &framebuffer);
+	free(offsets);
+
 
 	depthTextures[0] = createTextureDepth(CHUNK_RESOLUTION, CHUNK_RESOLUTION);
 	depthTextures[1] = createTextureDepth(CHUNK_RESOLUTION, CHUNK_RESOLUTION);
@@ -119,7 +136,7 @@ void initSnow() {
 
 	reflectionTexture = createTexture((int)texturesSize.x, (int)texturesSize.y);
 	depthStencilTexture = createTextureStencil((int)texturesSize.x, (int)texturesSize.y);
-	
+
 	reflectionFrameBuffer = createFramebufferDepthStencil(depthStencilTexture, reflectionTexture);
 
 	iceModel = rotationMatrix((vec3){(float)M_PI / 2.0f, 0.0f, 0.0f});
@@ -217,20 +234,16 @@ void renderSnow(const mat4 *projection, const mat4 *view, const mat4 *reflection
 	glBindTexture(GL_TEXTURE_2D, depthTextures[activeTexture]);
 	glUniform1i(glGetUniformLocation(snowShader, uniform_heightTex), 1);
 
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, heightmapTextureArray);
+	glUniform1i(glGetUniformLocation(snowShader, uniform_heightmapArray), 2);
+
+	int offset = chunkZ * CHUNK_NBR_X;
+	int limit = CHUNK_NBR_X * CHUNK_NBR_Z - offset ;
+
 	glPatchParameteri(GL_PATCH_VERTICES, 3);
 	glBindVertexArray(terrainMesh.VAO);
-
-	for (int x = 0; x < CHUNK_NBR_X; x++) {
-		for (int z = chunkZ; z < CHUNK_NBR_Z; z++) {
-			glUniform3f(glGetUniformLocation(snowShader, uniform_offset), ((float)x - mapCenterX) * CHUNK_SIZE, 0.0, ((float)z - mapCenterZ) * CHUNK_SIZE);
-
-			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_2D, terrainHeights[x][z]);
-			glUniform1i(glGetUniformLocation(snowShader, uniform_noiseTex), 2);
-
-			glDrawElements(GL_PATCHES, terrainMesh.indexCount, GL_UNSIGNED_INT, 0);
-		}
-	}
+	glDrawElementsInstancedBaseInstance(GL_PATCHES, terrainMesh.indexCount, GL_UNSIGNED_INT, 0, limit, offset);
 
 	glBindVertexArray(0);
 	glUseProgram(0);
@@ -252,9 +265,9 @@ void renderSnow(const mat4 *projection, const mat4 *view, const mat4 *reflection
 void cleanupSnow() {
 	freeMesh(terrainMesh);
 
-	for (int i = 0; i < CHUNK_NBR_X; i++) {
-		glDeleteTextures(CHUNK_NBR_Z, terrainHeights[i]);
-	}
+	glDeleteBuffers(1, &instanceVBO);
+	glDeleteTextures(1, &heightmapTextureArray);
+
 	glDeleteTextures(2, depthTextures);
 	glDeleteFramebuffers(2, depthFBOs);
 
