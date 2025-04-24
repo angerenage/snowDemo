@@ -14,6 +14,8 @@ out flat int tcsInstanceIndex[];
 
 uniform vec2 characterPos;
 
+const float tessellationFactor = 3.0;
+
 void main() {
 	tcsUV[gl_InvocationID] = uv[gl_InvocationID];
 	tcsTexCoords[gl_InvocationID] = texCoords[gl_InvocationID];
@@ -21,11 +23,11 @@ void main() {
 	tcsInstanceIndex[gl_InvocationID] = instanceIndex[gl_InvocationID];
 
 	float distance = length(characterPos - tcsPosWorld[gl_InvocationID].xz);
-	float tessellation = mix(2.0, 10.0, smoothstep(5.0, 1.0, distance));
-	tessellation = clamp(tessellation, 2.0, 10.0);
+	float tessellation = mix(tessellationFactor, 10.0, smoothstep(5.0, 1.0, distance));
+	tessellation = clamp(tessellation, tessellationFactor, 10.0);
 
 	gl_TessLevelInner[0] = tessellation;
-	gl_TessLevelOuter[0] = 2.0;
-	gl_TessLevelOuter[1] = 2.0;
-	gl_TessLevelOuter[2] = 2.0;
+	gl_TessLevelOuter[0] = tessellationFactor;
+	gl_TessLevelOuter[1] = tessellationFactor;
+	gl_TessLevelOuter[2] = tessellationFactor;
 }

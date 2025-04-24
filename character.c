@@ -33,6 +33,14 @@ typedef enum e_axis {
 	INVERT = 16
 } Axis;
 
+struct s_GpuBone {
+	vec4 position;         // vec3 + padding
+	vec4 lightPosition;    // vec3 + padding
+	vec4 rotation[3];      // mat3 -> 3 vec3 aligned to 16 bytes
+	uint32_t parentID;     // uint8_t + padding
+	uint8_t _padding[12];  // padding to 16 bytes
+};
+
 typedef struct s_boneDefinition {
 	vec3 position;
 	Axis axis;
@@ -66,6 +74,7 @@ static unsigned int characterVertexCount;
 
 static const int boneNumber = sizeof(characterDefinition) / sizeof(BoneDefinition);
 static Bone bones[sizeof(characterDefinition) / sizeof(BoneDefinition)] = {0};
+static GLuint boneSSBO;
 
 typedef struct s_frame {
 	vec3 position;
@@ -407,8 +416,8 @@ void initCharacter() {
 	characterVAO = createCharacterVAO(faces, faceCount);
 	free(faces);
 
-	pointLightSSBO = createSSBO(sizeof(float) * 4 * boneNumber, 0); // padded to 4 floats by openGL
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, pointLightSSBO);
+	pointLightSSBO = createSSBO(sizeof(vec4) * boneNumber, 0); // padded to 4 floats by openGL
+	boneSSBO = createSSBO(sizeof(struct s_GpuBone) * boneNumber, 1);
 }
 
 void loadAnimation(const Ressource *anim) {
@@ -432,6 +441,37 @@ void updateAnimation(float time) {
 	}
 
 	characterPosition.z = time * 3.5f;
+
+	struct s_GpuBone *gpuBones = malloc(sizeof(struct s_GpuBone) * boneNumber);
+	for (int i = 0; i < boneNumber; ++i) {
+		struct s_GpuBone *dst = &gpuBones[i];
+		Bone *src = &bones[i];
+
+		dst->position.x = src->position.x;
+		dst->position.y = src->position.y;
+		dst->position.z = src->position.z;
+		dst->position.w = 0.0f;
+
+		dst->lightPosition.x = src->lightPosition.x;
+		dst->lightPosition.y = src->lightPosition.y;
+		dst->lightPosition.z = src->lightPosition.z;
+		dst->lightPosition.w = 0.0f;
+
+		for (int col = 0; col < 3; ++col) {
+			dst->rotation[col].x = src->rotation.m[col][0];
+			dst->rotation[col].y = src->rotation.m[col][1];
+			dst->rotation[col].z = src->rotation.m[col][2];
+			dst->rotation[col].w = 0.0f;
+		}
+
+		dst->parentID = (uint32_t)(src->parentID);
+	}
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, boneSSBO);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(struct s_GpuBone) * boneNumber, gpuBones);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	free(gpuBones);
 }
 
 void renderCharacter(GLuint shader, const mat4* projection, const mat4* view, const mat4* model) {
@@ -440,23 +480,7 @@ void renderCharacter(GLuint shader, const mat4* projection, const mat4* view, co
 	glUniformMatrix4fv(glGetUniformLocation(shader, uniform_projection), 1, GL_FALSE, (GLfloat*)projection);
 	glUniformMatrix4fv(glGetUniformLocation(shader, uniform_view), 1, GL_FALSE, (GLfloat*)view);
 	glUniformMatrix4fv(glGetUniformLocation(shader, uniform_model), 1, GL_FALSE, (GLfloat*)model);
-
 	glUniform3fv(glGetUniformLocation(shader, uniform_lightPos), 1, (GLfloat*)&lightPosition);
-
-	for (int i = 0; i < boneNumber; i++) {
-		char uniformName[32];
-		snprintf(uniformName, sizeof(uniformName), "%s[%d].position", uniform_bones, i);
-		glUniform3fv(glGetUniformLocation(shader, uniformName), 1, (GLfloat*)&bones[i].position);
-
-		snprintf(uniformName, sizeof(uniformName), "%s[%d].lightPosition", uniform_bones, i);
-		glUniform3fv(glGetUniformLocation(shader, uniformName), 1, (GLfloat*)&bones[i].lightPosition);
-
-		snprintf(uniformName, sizeof(uniformName), "%s[%d].rotation", uniform_bones, i);
-		glUniformMatrix3fv(glGetUniformLocation(shader, uniformName), 1, GL_FALSE, (GLfloat*)&bones[i].rotation);
-		
-		snprintf(uniformName, sizeof(uniformName), "%s[%d].parent", uniform_bones, i);
-		glUniform1ui(glGetUniformLocation(shader, uniformName), bones[i].parentID);
-	}
 
 	glBindVertexArray(characterVAO);
 	glDrawArrays(GL_TRIANGLES, 0, characterVertexCount);
@@ -468,4 +492,5 @@ void renderCharacter(GLuint shader, const mat4* projection, const mat4* view, co
 void cleanupCharacter() {
 	glDeleteVertexArrays(1, &characterVAO);
 	glDeleteBuffers(1, &pointLightSSBO);
+	glDeleteBuffers(1, &boneSSBO);
 }

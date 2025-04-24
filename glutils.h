@@ -7,13 +7,13 @@
 #include "geometry.h"
 #include "shader.h"
 
-typedef struct mesh_s {
+typedef struct s_mesh {
 	GLuint VAO;
 	int vertexCount;
 	int indexCount;
 } Mesh;
 
-typedef struct instancedMesh_s {
+typedef struct s_instancedMesh {
 	GLuint VAO;
 	GLuint instanceVBO;
 	int vertexCount;

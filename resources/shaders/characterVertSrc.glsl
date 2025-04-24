@@ -9,17 +9,19 @@ layout(std430, binding = 0) buffer StorageBuffer {
 	vec3 lightPositions[];
 };
 
-uniform mat4 projection;
-uniform mat4 view;
-uniform mat4 model;
-
 struct Bone {
 	vec3 position;
 	vec3 lightPosition;
 	mat3 rotation;
 	uint parent;
 };
-uniform Bone bones[11];
+layout(std430, binding = 1) buffer BoneBuffer {
+	Bone bones[];
+};
+
+uniform mat4 projection;
+uniform mat4 view;
+uniform mat4 model;
 
 out vec3 fragPos;
 out vec3 fragNormal;

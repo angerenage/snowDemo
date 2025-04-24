@@ -21,8 +21,8 @@ static mat4 terrainModel = {0};
 static GLuint instanceVBO = 0;
 
 static GLuint depthFBOs[2];
-GLuint depthTextures[2];
-int activeTexture = 0;
+static GLuint depthTextures[2];
+static int activeTexture = 0;
 
 static vec2 currentPosition = {0.0f, 0.0f};
 static mat4 updateProjection;
@@ -77,7 +77,7 @@ void initSnow() {
 	texturesSize = screenSize;
 
 	terrainModel = translationMatrix((vec3){3.0, 0.0, CHUNK_NBR_Z * CHUNK_SIZE / 2.0f - CHUNK_SIZE});
-	terrainMesh = generateGrid((vec2){CHUNK_SIZE, CHUNK_SIZE}, 50, 0.0f);
+	terrainMesh = generateGrid((vec2){CHUNK_SIZE, CHUNK_SIZE}, 25, 0.0f);
 
 	glGenTextures(1, &heightmapTextureArray);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, heightmapTextureArray);

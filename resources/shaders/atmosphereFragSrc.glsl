@@ -49,7 +49,6 @@ vec2 rsi(vec3 position, vec3 direction, float radius) {
 #define bayer64(a)  (bayer32(.5*(a))*.25+bayer2(a))
 #define bayer128(a) (bayer64(.5*(a))*.25+bayer2(a))
 
-//////////////////////////////////////////////////////////////////
 
 const float cloudMinHeight = cloudHeight;
 const float cloudMaxHeight = cloudThickness + cloudMinHeight;
@@ -223,7 +222,7 @@ float getClouds(vec3 p) {
 	
 	return clouds * cloudDensity;
 }
-	
+
 float getCloudShadow(vec3 p) {
 	float rSteps = cloudThickness / abs(sunVector.y);
 	

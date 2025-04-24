@@ -1,6 +1,6 @@
 #include "tree.h"
 
-typedef struct geometry_s {
+typedef struct s_geometry {
 	vec3* vertices;
 	vec3* normals;
 	unsigned int vertexCount;
@@ -8,7 +8,7 @@ typedef struct geometry_s {
 	unsigned int indexCount;
 } Geometry;
 
-typedef struct point_s {
+typedef struct s_point {
 	vec3 position;
 	float radius;
 } Point;
@@ -190,7 +190,7 @@ static Geometry generateBranch(Point* trunkPoints, int trunkSegments, float trun
 
 	float radius = (2.0f - t) / 2.0f * fminf(1.0f, (1.0f - t) + 0.8f);
 
-	Geometry branch = generateSplineMesh(points, segments + 1, radius, 8, &(vec3){0.0f, 1.0f, 0.0f});
+	Geometry branch = generateSplineMesh(points, segments + 1, radius, 6, &(vec3){0.0f, 1.0f, 0.0f});
 	free(points);
 	return branch;
 }
@@ -216,7 +216,7 @@ static Geometry generateTrunk(float height, float scaleFactor, int segments, int
 		points[i].radius = radius;
 	}
 
-	Geometry trunk = generateSplineMesh(points, segments, scaleFactor, 16, &(vec3){1.0f, 0.0f, 0.0f});
+	Geometry trunk = generateSplineMesh(points, segments, scaleFactor, 8, &(vec3){1.0f, 0.0f, 0.0f});
 	Geometry* branches = (Geometry*)malloc(numBranches * sizeof(Geometry));
 
 	float rotationAngle = randomFloat(0.0f, 2.0f * (float)M_PI);
