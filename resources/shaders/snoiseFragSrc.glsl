@@ -84,5 +84,5 @@ void main() {
 	float lacunarity = 2.0;
 	vec3 fbmResult = fbmWithDerivatives(uv + offset, octaves, persistence, lacunarity);
 
-	gl_FragColor = vec4(fbmResult, 1.0);
+	fragColor = vec4(fbmResult, 1.0);
 }
