@@ -23,9 +23,11 @@ void initShadow() {
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+#ifdef DEBUG
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 		fprintf(stderr, "Error: Shadow framebuffer is not complete\n");
 	}
+#endif
 }
 
 void clearShadow() {

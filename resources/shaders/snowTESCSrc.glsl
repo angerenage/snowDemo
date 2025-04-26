@@ -1,6 +1,6 @@
 #version 430 core
 
-layout(triangles, equal_spacing, cw) in;
+layout(triangles, equal_spacing, ccw) in;
 
 in vec2 tcsUV[];
 in vec2 tcsTexCoords[];

@@ -154,8 +154,10 @@ GLuint createFramebuffer(GLuint texture) {
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
 
+#ifdef DEBUG
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		printf("Framebuffer is not complete!\n");
+#endif
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	return fbo;
@@ -167,8 +169,10 @@ GLuint createFramebufferDepth(GLuint depth) {
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth, 0);
 
+#ifdef DEBUG
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		printf("Framebuffer is not complete!\n");
+#endif
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	return fbo;
@@ -181,8 +185,10 @@ GLuint createFramebufferMultisampleDepth(GLuint depth, GLuint color) {
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, depth, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, color, 0);
 
+#ifdef DEBUG
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		printf("Framebuffer is not complete!\n");
+#endif
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	return fbo;
@@ -195,8 +201,10 @@ GLuint createFramebufferDepthStencil(GLuint depthStencil, GLuint color) {
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthStencil, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color, 0);
 
+#ifdef DEBUG
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		printf("Framebuffer is not complete!\n");
+#endif
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	return fbo;
@@ -271,6 +279,7 @@ GLuint createSSBO(size_t size, GLuint index) {
 }
 
 void checkOpenGLError() {
+#ifdef DEBUG
 	GLenum err;
 	while ((err = glGetError()) != GL_NO_ERROR) {
 		char *error;
@@ -286,6 +295,7 @@ void checkOpenGLError() {
 
 		printf("OpenGL Error: %s\n", error);
 	}
+#endif
 }
 
 void cleanupUtils() {

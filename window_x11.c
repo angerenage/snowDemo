@@ -35,10 +35,12 @@ float getTime() {
 
 void initWindow(vec2 size) {
 	display = XOpenDisplay(NULL);
+#ifdef DEBUG
 	if (display == NULL) {
 		fprintf(stderr, "Cannot open display\n");
 		exit(EXIT_FAILURE);
 	}
+#endif
 
 	int screen = DefaultScreen(display);
 	Window root = RootWindow(display, screen);
@@ -62,19 +64,23 @@ void initWindow(vec2 size) {
 
 	int fbcount;
 	GLXFBConfig *fbConfigs = glXChooseFBConfig(display, screen, fbAttribs, &fbcount);
+#ifdef DEBUG
 	if (!fbConfigs || fbcount == 0) {
 		fprintf(stderr, "Failed to retrieve framebuffer config\n");
 		exit(EXIT_FAILURE);
 	}
+#endif
 
 	GLXFBConfig fbConfig = fbConfigs[0];
 	XFree(fbConfigs);
 
 	vi = glXGetVisualFromFBConfig(display, fbConfig);
+#ifdef DEBUG
 	if (vi == NULL) {
 		fprintf(stderr, "No appropriate visual found\n");
 		exit(EXIT_FAILURE);
 	}
+#endif
 
 	swa.colormap = XCreateColormap(display, root, vi->visual, AllocNone);
 	swa.border_pixel = 0;
@@ -104,10 +110,12 @@ void initWindow(vec2 size) {
 
 	typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 	glXCreateContextAttribsARBProc glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc) glXGetProcAddressARB((const GLubyte *) "glXCreateContextAttribsARB");
+#ifdef DEBUG
 	if (glXCreateContextAttribsARB == NULL) {
 		fprintf(stderr, "glXCreateContextAttribsARB not found. Exiting.\n");
 		exit(EXIT_FAILURE);
 	}
+#endif
 
 	int contextAttribs[] = {
 		GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
@@ -117,17 +125,23 @@ void initWindow(vec2 size) {
 	};
 
 	glc = glXCreateContextAttribsARB(display, fbConfig, NULL, True, contextAttribs);
+#ifdef DEBUG
 	if (!glc) {
 		fprintf(stderr, "Failed to create GL context\n");
 		exit(EXIT_FAILURE);
 	}
+#endif
 	glXMakeCurrent(display, window, glc);
 
+#ifdef DEBUG
 	if (!gladLoadGLLoader((GLADloadproc)glXGetProcAddress)) {
 		fprintf(stderr, "Failed to initialize GLAD\n");
 		cleanupWindow();
 		exit(EXIT_FAILURE);
 	}
+#else
+	gladLoadGLLoader((GLADloadproc)glXGetProcAddress);
+#endif
 
 	screenSize = size;
 	projection = projectionMatrix(M_PI / 4.0, size.x / size.y, 0.1f, 1000.0f);

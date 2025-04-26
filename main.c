@@ -13,7 +13,7 @@
 
 int main() {
 	initWindow(screenSize);
-	
+
 
 	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_DEPTH_TEST);
@@ -35,11 +35,11 @@ int main() {
 
 	glViewport(0, 0, (GLsizei)screenSize.x, (GLsizei)screenSize.y);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	
+
 
 	mat4 characterModel = rotationMatrix((vec3){0.0f, -(float)M_PI / 2.0f, 0.0f});
 	loadAnimation(&res_running_anim);
-	
+
 
 	projection = projectionMatrix((float)M_PI / 4.0f, screenSize.x / screenSize.y, 0.001f, 1000.0f);
 

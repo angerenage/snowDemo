@@ -53,13 +53,13 @@ static Mesh generateGrid(vec2 size, int subdivision, float yOffset) {
 					int bottomRight = (x + 1) + (y + 1) * (width + 1);
 
 					// First triangle
-					indices[index++] = bottomLeft;
 					indices[index++] = topLeft;
+					indices[index++] = bottomLeft;
 					indices[index++] = topRight;
 
 					// Second triangle
-					indices[index++] = bottomLeft;
 					indices[index++] = topRight;
+					indices[index++] = bottomLeft;
 					indices[index++] = bottomRight;
 				}
 			}
