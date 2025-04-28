@@ -330,11 +330,12 @@ static InstancedMesh bindTreeInstances(const Mesh* tree, const mat4* instances, 
 	};
 }
 
-static void renderTreeChunk(GLuint shader, const InstancedMesh* trees, const mat4* projection, const mat4* view, const mat4* model, const vec3* lightPos) {
+static void renderTreeChunk(GLuint shader, const InstancedMesh* trees, const mat4* projection, const mat4* view, const mat4* model, const vec3* lightPos, float offsetZ) {
 	glUseProgram(shader);
 	glUniformMatrix4fv(glGetUniformLocation(shader, uniform_projection), 1, GL_FALSE, (GLfloat*)projection);
 	glUniformMatrix4fv(glGetUniformLocation(shader, uniform_view), 1, GL_FALSE, (GLfloat*)view);
 	glUniformMatrix4fv(glGetUniformLocation(shader, uniform_model), 1, GL_FALSE, (GLfloat*)model);
+	glUniform1f(glGetUniformLocation(shader, uniform_worldZOffset), offsetZ);
 	glUniform3fv(glGetUniformLocation(shader, uniform_lightPos), 1, (GLfloat*)lightPos);
 	
 	glActiveTexture(GL_TEXTURE0);
@@ -359,7 +360,12 @@ void initTrees() {
 
 void renderTrees(GLuint shader, const mat4* projection, const mat4* view, const vec3* lightPos, int chunkZ) {
 	for (int i = chunkZ; i < CHUNK_NBR_Z; i++) {
-		renderTreeChunk(shader, &treeInstances[i], projection, view, &treeModels[i], lightPos);
+		renderTreeChunk(shader, &treeInstances[i], projection, view, &treeModels[i], lightPos, currentZOffset);
+	}
+
+	float offsetZ = currentZOffset + CHUNK_NBR_Z * CHUNK_SIZE;
+	for (int i = 0; i < chunkZ; i++) {
+		renderTreeChunk(shader, &treeInstances[i], projection, view, &treeModels[i], lightPos, offsetZ);
 	}
 }
 

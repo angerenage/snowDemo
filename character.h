@@ -21,9 +21,10 @@ typedef struct s_bone {
 } Bone;
 
 extern vec3 characterPosition;
+extern float currentZOffset;
 
 void initCharacter();
 void loadAnimation(const Ressource *anim);
-void updateAnimation(float time);
+void updateCharacter(float time);
 void renderCharacter(GLuint shader, const mat4* projection, const mat4* view, const mat4* model);
 void cleanupCharacter();

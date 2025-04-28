@@ -21,7 +21,9 @@ uniform mat4 view;
 uniform mat4 shadowProjection;
 uniform mat4 shadowView;
 
-const float heightScale = 1.5;
+uniform uvec2 chunks;
+
+const float heightScale = 2.0;
 const float heightOffset = 0.5;
 
 float smoothMin(float a, float b, float k) {
@@ -33,16 +35,23 @@ void main() {
 	vec2 uv = gl_TessCoord.x * tcsUV[0] + gl_TessCoord.y * tcsUV[1] + gl_TessCoord.z * tcsUV[2];
 	vec2 texCoords = gl_TessCoord.x * tcsTexCoords[0] + gl_TessCoord.y * tcsTexCoords[1] + gl_TessCoord.z * tcsTexCoords[2];
 	vec3 pos = gl_TessCoord.x * tcsPosWorld[0] + gl_TessCoord.y * tcsPosWorld[1] + gl_TessCoord.z * tcsPosWorld[2];
+	uint chunkIndex = tcsInstanceIndex[0];
 
 	tesUV = texCoords;
 
-	vec3 noise = texture(heightmapArray, vec3(uv, tcsInstanceIndex[0])).xyz * heightScale;
+	vec2 chunkCoord = vec2(float(chunkIndex % chunks.x), float(chunkIndex / chunks.x));
+	vec2 chunkCoordOpposed = vec2(chunkCoord.x, float(chunks.y - 1) - chunkCoord.y);
+	uint chunkIndexOpposed = uint(chunkCoordOpposed.x + chunkCoordOpposed.y * chunks.x);
+
+	vec3 noiseCenter = texture(heightmapArray, vec3(uv, chunkIndex)).xyz * heightScale;
+	vec3 noiseOpposed = texture(heightmapArray, vec3(uv.x, 1.0 - uv.y, chunkIndexOpposed)).xyz * heightScale;
+
+	vec2 gradient = (chunkCoord + uv) / vec2(chunks - 1);
+	pos.y += 0.01 * smoothstep(0.8, 1.0, gradient.y);
+
+	vec3 noise = mix(noiseCenter, noiseOpposed, gradient.y);
 	noise.x += heightOffset;
-	vec3 perturbation = vec3(
-		-noise.y,
-		1.0,
-		-noise.z
-	);
+	vec3 perturbation = vec3(-noise.y, 1.0, -noise.z);
 	fragNormal = normalize(perturbation);
 
 	float k = 0.3;

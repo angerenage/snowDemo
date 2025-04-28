@@ -77,7 +77,7 @@ vec3 fbmWithDerivatives(vec2 v, int octaves, float persistence, float lacunarity
 }
 
 void main() {
-	vec2 uv = 2.0 * gl_FragCoord.xy / resolution.xy;
+	vec2 uv = gl_FragCoord.xy / resolution.xy;
 
 	int octaves = 4;
 	float persistence = 0.5;

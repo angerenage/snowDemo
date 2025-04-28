@@ -61,7 +61,7 @@ int main() {
 
 		bool isDay = currentSceneId != 0;
 		updateLight(ftime, isDay);
-		updateAnimation(ftime);
+		updateCharacter(ftime);
 		updateCamera();
 
 		characterModel.m[3][2] = characterPosition.z;
@@ -74,7 +74,7 @@ int main() {
 
 		glViewport(0, 0, (GLsizei)screenSize.x, (GLsizei)screenSize.y);
 
-		int currentChunkZ = (int)(characterPosition.z / CHUNK_SIZE);
+		int currentChunkZ = (int)((characterPosition.z - currentZOffset) / CHUNK_SIZE);
 
 		switch (currentSceneId) {
 			case 0: {

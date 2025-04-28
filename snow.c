@@ -1,6 +1,6 @@
 #include "snow.h"
 
-#define CHUNK_RESOLUTION 2048
+#define CHUNK_RESOLUTION 1024
 
 #define CHUNK_NBR_X 3
 
@@ -83,6 +83,9 @@ void initSnow() {
 	glBindTexture(GL_TEXTURE_2D_ARRAY, heightmapTextureArray);
 	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGB8, CHUNK_RESOLUTION, CHUNK_RESOLUTION, CHUNK_NBR_X * CHUNK_NBR_Z);
 
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -153,12 +156,12 @@ mat4 updateSnow(vec3 *reflectionDirection, const mat4 *projection, const mat4 *c
 
 		reflectionTexture = createTexture((int)texturesSize.x, (int)texturesSize.y);
 		depthStencilTexture = createTextureStencil((int)texturesSize.x, (int)texturesSize.y);
-		
+
 		reflectionFrameBuffer = createFramebufferDepthStencil(depthStencilTexture, reflectionTexture);
 	}
 
 	mat4 reflectionView = reflectionCameraMatrix(reflectionDirection, &(vec3){0.0f, 1.0f, 0.0f}, iceHeight);
-	
+
 	vec2 nextPosition = {characterPosition.x, characterPosition.z};
 	mat4 updateView = viewMatrix((vec3){nextPosition.x, 0.0f, nextPosition.y}, (vec3){nextPosition.x, 1.0f, nextPosition.y}, (vec3){0.0f, 0.0f, 1.0f});
 
@@ -169,7 +172,7 @@ mat4 updateSnow(vec3 *reflectionDirection, const mat4 *projection, const mat4 *c
 
 	glBindFramebuffer(GL_FRAMEBUFFER, depthFBOs[nextTexture]);
 	glViewport(0, 0, CHUNK_RESOLUTION, CHUNK_RESOLUTION);
-	
+
 	glUseProgram(updateSnowShader);
 
 	glActiveTexture(GL_TEXTURE0);
@@ -225,6 +228,7 @@ void renderSnow(const mat4 *projection, const mat4 *view, const mat4 *reflection
 	glUniform3fv(glGetUniformLocation(snowShader, uniform_viewPos), 1, (GLfloat*)&cameraPos);
 	glUniform2f(glGetUniformLocation(snowShader, uniform_characterPos), currentPosition.x, currentPosition.y);
 	glUniform1f(glGetUniformLocation(snowShader, uniform_size), CHUNK_SIZE);
+	glUniform2ui(glGetUniformLocation(snowShader, uniform_chunks), CHUNK_NBR_X, CHUNK_NBR_Z);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, shadowMap);
@@ -243,7 +247,12 @@ void renderSnow(const mat4 *projection, const mat4 *view, const mat4 *reflection
 
 	glPatchParameteri(GL_PATCH_VERTICES, 3);
 	glBindVertexArray(terrainMesh.VAO);
+
+	glUniform1f(glGetUniformLocation(snowShader, uniform_worldZOffset), currentZOffset);
 	glDrawElementsInstancedBaseInstance(GL_PATCHES, terrainMesh.indexCount, GL_UNSIGNED_INT, 0, limit, offset);
+
+	glUniform1f(glGetUniformLocation(snowShader, uniform_worldZOffset), currentZOffset + CHUNK_NBR_Z * CHUNK_SIZE);
+	glDrawElementsInstancedBaseInstance(GL_PATCHES, terrainMesh.indexCount, GL_UNSIGNED_INT, 0, offset, 0);
 
 	glBindVertexArray(0);
 	glUseProgram(0);

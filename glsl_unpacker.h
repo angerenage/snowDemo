@@ -1,31 +1,31 @@
 #pragma once
 
 enum ShaderOffset {
-	shader_atmosphereFragSrc = 262,
-	shader_basicFragSrc = 6959,
-	shader_basicVertSrc = 6981,
-	shader_debugFragSrc = 7006,
-	shader_snoiseFragSrc = 7028,
-	shader_postVertSrc = 8249,
-	shader_characterFragSrc = 8267,
-	shader_debugVertSrc = 8410,
-	shader_characterVertSrc = 8434,
-	shader_iceFragSrc = 8725,
-	shader_iceVertSrc = 8744,
-	shader_moonFragSrc = 8801,
-	shader_moonVertSrc = 8866,
-	shader_rnoiseFragSrc = 8947,
-	shader_skyFragSrc = 8971,
-	shader_skyVertSrc = 9002,
-	shader_snowFragSrc = 9036,
-	shader_snowTCSSrc = 9436,
-	shader_snowTESCSrc = 9633,
-	shader_snowVertSrc = 10082,
-	shader_textFragSrc = 10202,
-	shader_textVertSrc = 10290,
-	shader_treeFragSrc = 10351,
-	shader_treeVertSrc = 10557,
-	shader_updateSnowFragSrc = 10644,
+	shader_atmosphereFragSrc = 0,
+	shader_basicFragSrc = 9915,
+	shader_basicVertSrc = 9950,
+	shader_debugFragSrc = 9990,
+	shader_snoiseFragSrc = 10026,
+	shader_postVertSrc = 11919,
+	shader_characterFragSrc = 11962,
+	shader_debugVertSrc = 12764,
+	shader_characterVertSrc = 12837,
+	shader_iceFragSrc = 13554,
+	shader_iceVertSrc = 13587,
+	shader_moonFragSrc = 13747,
+	shader_moonVertSrc = 13865,
+	shader_rnoiseFragSrc = 14008,
+	shader_skyFragSrc = 14074,
+	shader_skyVertSrc = 14133,
+	shader_snowFragSrc = 14214,
+	shader_snowTCSSrc = 15686,
+	shader_snowTESCSrc = 16391,
+	shader_snowVertSrc = 18050,
+	shader_textFragSrc = 18331,
+	shader_textVertSrc = 18473,
+	shader_treeFragSrc = 18575,
+	shader_treeVertSrc = 19590,
+	shader_updateSnowFragSrc = 19861,
 };
 
 extern const char* uniform_view;
@@ -51,7 +51,9 @@ extern const char* uniform_viewPos;
 extern const char* uniform_heightmapArray;
 extern const char* uniform_heightTex;
 extern const char* uniform_shadowView;
+extern const char* uniform_chunks;
 extern const char* uniform_size;
+extern const char* uniform_worldZOffset;
 extern const char* uniform_aspectRatio;
 
 char* getShaderSourceFromFile(const char* compressedText, size_t offset);

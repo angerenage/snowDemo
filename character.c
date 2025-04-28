@@ -2,6 +2,8 @@
 
 #include <stdlib.h>
 
+#include "snow.h"
+
 typedef struct s_crystal {
 	float radius;
 	float topHeight;
@@ -85,6 +87,7 @@ static Frame* animation = NULL;
 static unsigned int animationLength = 0;
 
 vec3 characterPosition = {0.0f, 0.0f, 0.0f};
+float currentZOffset = 0.0f;
 
 static vec3 randomVector() {
 	float x = randomFloat(0.0f, 1.0f);
@@ -242,7 +245,7 @@ static int foundPointsOnPlane(int *pointsId, Triangle triangle, Plane plane) {
 	return pointCount;
 }
 
-Face *generateCrystal(Crystal crystal, int *faceCount, uint8_t boneId) {
+static Face *generateCrystal(Crystal crystal, int *faceCount, uint8_t boneId) {
 	Plane plane1 = {vec3_add(crystal.plane.point, vec3_scale(crystal.plane.normal, crystal.gap / 2.0f)), crystal.plane.normal};
 	Plane plane2 = {vec3_add(crystal.plane.point, vec3_scale(crystal.plane.normal,  -crystal.gap / 2.0f)), crystal.plane.normal};
 
@@ -299,7 +302,7 @@ Face *generateCrystal(Crystal crystal, int *faceCount, uint8_t boneId) {
 	return faces;
 }
 
-GLuint createCharacterVAO(const Face *faces, unsigned int faceCount) {
+static GLuint createCharacterVAO(const Face *faces, unsigned int faceCount) {
 	typedef struct s_vertex {
 		vec3 position;
 		vec3 normal;
@@ -425,7 +428,12 @@ void loadAnimation(const Ressource *anim) {
 	animationLength = (unsigned int)(anim->size / sizeof(Frame));
 }
 
-void updateAnimation(float time) {
+void updateCharacter(float time) {
+	characterPosition.z = time * 3.5f;
+
+	const float patchSize = (float)(CHUNK_NBR_Z * CHUNK_SIZE);
+	if (characterPosition.z - currentZOffset >= patchSize) currentZOffset = floorf(characterPosition.z / patchSize) * patchSize;
+
 	if (!animation) return;
 	
 	int currentFrameId = (int)(time * 30.0f) % animationLength;
@@ -439,8 +447,6 @@ void updateAnimation(float time) {
 		Quaternion rot = quat_lerp(currentFrame.rotations[i], nextFrame.rotations[i], time - (int)time);
 		bones[i].rotation = mat3_quaternion(rot);
 	}
-
-	characterPosition.z = time * 3.5f;
 
 	struct s_GpuBone *gpuBones = malloc(sizeof(struct s_GpuBone) * boneNumber);
 	for (int i = 0; i < boneNumber; ++i) {

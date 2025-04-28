@@ -10,11 +10,14 @@ out vec3 fragNormal;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+uniform float worldZOffset;
 
 void main() {
 	mat4 modelInstance = model * instanceModel;
 
 	vec4 pos = modelInstance * vec4(position, 1.0);
+	pos.z += worldZOffset;
+
 	fragPos = pos.xyz;
 
 	mat3 normalMatrix = transpose(inverse(mat3(modelInstance)));
