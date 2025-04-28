@@ -18,7 +18,7 @@ int main() {
 	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	//glEnable(GL_PROGRAM_POINT_SIZE);
+	glEnable(GL_PROGRAM_POINT_SIZE);
 
 	glDepthFunc(GL_LESS);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -46,20 +46,21 @@ int main() {
 	updateCamera();
 
 	bool skyUpdate = true;
-	
+
 	float start = getTime();
 	//float lastTime = 0.0;
 
 	while (running) {
 		handleEvents();
-		
+
 		float now = getTime();
 		const float ftime = now - start;
 
 		glClear(GL_DEPTH_BUFFER_BIT);
 		clearShadow();
 
-		updateLight(ftime, false);
+		bool isDay = currentSceneId != 0;
+		updateLight(ftime, isDay);
 		updateAnimation(ftime);
 		updateCamera();
 
@@ -68,7 +69,7 @@ int main() {
 		vec3 reflectionDirection;
 		mat4 reflectionView = updateSnow(&reflectionDirection, &projection, &characterModel);
 
-		if (skyUpdate) updateSky(&lightPosition, ftime, &reflectionDirection);
+		if (skyUpdate) updateSky(ftime * 2.0f, isDay, &reflectionDirection);
 		skyUpdate = !skyUpdate;
 
 		glViewport(0, 0, (GLsizei)screenSize.x, (GLsizei)screenSize.y);
@@ -121,7 +122,7 @@ int main() {
 #ifdef DEBUG
 		checkOpenGLError();
 #endif
-		
+
 		//lastTime = ftime;
 
 		swapBuffers();

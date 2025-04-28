@@ -1,5 +1,4 @@
 #version 330 core
-// https://www.shadertoy.com/view/MstBWs
 
 in vec2 fragPos;
 
@@ -9,7 +8,17 @@ uniform mat4 view;
 uniform float time;
 uniform vec2 resolution;
 uniform vec3 sunPosition;
+uniform vec3 moonPosition;
 uniform sampler2D noiseTex;
+uniform sampler2D moonTex;
+
+const float starThreshold = 0.992;
+const float moonDiskSize = 0.07;
+const float moonHaloSize = 0.2;
+const float moonHaloStrength = 0.07;
+
+const float angleDayToNight = radians(10.0);
+const float angleNight = radians(0.0);
 
 const float cloudSpeed = 0.02;
 const float cloudHeight = 1600.0;
@@ -181,7 +190,7 @@ vec3 calcAtmosphericScatterTop() {
 	return (scatterSun * absorbSun) * sunBrightness;
 }
 
-float Get3DNoise(vec3 pos) {
+float get3DNoise(vec3 pos) {
 	float p = floor(pos.z);
 	float f = pos.z - p;
 	
@@ -206,10 +215,10 @@ float getClouds(vec3 p) {
 	
 	vec3 cloudCoord = (p * 0.001) + movement;
 	
-	float noise = Get3DNoise(cloudCoord) * 0.5;
-	noise += Get3DNoise(cloudCoord * 2.0 + movement) * 0.25;
-	noise += Get3DNoise(cloudCoord * 7.0 - movement) * 0.125;
-	noise += Get3DNoise((cloudCoord + movement) * 16.0) * 0.0625;
+	float noise = get3DNoise(cloudCoord) * 0.5;
+	noise += get3DNoise(cloudCoord * 2.0 + movement) * 0.25;
+	noise += get3DNoise(cloudCoord * 7.0 - movement) * 0.125;
+	noise += get3DNoise((cloudCoord + movement) * 16.0) * 0.0625;
 	
 	const float top = 0.004;
 	const float bottom = 0.01;
@@ -303,14 +312,60 @@ vec3 calculateVolumetricClouds(vec3 color, float dither, vec3 sunColor) {
 }
 
 vec3 robobo1221Tonemap(vec3 color) {
-	#define rTOperator(x) (x / sqrt(x*x+1.0))
-
 	float l = length(color);
 
-	color = mix(color, color * 0.5, l / (l+1.0));
-	color = rTOperator(color);
+	color = mix(color, color * 0.5, l / (l + 1.0));
+	color = color / sqrt(color * color + 1.0);
 
 	return color;
+}
+
+float noiseStar(vec2 uv) {
+	uv = fract(uv);
+	float n = fract(sin(dot(uv, vec2(12.9898,78.233))) * 43758.5453);
+	return n;
+}
+
+vec3 computeNightSky(vec3 viewDir) {
+	vec2 uv = (viewDir.xy / max(abs(viewDir.z), 0.001)) * 20.0;
+	float n = noiseStar(uv);
+
+	float intensity = n > starThreshold ? pow((n - starThreshold) / (1.0 - starThreshold), 6.0) : 0.0;
+	vec3 starColor = mix(vec3(1.0, 0.95, 0.8), vec3(0.8, 0.9, 1.0), fract(n * 10.0));
+	vec3 stars = starColor * intensity;
+
+	vec3 moonDir = normalize(moonPosition);
+	float cosTheta = clamp(dot(normalize(viewDir), moonDir), -1.0, 1.0);
+	float angularDistance = acos(cosTheta);
+	float halo = exp(-pow(angularDistance / moonHaloSize, 2.0)) * moonHaloStrength;
+
+	stars *= (1.0 - clamp(halo * 3.0, 0.0, 1.0) * 4.0);
+
+	vec3 moon = vec3(0.0);
+	if (angularDistance < moonDiskSize) {
+		vec3 up = vec3(0.0, 1.0, 0.0);
+		if (abs(dot(up, moonDir)) > 0.99) { 
+			up = vec3(1.0, 0.0, 0.0);
+		}
+		vec3 right = normalize(cross(up, moonDir));
+		vec3 moonUp = normalize(cross(moonDir, right));
+
+		vec3 local = normalize(viewDir) - moonDir * dot(viewDir, moonDir);
+		float u = dot(local, right);
+		float v = dot(local, moonUp);
+
+		vec2 moonUV = vec2(0.5) + vec2(u, v) / (moonDiskSize * 2.0);
+
+		vec2 delta = moonUV - vec2(0.5);
+		float distCenter = length(delta);
+
+		if (distCenter < 0.41) {
+			moon = texture(moonTex, moonUV).rgb;
+			halo = 0.0;
+		}
+	}
+
+	return stars + halo + moon;
 }
 
 void main() {
@@ -320,9 +375,19 @@ void main() {
 	sunVector = normalize(sunPosition);
 	worldVector = normalize(worldPosition);
 
-	vec3 lightAbsorb = vec3(0.0);
+	float sunElevation = asin(clamp(dot(sunVector, vec3(0.0, 1.0, 0.0)), -1.0, 1.0));
+	float nightFactor = smoothstep(angleDayToNight, angleNight, sunElevation);
 
-	vec3 color = calcAtmosphericScatter(lightAbsorb);
+	vec3 lightAbsorb = vec3(0.0);
+	vec3 dayColor = vec3(0.0);
+
+	if (sunElevation > angleNight) {
+		dayColor = calcAtmosphericScatter(lightAbsorb);
+	}
+
+	vec3 nightColor = computeNightSky(worldVector);
+
+	vec3 color = mix(dayColor, nightColor, nightFactor);
 	color = calculateVolumetricClouds(color, bayer16(fragPos * resolution), lightAbsorb);
 
 	color = robobo1221Tonemap(color * 0.5);

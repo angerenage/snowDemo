@@ -65,8 +65,8 @@ endif()
 # Compiler specific flags and linking
 if(MSVC)
 	target_compile_options(snow PRIVATE 
-		$<$<CONFIG:Debug>:/W4 /Zi /MTd>
-		$<$<CONFIG:Release>:/W4 /O2 /DNDEBUG /MT>
+		$<$<CONFIG:Debug>:/W4 /Zi /DDEBUG /MTd>
+		$<$<CONFIG:Release>:/W4 /O2 /MT>
 	)
 
 	set_target_properties(snow PROPERTIES

@@ -153,6 +153,7 @@ GLuint rnoiseShader;
 
 GLuint atmosphereShader;
 GLuint skyShader;
+GLuint moonShader;
 
 GLuint snowShader;
 GLuint shadowSnowShader;
@@ -222,6 +223,15 @@ void initShaders() {
 	free(skyVertSrc);
 	free(skyFragSrc);
 
+	// Moon shaders
+	char *moonVertSrc = getShaderSourceFromFile(compressedShaders, shader_moonVertSrc);
+	char *moonFragSrc = getShaderSourceFromFile(compressedShaders, shader_moonFragSrc);
+
+	moonShader = compileShader(moonVertSrc, NULL, NULL, NULL, moonFragSrc);
+
+	free(moonVertSrc);
+	free(moonFragSrc);
+
 	// Snow shaders
 	char *snowVertSrc = getShaderSourceFromFile(compressedShaders, shader_snowVertSrc);
 	char *snowTCSSrc = getShaderSourceFromFile(compressedShaders, shader_snowTCSSrc);
@@ -283,6 +293,7 @@ void cleanupShaders() {
 
 	glDeleteProgram(atmosphereShader);
 	glDeleteProgram(skyShader);
+	glDeleteProgram(moonShader);
 
 	glDeleteProgram(snowShader);
 	glDeleteProgram(shadowSnowShader);

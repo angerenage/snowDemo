@@ -1,23 +1,23 @@
 #include "geometry.h"
 
 Quaternion quat_normalize(Quaternion q) {
-    float magnitude = sqrtf(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
-    q.w /= magnitude;
-    q.x /= magnitude;
-    q.y /= magnitude;
-    q.z /= magnitude;
-    return q;
+	float magnitude = sqrtf(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
+	q.w /= magnitude;
+	q.x /= magnitude;
+	q.y /= magnitude;
+	q.z /= magnitude;
+	return q;
 }
 
 Quaternion quat_lerp(Quaternion q1, Quaternion q2, float t) {
-    Quaternion result;
-    result.w = (1 - t) * q1.w + t * q2.w;
-    result.x = (1 - t) * q1.x + t * q2.x;
-    result.y = (1 - t) * q1.y + t * q2.y;
-    result.z = (1 - t) * q1.z + t * q2.z;
-    
-    result = quat_normalize(result);
-    return result;
+	Quaternion result;
+	result.w = (1 - t) * q1.w + t * q2.w;
+	result.x = (1 - t) * q1.x + t * q2.x;
+	result.y = (1 - t) * q1.y + t * q2.y;
+	result.z = (1 - t) * q1.z + t * q2.z;
+	
+	result = quat_normalize(result);
+	return result;
 }
 
 mat3 mat3_identity() {
