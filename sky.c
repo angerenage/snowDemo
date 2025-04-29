@@ -103,7 +103,9 @@ void updateSky(float ftime, bool isDay, const vec3* updateDirection) {
 		vec3 normal = {0.0f, 0.0f, 0.0f};
 		((float*)&normal)[i / 2] = (i % 2 == 0 ? 1.0f : -1.0f);
 
-		if (updateDirection != NULL && vec3_dot(cameraDirection, normal) <= 0.0f && vec3_dot(*updateDirection, normal) <= 0.0f) continue;
+		bool cameraLooks = vec3_dot(vec3_normalize(cameraDirection), normal) > 0.0f;
+		bool reflectionLooks = updateDirection ? vec3_dot(vec3_normalize(*updateDirection), normal) > 0.0f : false;
+		if (!cameraLooks && !reflectionLooks) continue;
 
 		mat4 view = viewMatrix((vec3){0.0f, 0.0f, 0.0f}, vec3_scale(normal, i <= 1 ? -1.0f : 1.0f), i == 2 ? (vec3){0.0f, 0.0f, 1.0f} : (vec3){0.0f, -1.0f, 0.0f});
 

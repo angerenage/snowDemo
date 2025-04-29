@@ -4,10 +4,6 @@
 
 #define CHUNK_NBR_X 3
 
-GLuint reflectionFrameBuffer = 0;
-static GLuint reflectionTexture = 0;
-static GLuint depthStencilTexture = 0;
-
 static const float iceHeight = 0.35f;
 static mat4 iceModel = {0};
 static vec2 texturesSize = {0};
@@ -136,32 +132,14 @@ void initSnow() {
 
 	updateProjection = orthographicMatrix(-CHUNK_SIZE, CHUNK_SIZE, -CHUNK_SIZE, CHUNK_SIZE, 0.0, 1.0);
 
-
-	reflectionTexture = createTexture((int)texturesSize.x, (int)texturesSize.y);
-	depthStencilTexture = createTextureStencil((int)texturesSize.x, (int)texturesSize.y);
-
-	reflectionFrameBuffer = createFramebufferDepthStencil(depthStencilTexture, reflectionTexture);
-
-	iceModel = rotationMatrix((vec3){(float)M_PI / 2.0f, 0.0f, 0.0f});
-	iceModel.m[3][1] = iceHeight;
+	iceModel = transformMatrix(
+		(vec3){0.0f, iceHeight, 100.0f},
+		(vec3){(float)M_PI / 2.0f, 0.0f, 0.0f},
+		(vec3){7.0f, 20.0f, 1.0f}
+	);
 }
 
 mat4 updateSnow(vec3 *reflectionDirection, const mat4 *projection, const mat4 *characterModel) {
-	if (texturesSize.x != screenSize.x || texturesSize.y != screenSize.y) {
-		texturesSize = screenSize;
-
-		glDeleteTextures(1, &reflectionTexture);
-		glDeleteTextures(1, &depthStencilTexture);
-		glDeleteFramebuffers(1, &reflectionFrameBuffer);
-
-		reflectionTexture = createTexture((int)texturesSize.x, (int)texturesSize.y);
-		depthStencilTexture = createTextureStencil((int)texturesSize.x, (int)texturesSize.y);
-
-		reflectionFrameBuffer = createFramebufferDepthStencil(depthStencilTexture, reflectionTexture);
-	}
-
-	mat4 reflectionView = reflectionCameraMatrix(reflectionDirection, &(vec3){0.0f, 1.0f, 0.0f}, iceHeight);
-
 	vec2 nextPosition = {characterPosition.x, characterPosition.z};
 	mat4 updateView = viewMatrix((vec3){nextPosition.x, 0.0f, nextPosition.y}, (vec3){nextPosition.x, 1.0f, nextPosition.y}, (vec3){0.0f, 0.0f, 1.0f});
 
@@ -190,33 +168,27 @@ mat4 updateSnow(vec3 *reflectionDirection, const mat4 *projection, const mat4 *c
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, (GLsizei)screenSize.x, (GLsizei)screenSize.y);
 
 	activeTexture = nextTexture;
 	currentPosition = nextPosition;
 
-
-	glBindFramebuffer(GL_FRAMEBUFFER, reflectionFrameBuffer);
-	glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-	glEnable(GL_STENCIL_TEST);
 
 	glStencilFunc(GL_ALWAYS, 1, 0xFF);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 	glUseProgram(basicShader);
 
-	glUniformMatrix4fv(glGetUniformLocation(basicShader, uniform_projection), 1, GL_FALSE, (GLfloat*)&projection);
-	glUniformMatrix4fv(glGetUniformLocation(basicShader, uniform_view), 1, GL_FALSE, (GLfloat*)&reflectionView);
+	glUniformMatrix4fv(glGetUniformLocation(basicShader, uniform_projection), 1, GL_FALSE, (GLfloat*)projection);
+	glUniformMatrix4fv(glGetUniformLocation(basicShader, uniform_view), 1, GL_FALSE, (GLfloat*)&cameraView);
 	glUniformMatrix4fv(glGetUniformLocation(basicShader, uniform_model), 1, GL_FALSE, (GLfloat*)&iceModel);
 
 	renderScreenQuad();
 
-	glDisable(GL_STENCIL_TEST);
-
-	return reflectionView;
+	return reflectionCameraMatrix(reflectionDirection, iceHeight);
 }
 
-void renderSnow(const mat4 *projection, const mat4 *view, const mat4 *reflectionView, int chunkZ) {
+void renderSnow(const mat4 *projection, const mat4 *view, int chunkZ) {
 	glUseProgram(snowShader);
 
 	glUniformMatrix4fv(glGetUniformLocation(snowShader, uniform_projection), 1, GL_FALSE, (GLfloat*)projection);
@@ -253,22 +225,6 @@ void renderSnow(const mat4 *projection, const mat4 *view, const mat4 *reflection
 
 	glUniform1f(glGetUniformLocation(snowShader, uniform_worldZOffset), currentZOffset + CHUNK_NBR_Z * CHUNK_SIZE);
 	glDrawElementsInstancedBaseInstance(GL_PATCHES, terrainMesh.indexCount, GL_UNSIGNED_INT, 0, offset, 0);
-
-	glBindVertexArray(0);
-	glUseProgram(0);
-
-	glUseProgram(iceShader);
-
-	glUniformMatrix4fv(glGetUniformLocation(iceShader, uniform_projection), 1, GL_FALSE, (GLfloat*)projection);
-	glUniformMatrix4fv(glGetUniformLocation(iceShader, uniform_view), 1, GL_FALSE, (GLfloat*)view);
-	glUniformMatrix4fv(glGetUniformLocation(iceShader, uniform_reflectionView), 1, GL_FALSE, (GLfloat*)reflectionView);
-	glUniformMatrix4fv(glGetUniformLocation(iceShader, uniform_model), 1, GL_FALSE, (GLfloat*)&iceModel);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, reflectionTexture);
-	glUniform1i(glGetUniformLocation(iceShader, uniform_reflection), 0);
-
-	renderScreenQuad();
 }
 
 void cleanupSnow() {
@@ -279,8 +235,4 @@ void cleanupSnow() {
 
 	glDeleteTextures(2, depthTextures);
 	glDeleteFramebuffers(2, depthFBOs);
-
-	glDeleteFramebuffers(1, &reflectionFrameBuffer);
-	glDeleteTextures(1, &reflectionTexture);
-	glDeleteTextures(1, &depthStencilTexture);
 }

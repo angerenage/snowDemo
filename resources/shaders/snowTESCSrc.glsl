@@ -26,6 +26,10 @@ uniform uvec2 chunks;
 const float heightScale = 2.0;
 const float heightOffset = 0.5;
 
+const vec2 lakeCenter = vec2(-22.0, 100.0);
+const float lakeRadius = 25.0;
+const float lakeDepth = 0.5;
+
 float smoothMin(float a, float b, float k) {
 	float h = max(k - abs(a - b), 0.0) / k;
 	return min(a, b) - h * h * h * k * (1.0 / 6.0);
@@ -48,6 +52,9 @@ void main() {
 
 	vec2 gradient = (chunkCoord + uv) / vec2(chunks - 1);
 	pos.y += 0.01 * smoothstep(0.8, 1.0, gradient.y);
+
+	float inLake = smoothstep(lakeRadius, lakeRadius - 2.0, length(pos.xz - lakeCenter) + noiseCenter.x * 2.0);
+	pos.y -= inLake * lakeDepth;
 
 	vec3 noise = mix(noiseCenter, noiseOpposed, gradient.y);
 	noise.x += heightOffset;

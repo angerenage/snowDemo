@@ -53,14 +53,19 @@ void updateCamera() {
 	cameraView = viewMatrix(cameraPos, characterPosition, (vec3){0.0f, 1.0f, 0.0f});
 }
 
-mat4 reflectionCameraMatrix(vec3 *reflectionDirection, const vec3 *normal, float distance) {
-	float dist = vec3_dot(*normal, cameraPos) - distance;
-	vec3 reflectionPos = vec3_sub(cameraPos, vec3_scale(*normal, 2.0f * dist));
+mat4 reflectionCameraMatrix(vec3 *reflectionDirection, float height) {
+	*reflectionDirection = vec3_normalize(vec3_sub(characterPosition, (vec3){
+		cameraPos.x,
+		2.0f * height - cameraPos.y,
+		cameraPos.z
+	}));	
 
-	float dotProd = vec3_dot(cameraDirection, *normal);
-	*reflectionDirection = vec3_sub(cameraDirection, vec3_scale(*normal, 2.0f * dotProd));
+	mat4 view = viewMatrix(cameraPos, characterPosition, (vec3){0.0f, 1.0f, 0.0f});
 
-	vec3 up = vec3_scale(vec3_sub((vec3){0.0f, 1.0f, 0.0f}, vec3_scale(*normal, 2.0f * vec3_dot((vec3){0.0f, 1.0f, 0.0f}, *normal))), -1.0f);
+	for(int i = 0; i < 4; i++) {
+		view.m[1][i] = -view.m[1][i];
+	}
+	view.m[3][1] += 2.0f * height;
 
-	return viewMatrix(reflectionPos, *reflectionDirection, up);
+	return view;
 }

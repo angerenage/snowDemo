@@ -22,8 +22,6 @@ extern GLuint snowShader;
 extern GLuint shadowSnowShader;
 extern GLuint updateSnowShader;
 
-extern GLuint iceShader;
-
 extern GLuint characterShader;
 extern GLuint shadowCharacterShader;
 

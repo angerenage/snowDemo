@@ -13,6 +13,6 @@ extern GLuint reflectionFrameBuffer;
 void initSnow();
 
 mat4 updateSnow(vec3 *reflectionDirection, const mat4 *projection, const mat4 *characterModel);
-void renderSnow(const mat4 *projection, const mat4 *view, const mat4 *reflectionView, int chunkZ);
+void renderSnow(const mat4 *projection, const mat4 *view, int chunkZ);
 
 void cleanupSnow();

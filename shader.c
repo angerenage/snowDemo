@@ -159,8 +159,6 @@ GLuint snowShader;
 GLuint shadowSnowShader;
 GLuint updateSnowShader;
 
-GLuint iceShader;
-
 GLuint characterShader;
 GLuint shadowCharacterShader;
 
@@ -249,15 +247,6 @@ void initShaders() {
 	free(snowFragSrc);
 	free(updateSnowFragSrc);
 
-	// Ice shaders
-	char *iceVertSrc = getShaderSourceFromFile(compressedShaders, shader_iceVertSrc);
-	char *iceFragSrc = getShaderSourceFromFile(compressedShaders, shader_iceFragSrc);
-
-	iceShader = compileShader(iceVertSrc, NULL, NULL, NULL, iceFragSrc);
-
-	free(iceVertSrc);
-	free(iceFragSrc);
-
 	// Character shaders
 	char *characterVertSrc = getShaderSourceFromFile(compressedShaders, shader_characterVertSrc);
 	char *characterFragSrc = getShaderSourceFromFile(compressedShaders, shader_characterFragSrc);
@@ -298,8 +287,6 @@ void cleanupShaders() {
 	glDeleteProgram(snowShader);
 	glDeleteProgram(shadowSnowShader);
 	glDeleteProgram(updateSnowShader);
-
-	glDeleteProgram(iceShader);
 
 	glDeleteProgram(characterShader);
 	glDeleteProgram(shadowCharacterShader);
