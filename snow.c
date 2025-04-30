@@ -227,6 +227,24 @@ void renderSnow(const mat4 *projection, const mat4 *view, int chunkZ) {
 	glDrawElementsInstancedBaseInstance(GL_PATCHES, terrainMesh.indexCount, GL_UNSIGNED_INT, 0, offset, 0);
 }
 
+void renderIce(const mat4* projection) {
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glUseProgram(iceShader);
+	glUniformMatrix4fv(glGetUniformLocation(iceShader, uniform_projection), 1, GL_FALSE, (GLfloat*)projection);
+	glUniformMatrix4fv(glGetUniformLocation(iceShader, uniform_view), 1, GL_FALSE, (GLfloat*)&cameraView);
+	glUniformMatrix4fv(glGetUniformLocation(iceShader, uniform_model), 1, GL_FALSE, (GLfloat*)&iceModel);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, heightmapTextureArray);
+	glUniform1i(glGetUniformLocation(iceShader, uniform_heightmapArray), 0);
+
+	renderScreenQuad();
+	
+	glDisable(GL_BLEND);
+}
+
 void cleanupSnow() {
 	freeMesh(terrainMesh);
 

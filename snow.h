@@ -14,5 +14,6 @@ void initSnow();
 
 mat4 updateSnow(vec3 *reflectionDirection, const mat4 *projection, const mat4 *characterModel);
 void renderSnow(const mat4 *projection, const mat4 *view, int chunkZ);
+void renderIce(const mat4 *projection);
 
 void cleanupSnow();

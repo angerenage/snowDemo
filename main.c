@@ -96,18 +96,21 @@ int main() {
 				renderSky(&projection, &cameraView);
 
 				// Ice pass
-				glClear(GL_DEPTH_BUFFER_BIT);
+				if (characterPosition.z / CHUNK_SIZE < 13) {
+					glClear(GL_DEPTH_BUFFER_BIT);
 
-				glStencilFunc(GL_EQUAL, 1, 0xFF);
-				glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-				glCullFace(GL_FRONT);
+					glStencilFunc(GL_EQUAL, 1, 0xFF);
+					glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+					glCullFace(GL_FRONT);
 
-				renderCharacter(characterShader, &projection, &reflectionView, &characterModel);
-				renderTrees(treeShader, &projection, &reflectionView, &lightPosition, currentChunkZ);
-				renderSky(&projection, &reflectionView);
+					renderCharacter(characterShader, &projection, &reflectionView, &characterModel);
+					renderTrees(treeShader, &projection, &reflectionView, &lightPosition, currentChunkZ);
+					renderSky(&projection, &reflectionView);
 
-				glCullFace(GL_BACK);
-				
+					glCullFace(GL_BACK);
+	
+					renderIce(&projection);
+				}
 				break;
 			}
 

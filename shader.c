@@ -156,8 +156,8 @@ GLuint skyShader;
 GLuint moonShader;
 
 GLuint snowShader;
-GLuint shadowSnowShader;
 GLuint updateSnowShader;
+GLuint iceShader;
 
 GLuint characterShader;
 GLuint shadowCharacterShader;
@@ -168,22 +168,18 @@ GLuint shadowTreeShader;
 void initShaders() {
 	const char *compressedShaders = (char*)res_shaders_pack.data;
 
-	// Debug shaders
-	char *debugVertSrc = getShaderSourceFromFile(compressedShaders, shader_debugVertSrc);
-	char *debugFragSrc = getShaderSourceFromFile(compressedShaders, shader_debugFragSrc);
-
-	debugShader = compileShader(debugVertSrc, NULL, NULL, NULL, debugFragSrc);
-
-	free(debugVertSrc);
-	free(debugFragSrc);
-
 	// Basic shaders
 	char *basicVertSrc = getShaderSourceFromFile(compressedShaders, shader_basicVertSrc);
 	char *basicFragSrc = getShaderSourceFromFile(compressedShaders, shader_basicFragSrc);
 
 	basicShader = compileShader(basicVertSrc, NULL, NULL, NULL, basicFragSrc);
 
-	free(basicVertSrc);
+	// Debug shaders
+	char *debugFragSrc = getShaderSourceFromFile(compressedShaders, shader_debugFragSrc);
+
+	debugShader = compileShader(basicVertSrc, NULL, NULL, NULL, debugFragSrc);
+
+	free(debugFragSrc);
 
 	// Text shaders
 	char *textVertSrc = getShaderSourceFromFile(compressedShaders, shader_textVertSrc);
@@ -238,7 +234,6 @@ void initShaders() {
 	char *updateSnowFragSrc = getShaderSourceFromFile(compressedShaders, shader_updateSnowFragSrc);
 
 	snowShader = compileShader(snowVertSrc, snowTCSSrc, snowTESCSrc, NULL, snowFragSrc);
-	shadowSnowShader = compileShader(snowVertSrc, NULL, NULL, NULL, basicFragSrc);
 	updateSnowShader = compileShader(postVertSrc, NULL, NULL, NULL, updateSnowFragSrc);
 
 	free(snowVertSrc);
@@ -246,6 +241,13 @@ void initShaders() {
 	free(snowTESCSrc);
 	free(snowFragSrc);
 	free(updateSnowFragSrc);
+
+	// Ice shaders
+	char *iceFragSrc = getShaderSourceFromFile(compressedShaders, shader_iceFragSrc);
+
+	iceShader = compileShader(basicVertSrc, NULL, NULL, NULL, iceFragSrc);
+
+	free(iceFragSrc);
 
 	// Character shaders
 	char *characterVertSrc = getShaderSourceFromFile(compressedShaders, shader_characterVertSrc);
@@ -269,6 +271,7 @@ void initShaders() {
 
 
 	// Cleanup
+	free(basicVertSrc);
 	free(basicFragSrc);
 	free(postVertSrc);
 }
@@ -285,8 +288,8 @@ void cleanupShaders() {
 	glDeleteProgram(moonShader);
 
 	glDeleteProgram(snowShader);
-	glDeleteProgram(shadowSnowShader);
 	glDeleteProgram(updateSnowShader);
+	glDeleteProgram(iceShader);
 
 	glDeleteProgram(characterShader);
 	glDeleteProgram(shadowCharacterShader);
