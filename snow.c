@@ -30,7 +30,7 @@ static Mesh generateGrid(vec2 size, int subdivision, float yOffset) {
 
 	GLuint vao = 0;
 	vec3 *positions = (vec3*)malloc(sizeof(vec3) * vertexNbr);
-	unsigned int *indices = (unsigned int*)malloc(sizeof(int) * indexNbr);
+	unsigned int *indices = (unsigned int*)malloc(sizeof(unsigned int) * indexNbr);
 
 	if (positions && indices) {
 		int index = 0;

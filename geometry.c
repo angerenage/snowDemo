@@ -292,5 +292,5 @@ bool pointOnPlane(vec3 point, Plane plane) {
 }
 
 float randomFloat(float min, float max) {
-	return min + (max - min) * ((float)rand() / RAND_MAX);
+	return min + (max - min) * ((float)rand() / (float)RAND_MAX);
 }

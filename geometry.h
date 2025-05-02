@@ -67,7 +67,7 @@ vec3 vec3_add(vec3 a, vec3 b);
 vec3 vec3_sub(vec3 a, vec3 b);
 vec3 vec3_multiply(vec3 a, vec3 b);
 vec3 vec3_scale(vec3 v, float s);
-vec3 vec3_lerp(vec3 a, vec3 v, float t);
+vec3 vec3_lerp(vec3 a, vec3 b, float t);
 vec3 vec3_normalize(vec3 v);
 vec3 vec3_cross(vec3 a, vec3 b);
 vec3 vec3_scaleAlongVector(vec3 p, vec3 v, float s);

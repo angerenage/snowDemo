@@ -134,7 +134,7 @@ static float taper(float t, float length) {
 
 static float branchLength(float t, float baseBranchLength) {
 	if (t <= 0.05f) return baseBranchLength * (0.8f + t * 5.0f);
-	else return baseBranchLength * (1.2f * (1.0f - t)) + 0.3f;
+	return baseBranchLength * (1.2f * (1.0f - t)) + 0.3f;
 }
 
 static float gravityEffect(float x, float length) {
