@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 
+#include "shadow.h"
 #include "snow.h"
 
 typedef struct s_crystal {

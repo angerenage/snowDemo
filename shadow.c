@@ -1,5 +1,10 @@
 #include "shadow.h"
 
+#include <stdio.h>
+
+#include "character.h"
+#include "cameraController.h"
+
 #define LIGHTS_NUMBER 10
 
 mat4 shadowProjection;
@@ -89,14 +94,14 @@ void updateLight(float time, bool isDay) {
 	shadowView = viewMatrix(vec3_add(characterPosition, lightPosition), characterPosition, (vec3){0.0, 1.0, 0.0});
 }
 
-void renderLights(const mat4* restrict const projection, const mat4* restrict const view, float time) {
+void renderLights(const mat4* restrict const view, float time) {
 	glDepthMask(GL_FALSE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glUseProgram(lightShader);
 
-	glUniformMatrix4fv(glGetUniformLocation(lightShader, uniform_projection), 1, GL_FALSE, (GLfloat*)projection);
+	glUniformMatrix4fv(glGetUniformLocation(lightShader, uniform_projection), 1, GL_FALSE, (GLfloat*)&projection);
 	glUniformMatrix4fv(glGetUniformLocation(lightShader, uniform_view), 1, GL_FALSE, (GLfloat*)view);
 	glUniform2fv(glGetUniformLocation(lightShader, uniform_resolution), 1, (GLfloat*)&screenSize);
 	glUniform1f(glGetUniformLocation(lightShader, uniform_time), time);

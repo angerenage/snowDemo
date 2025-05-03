@@ -13,7 +13,6 @@ static HGLRC hglrc;
 
 bool running = true;
 int currentSceneId = 0;
-mat4 projection;
 
 static bool mouseHeld = false;
 

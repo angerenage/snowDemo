@@ -1,10 +1,7 @@
 #pragma once
 
 #include <glad/glad.h>
-#include <stdlib.h>
-#include <stdio.h>
 
-#include "resources.h"
 #include "glsl_unpacker.h"
 
 extern GLuint debugShader;

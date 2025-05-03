@@ -1,8 +1,7 @@
 #pragma once
 
 #include <glad/glad.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <stddef.h>
 
 #include "geometry.h"
 #include "shader.h"

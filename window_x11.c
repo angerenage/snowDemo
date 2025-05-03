@@ -22,7 +22,6 @@ static GLXContext glc;
 static XVisualInfo *vi;
 
 bool running = true;
-mat4 projection;
 
 bool mouseHeld = false;
 int currentSceneId = 0;

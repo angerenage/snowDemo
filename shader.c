@@ -1,5 +1,10 @@
 #include "shader.h"
 
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "resources.h"
+
 static GLuint compileShader(const char* const vShaderCode, const char* const tcsShaderCode, const char* const tesShaderCode, const char* const gShaderCode, const char* const fShaderCode) {
 	GLuint vertex = 0, tcs = 0, tes = 0, geometry = 0, fragment = 0;
 

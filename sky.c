@@ -1,5 +1,11 @@
 #include "sky.h"
 
+#include <stdint.h>
+
+#include "cameraController.h"
+#include "shadow.h"
+#include "resources.h"
+
 static GLuint skyboxVAO;
 static GLuint skyboxTexture;
 static GLuint captureFBO;
@@ -122,12 +128,12 @@ void updateSky(float ftime, bool isDay, const vec3* restrict const updateDirecti
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void renderSky(const mat4* restrict const projection, const mat4* restrict const view) {
+void renderSky(const mat4* restrict const view) {
 	glDepthFunc(GL_LEQUAL);
 
 	glUseProgram(skyShader);
 
-	glUniformMatrix4fv(glGetUniformLocation(skyShader, uniform_projection), 1, GL_FALSE, (GLfloat*)projection);
+	glUniformMatrix4fv(glGetUniformLocation(skyShader, uniform_projection), 1, GL_FALSE, (GLfloat*)&projection);
 	glUniformMatrix4fv(glGetUniformLocation(skyShader, uniform_view), 1, GL_FALSE, (GLfloat*)view);
 
 	glActiveTexture(GL_TEXTURE0);

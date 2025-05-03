@@ -1,5 +1,8 @@
 #include "glutils.h"
 
+#include <stdlib.h>
+#include <stdio.h>
+
 #define RNOISE_RESOLUTION 32
 GLuint rnoiseTexture = 0;
 

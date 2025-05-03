@@ -1,13 +1,10 @@
 #pragma once
 
-#include <stdbool.h>
 #include <stdint.h>
 
 #include "geometry.h"
 #include "glutils.h"
 #include "resources.h"
-#include "shadow.h"
-#include "shader.h"
 
 enum animation {
 	ANIM_RUNNING,

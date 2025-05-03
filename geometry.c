@@ -1,5 +1,9 @@
 #include "geometry.h"
 
+#include <immintrin.h>
+#include <float.h>
+#include <stdlib.h>
+
 Quaternion quat_normalize(Quaternion q) {
 	float magnitude = sqrtf(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z);
 	q.w /= magnitude;

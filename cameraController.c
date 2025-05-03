@@ -1,5 +1,7 @@
 #include "cameraController.h"
 
+#include "character.h"
+
 vec2 screenSize = {800.0, 600.0};
 
 static float cameraYaw = 0.0f;
@@ -8,6 +10,7 @@ float lastMouseX = 0.0f;
 float lastMouseY = 0.0f;
 bool firstMouse = true;
 
+mat4 projection = {0};
 mat4 cameraView = {0};
 vec3 cameraPos = {0};
 vec3 cameraDirection = {0};

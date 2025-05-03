@@ -1,8 +1,7 @@
 #pragma once
 
 #include "glutils.h"
-#include "character.h"
-#include "cameraController.h"
+#include "geometry.h"
 
 #define SHADOW_MAP_SIZE 8192
 
@@ -18,6 +17,6 @@ void clearShadow();
 
 void updateLight(float time, bool isDay);
 
-void renderLights(const mat4* restrict const projection, const mat4* restrict const view, float time);
+void renderLights(const mat4* restrict const view, float time);
 
 void cleanupShadow();

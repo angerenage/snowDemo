@@ -1,5 +1,12 @@
 #include "tree.h"
 
+#include <stdlib.h>
+
+#include "shadow.h"
+#include "snow.h"
+#include "shader.h"
+#include "character.h"
+
 typedef struct s_geometry {
 	vec3* vertices;
 	vec3* normals;

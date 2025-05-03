@@ -65,7 +65,7 @@ int main() {
 		characterModel.m[3][2] = characterPosition.z;
 
 		vec3 reflectionDirection;
-		mat4 reflectionView = updateSnow(&reflectionDirection, &projection, &characterModel);
+		mat4 reflectionView = updateSnow(&reflectionDirection, &characterModel);
 
 		if (skyUpdate) updateSky(ftime * 2.0f, isDay, &reflectionDirection);
 		skyUpdate = !skyUpdate;
@@ -92,9 +92,9 @@ int main() {
 				// Main pass
 				renderCharacter(characterShader, &projection, &cameraView, &characterModel);
 				renderTrees(treeShader, &projection, &cameraView, &lightPosition, currentChunkZ);
-				renderSnow(&projection, &cameraView, currentChunkZ);
-				renderSky(&projection, &cameraView);
-				renderLights(&projection, &cameraView, ftime);
+				renderSnow(&cameraView, currentChunkZ);
+				renderSky(&cameraView);
+				renderLights(&cameraView, ftime);
 
 				// Ice pass
 				if (characterPosition.z / CHUNK_SIZE < 13) {
@@ -106,12 +106,12 @@ int main() {
 
 					renderCharacter(characterShader, &projection, &reflectionView, &characterModel);
 					renderTrees(treeShader, &projection, &reflectionView, &lightPosition, currentChunkZ);
-					renderSky(&projection, &reflectionView);
-					renderLights(&projection, &reflectionView, ftime);
+					renderSky(&reflectionView);
+					renderLights(&reflectionView, ftime);
 
 					glCullFace(GL_BACK);
 
-					renderIce(&projection);
+					renderIce();
 				}
 				break;
 			}
