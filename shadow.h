@@ -18,6 +18,6 @@ void clearShadow();
 
 void updateLight(float time, bool isDay);
 
-void renderLights(const mat4* projection, const mat4* view, float time);
+void renderLights(const mat4* restrict const projection, const mat4* restrict const view, float time);
 
 void cleanupShadow();

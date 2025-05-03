@@ -51,7 +51,7 @@ mat3 mat3_identity();
 mat3 mat3_quaternion(Quaternion q);
 
 mat4 mat4_identity();
-mat4 mat4_multiply(const mat4 *a, const mat4 *b);
+mat4 mat4_multiply(const mat4* const a, const mat4* const b);
 
 mat4 projectionMatrix(float fov, float aspectRatio, float nearPlane, float farPlane);
 mat4 orthographicMatrix(float left, float right, float bottom, float top, float nearPlane, float farPlane);
@@ -81,7 +81,7 @@ float smoothMin(float a, float b, float k);
 float lerp(float a, float b, float t);
 float radians(float degrees);
 
-bool intersectEdgeWithPlane(vec3 A, vec3 B, Plane plane, vec3 *intersection);
+bool intersectEdgeWithPlane(vec3 A, vec3 B, Plane plane, vec3* restrict intersection);
 bool pointOnPlane(vec3 point, Plane plane);
 
 float randomFloat(float min, float max);

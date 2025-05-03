@@ -34,7 +34,7 @@ void moveCamera(float xoffset, float yoffset) {
 	updateCamera();
 }
 
-void defaultCameraTransforms(vec3 *pos, vec3 *dir, float distance, vec2 angles) {
+void defaultCameraTransforms(vec3* restrict pos, vec3* restrict dir, float distance, vec2 angles) {
 	float yaw = angles.x;
 	float pitch = angles.y;
 	float x = cosf(yaw) * cosf(pitch);
@@ -53,7 +53,7 @@ void updateCamera() {
 	cameraView = viewMatrix(cameraPos, characterPosition, (vec3){0.0f, 1.0f, 0.0f});
 }
 
-mat4 reflectionCameraMatrix(vec3 *reflectionDirection, float height) {
+mat4 reflectionCameraMatrix(vec3* restrict reflectionDirection, float height) {
 	*reflectionDirection = vec3_normalize(vec3_sub(characterPosition, (vec3){
 		cameraPos.x,
 		2.0f * height - cameraPos.y,

@@ -20,7 +20,7 @@ typedef struct s_light {
 	float startTime;
 } Light;
 
-static Light lightParameters[LIGHTS_NUMBER] = {
+static const Light lightParameters[LIGHTS_NUMBER] = {
 	{ { -0.8f, 1.0f, -0.2f   }, {  0.8f, 5.0f, 14.0f }, 5.0f  },
 	{ { -0.2f, 1.0f,  12.4f  }, { -0.1f, 5.7f, 13.9f }, 10.0f },
 	{ { -0.7f, 1.0f,  29.7f  }, {  0.6f, 5.0f, 14.1f }, 15.0f },
@@ -89,7 +89,7 @@ void updateLight(float time, bool isDay) {
 	shadowView = viewMatrix(vec3_add(characterPosition, lightPosition), characterPosition, (vec3){0.0, 1.0, 0.0});
 }
 
-void renderLights(const mat4 *projection, const mat4 *view, float time) {
+void renderLights(const mat4* restrict const projection, const mat4* restrict const view, float time) {
 	glDepthMask(GL_FALSE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

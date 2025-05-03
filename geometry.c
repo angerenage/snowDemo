@@ -54,7 +54,7 @@ mat4 mat4_identity() {
 	return matrix;
 }
 
-mat4 mat4_multiply(const mat4 *a, const mat4 *b) {
+mat4 mat4_multiply(const mat4* const a, const mat4* const b) {
 	mat4 result = {0};
 
 	for (int i = 0; i < 4; i++) {
@@ -268,7 +268,7 @@ float radians(float degrees) {
 	return degrees * ((float)M_PI / 180.0f);
 }
 
-bool intersectEdgeWithPlane(vec3 A, vec3 B, Plane plane, vec3 *intersection) {
+bool intersectEdgeWithPlane(vec3 A, vec3 B, Plane plane, vec3* restrict intersection) {
 	vec3 v1_to_plane = vec3_sub(A, plane.point);
 	vec3 v2_to_plane = vec3_sub(B, plane.point);
 

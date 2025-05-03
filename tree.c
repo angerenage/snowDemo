@@ -18,7 +18,7 @@ static Mesh treeMeshs[CHUNK_NBR_Z];
 static InstancedMesh treeInstances[CHUNK_NBR_Z];
 static mat4 treeModels[CHUNK_NBR_Z];
 
-static Geometry generateSplineMesh(const Point *points, int numPoints, float generalRadius, int resolution, const vec3 *up) {
+static Geometry generateSplineMesh(const Point* restrict const points, int numPoints, float generalRadius, int resolution, const vec3* restrict const up) {
 	int totalVertices = numPoints * resolution;
 	vec3 *vertices = (vec3*)malloc(totalVertices * sizeof(vec3));
 	vec3 *normals = (vec3*)malloc(totalVertices * sizeof(vec3));
@@ -81,7 +81,7 @@ static Geometry generateSplineMesh(const Point *points, int numPoints, float gen
 	};
 }
 
-static Geometry mergeGeometries(Geometry *geometries, int count) {
+static Geometry mergeGeometries(Geometry* restrict geometries, int count) {
 	unsigned int totalVertices = 0, totalIndices = 0;
 
 	for (int i = 0; i < count; i++) {
@@ -145,7 +145,7 @@ static float growthForce(float t) {
 	return 0.4f * t;
 }
 
-static Geometry generateBranch(Point* trunkPoints, int trunkSegments, float trunkHeight, float t, float rotationAngle, float baseBranchLength, int segments) {
+static Geometry generateBranch(Point* restrict trunkPoints, int trunkSegments, float trunkHeight, float t, float rotationAngle, float baseBranchLength, int segments) {
 	Point* points = (Point*)malloc((segments + 1) * sizeof(Point));
 	float branchLengthValue = branchLength(t, baseBranchLength);
 
@@ -305,7 +305,7 @@ static mat4* generateTreeInstances(int rows, int cols, float spacing) {
 	return instances;
 }
 
-static InstancedMesh bindTreeInstances(const Mesh* tree, const mat4* instances, int instanceCount) {
+static InstancedMesh bindTreeInstances(const Mesh* restrict const tree, const mat4* restrict const instances, int instanceCount) {
 	GLuint instanceVBO;
 	glGenBuffers(1, &instanceVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
@@ -330,7 +330,7 @@ static InstancedMesh bindTreeInstances(const Mesh* tree, const mat4* instances, 
 	};
 }
 
-static void renderTreeChunk(GLuint shader, const InstancedMesh* trees, const mat4* projection, const mat4* view, const mat4* model, const vec3* lightPos, float offsetZ) {
+static void renderTreeChunk(GLuint shader, const InstancedMesh* restrict const trees, const mat4* restrict const projection, const mat4* restrict const view, const mat4* restrict const model, const vec3* restrict const lightPos, float offsetZ) {
 	glUseProgram(shader);
 	glUniformMatrix4fv(glGetUniformLocation(shader, uniform_projection), 1, GL_FALSE, (GLfloat*)projection);
 	glUniformMatrix4fv(glGetUniformLocation(shader, uniform_view), 1, GL_FALSE, (GLfloat*)view);
@@ -358,7 +358,7 @@ void initTrees() {
 	}
 }
 
-void renderTrees(GLuint shader, const mat4* projection, const mat4* view, const vec3* lightPos, int chunkZ) {
+void renderTrees(GLuint shader, const mat4* restrict const projection, const mat4* restrict const view, const vec3* restrict const lightPos, int chunkZ) {
 	for (int i = chunkZ; i < CHUNK_NBR_Z; i++) {
 		renderTreeChunk(shader, &treeInstances[i], projection, view, &treeModels[i], lightPos, currentZOffset);
 	}

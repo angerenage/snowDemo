@@ -39,9 +39,9 @@ GLuint createFramebufferDepth(GLuint depth);
 GLuint createFramebufferMultisampleDepth(GLuint depth, GLuint color);
 GLuint createFramebufferDepthStencil(GLuint depthStencil, GLuint color);
 
-GLuint createIndexedVAO(const vec3 *vertices, int vertexCount, const unsigned int *indices, unsigned int indexCount);
-GLuint createVAO(const vec3 *vertices, unsigned int vertexCount);
-GLuint setupInstanceBuffer(GLuint instanceVAO, const vec3 *positions, unsigned int positionsCount);
+GLuint createIndexedVAO(const vec3* restrict const vertices, int vertexCount, const unsigned int* restrict const indices, unsigned int indexCount);
+GLuint createVAO(const vec3* restrict const vertices, unsigned int vertexCount);
+GLuint setupInstanceBuffer(GLuint instanceVAO, const vec3* restrict const positions, unsigned int positionsCount);
 
 GLuint createSSBO(size_t size, GLuint index);
 

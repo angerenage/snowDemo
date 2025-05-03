@@ -1,6 +1,6 @@
 #include "shader.h"
 
-static GLuint compileShader(const char *vShaderCode, const char *tcsShaderCode, const char *tesShaderCode, const char *gShaderCode, const char *fShaderCode) {
+static GLuint compileShader(const char* const vShaderCode, const char* const tcsShaderCode, const char* const tesShaderCode, const char* const gShaderCode, const char* const fShaderCode) {
 	GLuint vertex = 0, tcs = 0, tes = 0, geometry = 0, fragment = 0;
 
 #ifdef DEBUG
@@ -106,7 +106,7 @@ static GLuint compileShader(const char *vShaderCode, const char *tcsShaderCode, 
 	return ID;
 }
 
-static GLuint compileComputeShader(const char *shaderCode) {
+static GLuint compileComputeShader(const char* const shaderCode) {
 	GLuint compute;
 
 #ifdef DEBUG

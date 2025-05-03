@@ -139,7 +139,7 @@ void initSnow() {
 	);
 }
 
-mat4 updateSnow(vec3 *reflectionDirection, const mat4 *projection, const mat4 *characterModel) {
+mat4 updateSnow(vec3* restrict reflectionDirection, const mat4* restrict const projection, const mat4* restrict const characterModel) {
 	vec2 nextPosition = {characterPosition.x, characterPosition.z};
 	mat4 updateView = viewMatrix((vec3){nextPosition.x, 0.0f, nextPosition.y}, (vec3){nextPosition.x, 1.0f, nextPosition.y}, (vec3){0.0f, 0.0f, 1.0f});
 
@@ -188,7 +188,7 @@ mat4 updateSnow(vec3 *reflectionDirection, const mat4 *projection, const mat4 *c
 	return reflectionCameraMatrix(reflectionDirection, iceHeight);
 }
 
-void renderSnow(const mat4 *projection, const mat4 *view, int chunkZ) {
+void renderSnow(const mat4* restrict const projection, const mat4* restrict const view, int chunkZ) {
 	glUseProgram(snowShader);
 
 	glUniformMatrix4fv(glGetUniformLocation(snowShader, uniform_projection), 1, GL_FALSE, (GLfloat*)projection);
@@ -227,7 +227,7 @@ void renderSnow(const mat4 *projection, const mat4 *view, int chunkZ) {
 	glDrawElementsInstancedBaseInstance(GL_PATCHES, terrainMesh.indexCount, GL_UNSIGNED_INT, 0, offset, 0);
 }
 
-void renderIce(const mat4* projection) {
+void renderIce(const mat4* restrict const projection) {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 

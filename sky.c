@@ -71,7 +71,7 @@ void initSky() {
 	glDeleteFramebuffers(1, &moonFBO);
 }
 
-void updateSky(float ftime, bool isDay, const vec3* updateDirection) {
+void updateSky(float ftime, bool isDay, const vec3* restrict const updateDirection) {
 	glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
 	glViewport(0, 0, SKYBOX_RESOLUTION, SKYBOX_RESOLUTION);
 
@@ -122,7 +122,7 @@ void updateSky(float ftime, bool isDay, const vec3* updateDirection) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void renderSky(const mat4* projection, const mat4* view) {
+void renderSky(const mat4* restrict const projection, const mat4* restrict const view) {
 	glDepthFunc(GL_LEQUAL);
 
 	glUseProgram(skyShader);

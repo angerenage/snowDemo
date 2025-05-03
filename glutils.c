@@ -210,7 +210,7 @@ GLuint createFramebufferDepthStencil(GLuint depthStencil, GLuint color) {
 	return fbo;
 }
 
-GLuint createIndexedVAO(const vec3 *vertices, int vertexCount, const unsigned int *indices, unsigned int indexCount) {
+GLuint createIndexedVAO(const vec3* restrict const vertices, int vertexCount, const unsigned int* restrict const indices, unsigned int indexCount) {
 	GLuint vao, vbo, ebo;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
@@ -232,7 +232,7 @@ GLuint createIndexedVAO(const vec3 *vertices, int vertexCount, const unsigned in
 	return vao;
 }
 
-GLuint createVAO(const vec3 *vertices, unsigned int vertexCount) {
+GLuint createVAO(const vec3* restrict const vertices, unsigned int vertexCount) {
 	GLuint vao, vbo;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
@@ -250,7 +250,7 @@ GLuint createVAO(const vec3 *vertices, unsigned int vertexCount) {
 	return vao;
 }
 
-GLuint setupInstanceBuffer(GLuint instanceVAO, const vec3 *positions, unsigned int positionsCount) {
+GLuint setupInstanceBuffer(GLuint instanceVAO, const vec3* restrict const positions, unsigned int positionsCount) {
 	GLuint instanceVBO = 0;
 
 	glGenBuffers(1, &instanceVBO);

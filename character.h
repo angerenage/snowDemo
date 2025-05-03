@@ -26,7 +26,7 @@ extern vec3 characterPosition;
 extern float currentZOffset;
 
 void initCharacter();
-void loadAnimation(const Ressource *anim);
+void loadAnimation(const Ressource* restrict const anim);
 void updateCharacter(float time);
-void renderCharacter(GLuint shader, const mat4* projection, const mat4* view, const mat4* model);
+void renderCharacter(GLuint shader, const mat4* restrict const projection, const mat4* restrict const view, const mat4* restrict const model);
 void cleanupCharacter();

@@ -115,7 +115,7 @@ static vec3 axisToVector(Axis axis, float length) {
 	return *(vec3*)result;
 }
 
-static int reconstructTriangle(Triangle triangle, Plane plane, Triangle *triangles, bool invert) {
+static int reconstructTriangle(Triangle triangle, Plane plane, Triangle* restrict triangles, bool invert) {
 	vec3 intersections[3] = {0};
 	int intersectionType = 0;
 	if (intersectEdgeWithPlane(triangle.A, triangle.B, plane, &intersections[0])) {
@@ -175,7 +175,7 @@ static int reconstructTriangle(Triangle triangle, Plane plane, Triangle *triangl
 	}
 }
 
-static int reconstructHalfCrystal(Crystal crystal, Plane plane, Triangle *triangles, bool invert) {
+static int reconstructHalfCrystal(Crystal crystal, Plane plane, Triangle* restrict triangles, bool invert) {
 	vec3 topVertex = (vec3){0.0f, 0.0f, 0.0f};
 	vec3 bottomVertex = (vec3){0.0f, -crystal.bottomHeight - crystal.topHeight, 0.0f};
 
@@ -205,7 +205,7 @@ static int reconstructHalfCrystal(Crystal crystal, Plane plane, Triangle *triang
 	return triangleCount;
 }
 
-static int reconstructInnerCrystal(Crystal crystal, Plane plane1, Plane plane2, Triangle *triangles) {
+static int reconstructInnerCrystal(Crystal crystal, Plane plane1, Plane plane2, Triangle* restrict triangles) {
 	Triangle *outerTriangles = (Triangle*)malloc(sizeof(Triangle) * crystal.segments * 8);
 	int innerFaceCount = 0;
 	
@@ -236,7 +236,7 @@ static int reconstructInnerCrystal(Crystal crystal, Plane plane1, Plane plane2, 
 	return innerFaceCount;
 }
 
-static int foundPointsOnPlane(int *pointsId, Triangle triangle, Plane plane) {
+static int foundPointsOnPlane(int* restrict pointsId, Triangle triangle, Plane plane) {
 	int pointCount = 0;
 	if (pointOnPlane(triangle.A, plane)) pointsId[pointCount++] = 0;
 	if (pointOnPlane(triangle.B, plane)) pointsId[pointCount++] = 1;
@@ -244,7 +244,7 @@ static int foundPointsOnPlane(int *pointsId, Triangle triangle, Plane plane) {
 	return pointCount;
 }
 
-static Face *generateCrystal(Crystal crystal, int *faceCount, uint8_t boneId) {
+static Face* generateCrystal(Crystal crystal, int* restrict faceCount, uint8_t boneId) {
 	Plane plane1 = {vec3_add(crystal.plane.point, vec3_scale(crystal.plane.normal, crystal.gap / 2.0f)), crystal.plane.normal};
 	Plane plane2 = {vec3_add(crystal.plane.point, vec3_scale(crystal.plane.normal,  -crystal.gap / 2.0f)), crystal.plane.normal};
 
@@ -301,7 +301,7 @@ static Face *generateCrystal(Crystal crystal, int *faceCount, uint8_t boneId) {
 	return faces;
 }
 
-static GLuint createCharacterVAO(const Face *faces, unsigned int faceCount) {
+static GLuint createCharacterVAO(const Face* restrict const faces, unsigned int faceCount) {
 	typedef struct s_vertex {
 		vec3 position;
 		vec3 normal;
@@ -421,7 +421,7 @@ void initCharacter() {
 	boneSSBO = createSSBO(sizeof(struct s_GpuBone) * boneNumber, 1);
 }
 
-void loadAnimation(const Ressource *anim) {
+void loadAnimation(const Ressource* restrict const anim) {
 	animation = (Frame*)anim->data;
 	animationLength = (unsigned int)(anim->size / sizeof(Frame));
 }
@@ -478,7 +478,7 @@ void updateCharacter(float time) {
 	free(gpuBones);
 }
 
-void renderCharacter(GLuint shader, const mat4* projection, const mat4* view, const mat4* model) {
+void renderCharacter(GLuint shader, const mat4* restrict const projection, const mat4* restrict const view, const mat4* restrict const model) {
 	glUseProgram(shader);
 
 	glUniformMatrix4fv(glGetUniformLocation(shader, uniform_projection), 1, GL_FALSE, (GLfloat*)projection);
