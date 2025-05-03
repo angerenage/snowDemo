@@ -70,11 +70,10 @@ static const BoneDefinition characterDefinition[] = {
 	{{0.0f, 0.3290f, 0.0f}, Y | MINUS | INVERT, {0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 0.335f, 0.29f, 1},		// 10 : Head
 };
 
-static GLuint pointLightSSBO;
 static GLuint characterVAO;
 static unsigned int characterVertexCount;
 
-static const int boneNumber = sizeof(characterDefinition) / sizeof(BoneDefinition);
+const unsigned int boneNumber = sizeof(characterDefinition) / sizeof(BoneDefinition);
 static Bone bones[sizeof(characterDefinition) / sizeof(BoneDefinition)] = {0};
 static GLuint boneSSBO;
 
@@ -313,7 +312,7 @@ static GLuint createCharacterVAO(const Face *faces, unsigned int faceCount) {
 	characterVertexCount = faceCount * 3;
 	Vertex *vertices = (Vertex*)malloc(sizeof(Vertex) * characterVertexCount);
 	for (unsigned int i = 0; i < faceCount; i++) {
-		vec3 normal = vec3_normalize(vec3_cross(vec3_sub(faces[i].triangle.B, faces[i].triangle.A), vec3_sub(faces[i].triangle.C, faces[i].triangle.A)));
+		vec3 normal = vec3_normalize(vec3_cross(vec3_sub(faces[i].triangle.C, faces[i].triangle.A), vec3_sub(faces[i].triangle.B, faces[i].triangle.A)));
 		vertices[i * 3 + 0] = (Vertex){faces[i].triangle.A, normal, faces[i].material, faces[i].boneId};
 		vertices[i * 3 + 1] = (Vertex){faces[i].triangle.B, normal, faces[i].material, faces[i].boneId};
 		vertices[i * 3 + 2] = (Vertex){faces[i].triangle.C, normal, faces[i].material, faces[i].boneId};
@@ -348,7 +347,7 @@ void initCharacter() {
 	Face *faces = NULL;
 	int faceCount = 0;
 
-	for (int i = 0; i < boneNumber; i++) {
+	for (unsigned int i = 0; i < boneNumber; i++) {
 		// Create the mesh
 		const float topHeight = characterDefinition[i].length * randomFloat(0.1f, 0.4f);
 		Crystal crystal = {
@@ -419,7 +418,6 @@ void initCharacter() {
 	characterVAO = createCharacterVAO(faces, faceCount);
 	free(faces);
 
-	pointLightSSBO = createSSBO(sizeof(vec4) * boneNumber, 0); // padded to 4 floats by openGL
 	boneSSBO = createSSBO(sizeof(struct s_GpuBone) * boneNumber, 1);
 }
 
@@ -443,13 +441,13 @@ void updateCharacter(float time) {
 	Frame nextFrame = animation[nextFrameId];
 
 	bones[0].position = vec3_lerp(currentFrame.position, nextFrame.position, time - (int)time);
-	for (int i = 0; i < boneNumber; i++) {
+	for (unsigned int i = 0; i < boneNumber; i++) {
 		Quaternion rot = quat_lerp(currentFrame.rotations[i], nextFrame.rotations[i], time - (int)time);
 		bones[i].rotation = mat3_quaternion(rot);
 	}
 
 	struct s_GpuBone *gpuBones = malloc(sizeof(struct s_GpuBone) * boneNumber);
-	for (int i = 0; i < boneNumber; ++i) {
+	for (unsigned int i = 0; i < boneNumber; i++) {
 		struct s_GpuBone *dst = &gpuBones[i];
 		Bone *src = &bones[i];
 
@@ -463,7 +461,7 @@ void updateCharacter(float time) {
 		dst->lightPosition.z = src->lightPosition.z;
 		dst->lightPosition.w = 0.0f;
 
-		for (int col = 0; col < 3; ++col) {
+		for (int col = 0; col < 3; col++) {
 			dst->rotation[col].x = src->rotation.m[col][0];
 			dst->rotation[col].y = src->rotation.m[col][1];
 			dst->rotation[col].z = src->rotation.m[col][2];
@@ -497,6 +495,5 @@ void renderCharacter(GLuint shader, const mat4* projection, const mat4* view, co
 
 void cleanupCharacter() {
 	glDeleteVertexArrays(1, &characterVAO);
-	glDeleteBuffers(1, &pointLightSSBO);
 	glDeleteBuffers(1, &boneSSBO);
 }

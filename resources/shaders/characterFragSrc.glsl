@@ -1,8 +1,8 @@
 #version 430 core
-#define NUM_LIGHTS 11
+#define NUM_LIGHTS 21
 
 layout(std430, binding = 0) buffer StorageBuffer {
-	vec3 lightPositions[];
+	vec3 lightPositions[][2];
 };
 
 in vec3 fragPos;
@@ -17,14 +17,14 @@ vec3 calculate_point_lighting(float lightIntensity) {
 	vec3 color = vec3(0.0);
 
 	for (int i = 0; i < NUM_LIGHTS; i++) {
-		vec3 pointLightPos = lightPositions[i];
+		vec3 pointLightPos = lightPositions[i][0];
 
 		vec3 lightDir = normalize(pointLightPos - fragPos);
 
 		float diff = max(dot(fragNormal, lightDir), 0.0);
 
 		float attenuation = 1.0 / (1.0 + 0.09 * length(pointLightPos - fragPos));
-		vec3 lightColor = vec3(1.0, 0.5, 0.0) / NUM_LIGHTS;
+		vec3 lightColor = lightPositions[i][1];
 
 		color += diff * lightColor * attenuation * (1.0 - lightIntensity);
 	}

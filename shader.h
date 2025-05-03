@@ -28,5 +28,7 @@ extern GLuint shadowCharacterShader;
 extern GLuint treeShader;
 extern GLuint shadowTreeShader;
 
+extern GLuint lightShader;
+
 void initShaders();
 void cleanupShaders();

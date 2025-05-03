@@ -6,7 +6,7 @@ layout(location=2) in uint material;
 layout(location=3) in uint bone;
 
 layout(std430, binding = 0) buffer StorageBuffer {
-	vec3 lightPositions[];
+	vec3 lightPositions[][2];
 };
 
 struct Bone {
@@ -37,7 +37,8 @@ void main() {
 	}
 
 	mat3 rotation = bones[bone].rotation;
-	lightPositions[bone] = vec3(model * vec4(fragPos + rotation * bones[bone].lightPosition, 1.0));
+	lightPositions[bone][0] = vec3(model * vec4(fragPos + rotation * bones[bone].lightPosition, 1.0));
+	lightPositions[bone][1] = vec3(0.1, 0.05, 0.0);
 	fragPos += rotation * position;
 
 	fragMaterial = material;

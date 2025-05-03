@@ -20,6 +20,8 @@ typedef struct s_bone {
 	uint8_t parentID;
 } Bone;
 
+extern const unsigned int boneNumber;
+
 extern vec3 characterPosition;
 extern float currentZOffset;
 

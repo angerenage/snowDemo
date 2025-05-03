@@ -165,6 +165,8 @@ GLuint shadowCharacterShader;
 GLuint treeShader;
 GLuint shadowTreeShader;
 
+GLuint lightShader;
+
 void initShaders() {
 	const char *compressedShaders = (char*)res_shaders_pack.data;
 
@@ -268,6 +270,15 @@ void initShaders() {
 
 	free(treeVertSrc);
 	free(treeFragSrc);
+
+	// Light shaders
+	char *lightVertSrc = getShaderSourceFromFile(compressedShaders, shader_lightVertSrc);
+	char *lightFragSrc = getShaderSourceFromFile(compressedShaders, shader_lightFragSrc);
+
+	lightShader = compileShader(lightVertSrc, NULL, NULL, NULL, lightFragSrc);
+
+	free(lightVertSrc);
+	free(lightFragSrc);
 
 
 	// Cleanup
