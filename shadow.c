@@ -87,8 +87,10 @@ void clearShadow() {
 }
 
 void updateLight(float time, bool isDay) {
-	const float sunTime = time / 20.0f;
-	sunPosition = (vec3){sinf(sunTime) + cosf(sunTime), cosf(sunTime) - sinf(sunTime), 0.0};
+	const float sunTime = -time / 100.0f;
+	const float angle = sunTime + (float)M_PI_2 * 0.6f;
+
+	sunPosition = (vec3){sinf(angle) + cosf(angle), cosf(angle) - sinf(angle), 0.0};
 	lightPosition = isDay ? sunPosition : moonPosition;
 
 	shadowView = viewMatrix(vec3_add(characterPosition, lightPosition), characterPosition, (vec3){0.0, 1.0, 0.0});

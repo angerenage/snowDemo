@@ -38,29 +38,18 @@ void moveCamera(float xoffset, float yoffset) {
 	updateCamera();
 }
 
-static void defaultCameraTransforms(vec3* restrict pos, vec3* restrict dir, const vec3* restrict const offset, float distance, vec2 angles) {
-	float yaw = angles.x;
-	float pitch = angles.y;
-	float x = cosf(yaw) * cosf(pitch);
-	float y = sinf(pitch);
-	float z = sinf(yaw) * cosf(pitch);
-
-	vec3 direction = (vec3){x, y, z};
-	vec3 position = vec3_add(*offset, vec3_scale(direction, -distance));
-	
-	*pos = position;
-	*dir = direction;
-}
-
 void updateCamera() {
 	if (currentSceneId == 0) {
-		defaultCameraTransforms(&cameraPos, &cameraDirection, &characterPosition, 10.0f, (vec2){cameraYaw, cameraPitch});
+		cameraPos = (vec3){-6.40f, 4.75f, characterPosition.z - 6.0f};
+		cameraDirection = vec3_normalize(vec3_sub(characterPosition, cameraPos));
 		cameraView = viewMatrix(cameraPos, characterPosition, (vec3){0.0f, 1.0f, 0.0f});
 	}
 	else {
-		vec3 offset = {0.0f, 0.0f, 0.0f};
-		defaultCameraTransforms(&cameraPos, &cameraDirection, &offset, 10.0f, (vec2){cameraYaw, cameraPitch});
-		cameraView = viewMatrix(cameraPos, offset, (vec3){0.0f, 1.0f, 0.0f});
+		cameraPos = (vec3){-6.5f, 1.3f, 0.0f};
+		cameraDirection = (vec3){1.0f, -0.20f, 0.0f};
+
+		vec3 target = vec3_add(cameraPos, cameraDirection);
+		cameraView = viewMatrix(cameraPos, target, (vec3){0.0f, 1.0f, 0.0f});
 	}
 }
 

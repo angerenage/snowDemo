@@ -4,7 +4,7 @@
 #include "cameraController.h"
 
 #define GRASS_CHUNKS 2
-#define GRASS_PER_CHUNK 200000
+#define GRASS_PER_CHUNK 500000
 #define GRASS_AREA 10.0f
 #define HEIGHT_SIZE 2048
 
@@ -45,7 +45,7 @@ void initGrass() {
 
 	float size = (float)HEIGHT_SIZE;
 	glUniform2f(glGetUniformLocation(snoiseShader, uniform_resolution), size, size);
-	glUniform2f(glGetUniformLocation(snoiseShader, uniform_offset), 0.0f, 0.0f);
+	glUniform2f(glGetUniformLocation(snoiseShader, uniform_offset), 0.05f, -0.05f);
 
 	renderScreenQuad();
 

@@ -23,6 +23,8 @@ int main() {
 
 	glDepthFunc(GL_LESS);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glStencilFunc(GL_ALWAYS, 0, 0xFF);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 	initShaders();
@@ -43,6 +45,8 @@ int main() {
 	bool skyUpdate = true;
 	float start = getTime();
 
+	bool first = true; // DEBUG
+
 	while (running) {
 		handleEvents();
 
@@ -50,26 +54,22 @@ int main() {
 		const float ftime = now - start;
 
 		glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		clearShadow();
 
-		bool isDay = currentSceneId != 0;
-		updateLight(ftime, isDay);
+		updateLight(ftime, currentSceneId != 0);
 		updateCharacter(ftime);
-		updateCamera();
-
-		characterModel.m[3][2] = characterPosition.z;
-
-		vec3 reflectionDirection;
-		mat4 reflectionView = updateSnow(&reflectionDirection, &characterModel);
-
-		if (skyUpdate) updateSky(ftime * 2.0f, isDay, &reflectionDirection);
-		skyUpdate = !skyUpdate;
-
-		int currentChunkZ = (int)((characterPosition.z - currentZOffset) / CHUNK_SIZE);
 
 		if (currentSceneId == 0) {
-			glStencilFunc(GL_ALWAYS, 0, 0xFF);
-			glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+			clearShadow();
+			updateCamera();
+
+			vec3 reflectionDirection;
+			mat4 reflectionView = updateSnow(&reflectionDirection, &characterModel);
+
+			if (skyUpdate) updateSky(ftime * 2.0f, false, &reflectionDirection);
+			skyUpdate = !skyUpdate;
+
+			characterModel.m[3][2] = characterPosition.z;
+			int currentChunkZ = (int)((characterPosition.z - currentZOffset) / CHUNK_SIZE);
 
 			// Shadow pass
 			glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO);
@@ -104,9 +104,34 @@ int main() {
 				glCullFace(GL_BACK);
 
 				renderIce();
+
+				glStencilFunc(GL_ALWAYS, 0, 0xFF);
+				glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+			}
+
+			if (ftime > 55.0f) {
+				currentSceneId = 1;
+				start = getTime();
+
+				glDisable(GL_STENCIL_TEST);
+
+				updateCamera();
 			}
 		}
 		else {
+			if (first) {
+				start = getTime();
+
+				glDisable(GL_STENCIL_TEST);
+
+				updateCamera();
+
+
+				first = false;
+			}
+
+			updateSky(ftime, true, NULL);
+
 			renderGrass(ftime);
 			renderSky(&cameraView);
 		}

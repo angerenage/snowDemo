@@ -18,7 +18,7 @@ const float moonHaloSize = 0.2;
 const float moonHaloStrength = 0.07;
 
 const float angleDayToNight = radians(10.0);
-const float angleNight = radians(0.0);
+const float angleNight = radians(-15.0);
 
 const float cloudSpeed = 0.02;
 const float cloudHeight = 1600.0;

@@ -121,11 +121,9 @@ mat4 updateSnow(vec3* restrict reflectionDirection, const mat4* restrict const c
 
 	glDepthFunc(GL_ALWAYS);
 	renderScreenQuad();
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glDepthFunc(GL_LESS);
 
 	renderCharacter(shadowCharacterShader, &updateProjection, &updateView, characterModel);
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, (GLsizei)screenSize.x, (GLsizei)screenSize.y);
@@ -144,6 +142,9 @@ mat4 updateSnow(vec3* restrict reflectionDirection, const mat4* restrict const c
 	glUniformMatrix4fv(glGetUniformLocation(basicShader, uniform_model), 1, GL_FALSE, (GLfloat*)&iceModel);
 
 	renderScreenQuad();
+
+	glStencilFunc(GL_ALWAYS, 0, 0xFF);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 	return reflectionCameraMatrix(reflectionDirection, iceHeight);
 }
