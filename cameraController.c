@@ -1,5 +1,6 @@
 #include "cameraController.h"
 
+#include "window.h"
 #include "character.h"
 
 vec2 screenSize = {800.0, 600.0};
@@ -37,7 +38,7 @@ void moveCamera(float xoffset, float yoffset) {
 	updateCamera();
 }
 
-void defaultCameraTransforms(vec3* restrict pos, vec3* restrict dir, float distance, vec2 angles) {
+static void defaultCameraTransforms(vec3* restrict pos, vec3* restrict dir, const vec3* restrict const offset, float distance, vec2 angles) {
 	float yaw = angles.x;
 	float pitch = angles.y;
 	float x = cosf(yaw) * cosf(pitch);
@@ -45,15 +46,22 @@ void defaultCameraTransforms(vec3* restrict pos, vec3* restrict dir, float dista
 	float z = sinf(yaw) * cosf(pitch);
 
 	vec3 direction = (vec3){x, y, z};
-	vec3 position = vec3_add(characterPosition, vec3_scale(direction, -distance));
+	vec3 position = vec3_add(*offset, vec3_scale(direction, -distance));
 	
 	*pos = position;
 	*dir = direction;
 }
 
 void updateCamera() {
-	defaultCameraTransforms(&cameraPos, &cameraDirection, 10.0f, (vec2){cameraYaw, cameraPitch});
-	cameraView = viewMatrix(cameraPos, characterPosition, (vec3){0.0f, 1.0f, 0.0f});
+	if (currentSceneId == 0) {
+		defaultCameraTransforms(&cameraPos, &cameraDirection, &characterPosition, 10.0f, (vec2){cameraYaw, cameraPitch});
+		cameraView = viewMatrix(cameraPos, characterPosition, (vec3){0.0f, 1.0f, 0.0f});
+	}
+	else {
+		vec3 offset = {0.0f, 0.0f, 0.0f};
+		defaultCameraTransforms(&cameraPos, &cameraDirection, &offset, 10.0f, (vec2){cameraYaw, cameraPitch});
+		cameraView = viewMatrix(cameraPos, offset, (vec3){0.0f, 1.0f, 0.0f});
+	}
 }
 
 mat4 reflectionCameraMatrix(vec3* restrict reflectionDirection, float height) {

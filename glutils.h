@@ -44,6 +44,8 @@ GLuint setupInstanceBuffer(GLuint instanceVAO, const vec3* restrict const positi
 
 GLuint createSSBO(size_t size, GLuint index);
 
+Mesh generateGrid(vec2 size, int subdivision, float yOffset);
+
 void checkOpenGLError();
 void cleanupUtils();
 void freeMesh(Mesh m);

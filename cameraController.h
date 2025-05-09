@@ -14,7 +14,6 @@ extern vec3 cameraPos;
 extern vec3 cameraDirection;
 
 void moveCamera(float xoffset, float yoffset);
-void defaultCameraTransforms(vec3* restrict pos, vec3* restrict dir, float distance, vec2 angles);
 void updateCamera();
 
 mat4 reflectionCameraMatrix(vec3* restrict reflectionDirection, float height);

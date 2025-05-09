@@ -164,6 +164,10 @@ GLuint snowShader;
 GLuint updateSnowShader;
 GLuint iceShader;
 
+GLuint terrainShader;
+GLuint grassCompShader;
+GLuint grassShader;
+
 GLuint characterShader;
 GLuint shadowCharacterShader;
 
@@ -256,6 +260,27 @@ void initShaders() {
 
 	free(iceFragSrc);
 
+	// Terrain shaders
+	char *terrainVertSrc = getShaderSourceFromFile(compressedShaders, shader_terrainVertSrc);
+	char *terrainFragSrc = getShaderSourceFromFile(compressedShaders, shader_terrainFragSrc);
+
+	terrainShader = compileShader(terrainVertSrc, NULL, NULL, NULL, terrainFragSrc);
+
+	free(terrainVertSrc);
+	free(terrainFragSrc);
+
+	// Grass shaders
+	char *grassCompSrc = getShaderSourceFromFile(compressedShaders, shader_grassCompSrc);
+	char *grassVertSrc = getShaderSourceFromFile(compressedShaders, shader_grassVertSrc);
+	char *grassFragSrc = getShaderSourceFromFile(compressedShaders, shader_grassFragSrc);
+
+	grassCompShader = compileComputeShader(grassCompSrc);
+	grassShader = compileShader(grassVertSrc, NULL, NULL, NULL, grassFragSrc);
+
+	free(grassCompSrc);
+	free(grassVertSrc);
+	free(grassFragSrc);
+
 	// Character shaders
 	char *characterVertSrc = getShaderSourceFromFile(compressedShaders, shader_characterVertSrc);
 	char *characterFragSrc = getShaderSourceFromFile(compressedShaders, shader_characterFragSrc);
@@ -294,6 +319,7 @@ void initShaders() {
 
 void cleanupShaders() {
 	glDeleteProgram(debugShader);
+	glDeleteProgram(basicShader);
 
 	glDeleteProgram(textShader);
 	glDeleteProgram(snoiseShader);
@@ -307,9 +333,13 @@ void cleanupShaders() {
 	glDeleteProgram(updateSnowShader);
 	glDeleteProgram(iceShader);
 
+	glDeleteProgram(terrainShader);
+
 	glDeleteProgram(characterShader);
 	glDeleteProgram(shadowCharacterShader);
 
 	glDeleteProgram(treeShader);
 	glDeleteProgram(shadowTreeShader);
+
+	glDeleteProgram(lightShader);
 }
