@@ -16,11 +16,11 @@ int currentSceneId = 0;
 
 static bool mouseHeld = false;
 
-float getTime() {
+double getTime() {
 	LARGE_INTEGER freq, counter;
 	QueryPerformanceFrequency(&freq);
 	QueryPerformanceCounter(&counter);
-	return (float)counter.QuadPart / freq.QuadPart;
+	return (double)counter.QuadPart / freq.QuadPart;
 }
 
 extern int main(void);

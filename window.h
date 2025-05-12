@@ -8,7 +8,7 @@
 extern bool running;
 extern int currentSceneId;
 
-float getTime();
+double getTime();
 
 void initWindow(vec2 size);
 void handleEvents();

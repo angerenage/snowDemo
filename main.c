@@ -42,16 +42,15 @@ int main() {
 	projection = projectionMatrix((float)M_PI / 4.0f, screenSize.x / screenSize.y, 0.001f, 1000.0f);
 	updateCamera();
 
-	bool skyUpdate = true;
-	float start = getTime();
+	double start = getTime();
 
 	bool first = true; // DEBUG
 
 	while (running) {
 		handleEvents();
 
-		float now = getTime();
-		const float ftime = now - start;
+		double now = getTime();
+		const float ftime = (float)(now - start);
 
 		glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
@@ -65,8 +64,7 @@ int main() {
 			vec3 reflectionDirection;
 			mat4 reflectionView = updateSnow(&reflectionDirection, &characterModel);
 
-			if (skyUpdate) updateSky(ftime * 2.0f, false, &reflectionDirection);
-			skyUpdate = !skyUpdate;
+			updateSky(ftime * 2.0f, false, &reflectionDirection);
 
 			characterModel.m[3][2] = characterPosition.z;
 			int currentChunkZ = (int)((characterPosition.z - currentZOffset) / CHUNK_SIZE);
@@ -89,7 +87,8 @@ int main() {
 			renderLights(&cameraView, ftime);
 
 			// Ice pass
-			if (characterPosition.z / CHUNK_SIZE < 13) {
+			int chunk = (int)(characterPosition.z / CHUNK_SIZE);
+			if (chunk > 5 && chunk < 13) {
 				glClear(GL_DEPTH_BUFFER_BIT);
 
 				glStencilFunc(GL_EQUAL, 1, 0xFF);
