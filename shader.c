@@ -1,152 +1,69 @@
 #include "shader.h"
 
 #include <stdlib.h>
-#include <stdio.h>
+#ifdef DEBUG
+	#include <stdio.h>
+#endif
 
 #include "resources.h"
 
-static GLuint compileShader(const char* const vShaderCode, const char* const tcsShaderCode, const char* const tesShaderCode, const char* const gShaderCode, const char* const fShaderCode) {
-	GLuint vertex = 0, tcs = 0, tes = 0, geometry = 0, fragment = 0;
+static GLuint compileShaderStage(GLenum type, const char* code) {
+	if (!code) return 0;
+
+	GLuint shader = glCreateShader(type);
+	glShaderSource(shader, 1, &code, NULL);
+	glCompileShader(shader);
 
 #ifdef DEBUG
-	int success;
-	char infoLog[512];
-#endif
-
-	// Vertex shader
-	vertex = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertex, 1, &vShaderCode, NULL);
-	glCompileShader(vertex);
-
-#ifdef DEBUG
-	glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
+	GLint success;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 	if (!success) {
-		glGetShaderInfoLog(vertex, 512, NULL, infoLog);
-		printf("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n%s\n", infoLog);
+		char infoLog[512];
+		glGetShaderInfoLog(shader, 512, NULL, infoLog);
+		printf("ERROR::SHADER::COMPILATION_FAILED (%d)\n%s\n", type, infoLog);
 	}
 #endif
 
-	// Tessellation Control Shader (TCS)
-	if (tcsShaderCode) {
-		tcs = glCreateShader(GL_TESS_CONTROL_SHADER);
-		glShaderSource(tcs, 1, &tcsShaderCode, NULL);
-		glCompileShader(tcs);
-
-#ifdef DEBUG
-		glGetShaderiv(tcs, GL_COMPILE_STATUS, &success);
-		if (!success) {
-			glGetShaderInfoLog(tcs, 512, NULL, infoLog);
-			printf("ERROR::SHADER::TESS_CONTROL::COMPILATION_FAILED\n%s\n", infoLog);
-		}
-#endif
-	}
-
-	// Tessellation Evaluation Shader (TES)
-	if (tesShaderCode) {
-		tes = glCreateShader(GL_TESS_EVALUATION_SHADER);
-		glShaderSource(tes, 1, &tesShaderCode, NULL);
-		glCompileShader(tes);
-
-#ifdef DEBUG
-		glGetShaderiv(tes, GL_COMPILE_STATUS, &success);
-		if (!success) {
-			glGetShaderInfoLog(tes, 512, NULL, infoLog);
-			printf("ERROR::SHADER::TESS_EVALUATION::COMPILATION_FAILED\n%s\n", infoLog);
-		}
-#endif
-	}
-
-	// Geometry shader
-	if (gShaderCode) {
-		geometry = glCreateShader(GL_GEOMETRY_SHADER);
-		glShaderSource(geometry, 1, &gShaderCode, NULL);
-		glCompileShader(geometry);
-
-#ifdef DEBUG
-		glGetShaderiv(geometry, GL_COMPILE_STATUS, &success);
-		if (!success) {
-			glGetShaderInfoLog(geometry, 512, NULL, infoLog);
-			printf("ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n%s\n", infoLog);
-		}
-#endif
-	}
-
-	// Fragment shader
-	fragment = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragment, 1, &fShaderCode, NULL);
-	glCompileShader(fragment);
-
-#ifdef DEBUG
-	glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		glGetShaderInfoLog(fragment, 512, NULL, infoLog);
-		printf("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n%s\n", infoLog);
-	}
-#endif
-
-	// Shader program
-	GLuint ID = glCreateProgram();
-	glAttachShader(ID, vertex);
-	if (tcsShaderCode) glAttachShader(ID, tcs);
-	if (tesShaderCode) glAttachShader(ID, tes);
-	if (gShaderCode) glAttachShader(ID, geometry);
-	glAttachShader(ID, fragment);
-	glLinkProgram(ID);
-
-#ifdef DEBUG
-	glGetProgramiv(ID, GL_LINK_STATUS, &success);
-	if (!success) {
-		glGetProgramInfoLog(ID, 512, NULL, infoLog);
-		printf("ERROR::SHADER::PROGRAM::LINKING_FAILED\n%s\n", infoLog);
-	}
-#endif
-
-	// Clean up shaders
-	glDeleteShader(vertex);
-	if (tcsShaderCode) glDeleteShader(tcs);
-	if (tesShaderCode) glDeleteShader(tes);
-	if (gShaderCode) glDeleteShader(geometry);
-	glDeleteShader(fragment);
-
-	return ID;
+	return shader;
 }
 
-static GLuint compileComputeShader(const char* const shaderCode) {
-	GLuint compute;
+static GLuint linkShaderProgram(GLuint* shaders, int count) {
+	GLuint program = glCreateProgram();
+	for (int i = 0; i < count; ++i) {
+		if (shaders[i]) glAttachShader(program, shaders[i]);
+	}
+	glLinkProgram(program);
 
 #ifdef DEBUG
-	int success;
-	char infoLog[512];
-#endif
-
-	// compute shader
-	compute = glCreateShader(GL_COMPUTE_SHADER);
-	glShaderSource(compute, 1, &shaderCode, NULL);
-	glCompileShader(compute);
-	
-#ifdef DEBUG
-	glGetShaderiv(compute, GL_COMPILE_STATUS, &success);
+	GLint success;
+	glGetProgramiv(program, GL_LINK_STATUS, &success);
 	if (!success) {
-		glGetShaderInfoLog(compute, 512, NULL, infoLog);
-		printf("ERROR::SHADER::COMPUTE::COMPILATION_FAILED\n%s\n", infoLog);
+		char infoLog[512];
+		glGetProgramInfoLog(program, 512, NULL, infoLog);
+		printf("ERROR::SHADER::LINK_FAILED\n%s\n", infoLog);
 	}
 #endif
 
-	GLuint ID = glCreateProgram();
-	glAttachShader(ID, compute);
-	glLinkProgram(ID);
-	
-#ifdef DEBUG
-	glGetProgramiv(ID, GL_LINK_STATUS, &success);
-	if (!success) {
-		glGetProgramInfoLog(ID, 512, NULL, infoLog);
-		printf("ERROR::SHADER::PROGRAM::LINKING_FAILED\n%s\n", infoLog);
+	for (int i = 0; i < count; ++i) {
+		if (shaders[i]) glDeleteShader(shaders[i]);
 	}
-#endif
 
-	glDeleteShader(compute);
+	return program;
+}
 
-	return ID;
+static GLuint compileShader(const char* vs, const char* tcs, const char* tes, const char* gs, const char* fs) {
+	GLuint shaders[5];
+	shaders[0] = compileShaderStage(GL_VERTEX_SHADER, vs);
+	shaders[1] = compileShaderStage(GL_TESS_CONTROL_SHADER, tcs);
+	shaders[2] = compileShaderStage(GL_TESS_EVALUATION_SHADER, tes);
+	shaders[3] = compileShaderStage(GL_GEOMETRY_SHADER, gs);
+	shaders[4] = compileShaderStage(GL_FRAGMENT_SHADER, fs);
+	return linkShaderProgram(shaders, 5);
+}
+
+static GLuint compileComputeShader(const char* cs) {
+	GLuint shader = compileShaderStage(GL_COMPUTE_SHADER, cs);
+	return linkShaderProgram(&shader, 1);
 }
 
 GLuint debugShader;
@@ -319,7 +236,7 @@ void initShaders() {
 	transitionShader = compileShader(postVertSrc, NULL, NULL, NULL, transitionFragSrc);
 
 	free(transitionFragSrc);
-	
+
 
 	// Cleanup
 	free(basicVertSrc);
