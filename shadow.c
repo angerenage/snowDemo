@@ -22,20 +22,20 @@ static GLuint pointLightVAO;
 typedef struct s_light {
 	vec3 origin;
 	vec3 direction;
-	float startTime;
+	vec2 interval;
 } Light;
 
 static const Light lightParameters[LIGHTS_NUMBER] = {
-	{ { -0.8f, 1.0f, -0.2f   }, {  0.8f, 5.0f, 14.0f }, 5.0f  },
-	{ { -0.2f, 1.0f,  12.4f  }, { -0.1f, 5.7f, 13.9f }, 10.0f },
-	{ { -0.7f, 1.0f,  29.7f  }, {  0.6f, 5.0f, 14.1f }, 15.0f },
-	{ { -1.9f, 1.0f,  51.6f  }, {  1.4f, 4.9f, 14.1f }, 20.0f },
-	{ {  1.3f, 1.0f,  65.7f  }, { -0.9f, 4.3f, 14.7f }, 25.0f },
-	{ {  1.2f, 1.0f,  84.5f  }, { -0.7f, 4.2f, 14.4f }, 30.0f },
-	{ {  1.7f, 1.0f,  104.2f }, { -1.4f, 4.5f, 14.3f }, 35.0f },
-	{ { -1.1f, 1.0f,  118.2f }, {  0.6f, 4.8f, 14.2f }, 40.0f },
-	{ {  1.4f, 1.0f,  140.4f }, { -1.2f, 5.0f, 14.1f }, 45.0f },
-	{ { -1.7f, 1.0f,  154.4f }, {  1.3f, 5.8f, 13.8f }, 50.0f }
+	{ { -0.8f, 1.0f, -0.2f   }, {  0.8f, 5.0f, 14.0f }, { 5.0f,  1.5f } },
+	{ { -0.2f, 1.0f,  12.4f  }, { -0.1f, 5.7f, 13.9f }, { 10.0f, 1.8f } },
+	{ { -0.7f, 1.0f,  29.7f  }, {  0.6f, 5.0f, 14.1f }, { 15.0f, 1.8f } },
+	{ { -1.9f, 1.0f,  51.6f  }, {  1.4f, 4.9f, 14.1f }, { 20.0f, 1.5f } },
+	{ {  1.3f, 1.0f,  65.7f  }, { -0.9f, 4.3f, 14.7f }, { 25.0f, 1.5f } },
+	{ {  1.2f, 1.0f,  84.5f  }, { -0.7f, 4.2f, 14.4f }, { 30.0f, 1.4f } },
+	{ {  1.7f, 1.0f,  104.2f }, { -1.4f, 4.5f, 14.3f }, { 35.0f, 1.1f } }, 
+	{ { -1.1f, 1.0f,  118.2f }, {  0.6f, 4.8f, 14.2f }, { 40.0f, 1.3f } },
+	{ {  1.4f, 1.0f,  140.4f }, { -1.2f, 5.0f, 14.1f }, { 45.0f, 0.9f } },
+	{ { -1.7f, 1.0f,  154.4f }, {  1.3f, 5.8f, 13.8f }, { 50.0f, 0.7f } },
 };
 
 void initShadow() {
@@ -77,7 +77,7 @@ void initShadow() {
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Light), (void*)offsetof(Light, direction));
 
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Light), (void*)offsetof(Light, startTime));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Light), (void*)offsetof(Light, interval));
 }
 
 void clearShadow() {
