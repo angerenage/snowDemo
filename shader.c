@@ -176,6 +176,8 @@ GLuint shadowTreeShader;
 
 GLuint lightShader;
 
+GLuint transitionShader;
+
 void initShaders() {
 	const char *compressedShaders = (char*)res_shaders_pack.data;
 
@@ -310,6 +312,14 @@ void initShaders() {
 	free(lightVertSrc);
 	free(lightFragSrc);
 
+	// Transition shaders
+
+	char *transitionFragSrc = getShaderSourceFromFile(compressedShaders, shader_transitionFragSrc);
+
+	transitionShader = compileShader(postVertSrc, NULL, NULL, NULL, transitionFragSrc);
+
+	free(transitionFragSrc);
+	
 
 	// Cleanup
 	free(basicVertSrc);

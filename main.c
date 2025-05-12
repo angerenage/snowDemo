@@ -12,6 +12,9 @@
 #include "tree.h"
 #include "grass.h"
 
+#define SCENE1_TIME 55.0f
+#define TRANSITION_TIME 3.0f
+
 int main() {
 	initWindow(screenSize);
 
@@ -108,13 +111,26 @@ int main() {
 				glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 			}
 
-			if (ftime > 55.0f) {
-				currentSceneId = 1;
-				start = getTime();
+			if (ftime > SCENE1_TIME - TRANSITION_TIME) {
+				glEnable(GL_BLEND);
 
-				glDisable(GL_STENCIL_TEST);
+				glUseProgram(transitionShader);
 
-				updateCamera();
+				float opacity = (ftime - (SCENE1_TIME - TRANSITION_TIME)) / TRANSITION_TIME;
+				glUniform1f(glGetUniformLocation(transitionShader, uniform_opacity), opacity);
+
+				renderScreenQuad();
+
+				glDisable(GL_BLEND);
+
+				if (ftime > SCENE1_TIME) {
+					currentSceneId = 1;
+					start = getTime();
+
+					glDisable(GL_STENCIL_TEST);
+
+					updateCamera();
+				}
 			}
 		}
 		else {
@@ -133,6 +149,19 @@ int main() {
 
 			renderGrass(ftime);
 			renderSky(&cameraView);
+
+			if (ftime < TRANSITION_TIME) {
+				glEnable(GL_BLEND);
+
+				glUseProgram(transitionShader);
+
+				float opacity = -(ftime - TRANSITION_TIME) / TRANSITION_TIME;
+				glUniform1f(glGetUniformLocation(transitionShader, uniform_opacity), opacity);
+
+				renderScreenQuad();
+
+				glDisable(GL_BLEND);
+			}
 		}
 
 #ifdef DEBUG
