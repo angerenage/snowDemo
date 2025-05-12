@@ -2,6 +2,7 @@
 
 #include "glutils.h"
 #include "cameraController.h"
+#include "shadow.h"
 
 #define GRASS_CHUNKS 2
 #define GRASS_PER_CHUNK 500000
@@ -102,6 +103,7 @@ void renderGrass(float time) {
 			glUniformMatrix4fv(glGetUniformLocation(grassShader, uniform_projection), 1, GL_FALSE, (const float*)&projection);
 			glUniformMatrix4fv(glGetUniformLocation(grassShader, uniform_view), 1, GL_FALSE, (const float*)&cameraView);
 			glUniformMatrix4fv(glGetUniformLocation(grassShader, uniform_model), 1, GL_FALSE, (const float*)&model);
+			glUniform3fv(glGetUniformLocation(grassShader, uniform_lightPos), 1, (const float*)&lightPosition);
 			glUniform2fv(glGetUniformLocation(grassShader, uniform_offset), 1, (const float*)&offset);
 			glUniform1f(glGetUniformLocation(grassShader, uniform_time), time);
 

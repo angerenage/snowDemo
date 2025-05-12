@@ -47,7 +47,9 @@ int main() {
 
 	double start = getTime();
 
-	bool first = true; // DEBUG
+#ifdef DEBUG
+	bool first = true;
+#endif
 
 	while (running) {
 		handleEvents();
@@ -127,6 +129,8 @@ int main() {
 					currentSceneId = 1;
 					start = getTime();
 
+					characterModel.m[3][2] = 0.0f;
+
 					glDisable(GL_STENCIL_TEST);
 
 					updateCamera();
@@ -134,8 +138,11 @@ int main() {
 			}
 		}
 		else {
+#ifdef DEBUG
 			if (first) {
 				start = getTime();
+
+				characterModel.m[3][2] = 0.0f;
 
 				glDisable(GL_STENCIL_TEST);
 
@@ -144,9 +151,11 @@ int main() {
 
 				first = false;
 			}
+#endif
 
 			updateSky(ftime, true, NULL);
 
+			renderCharacter(characterShader, &projection, &cameraView, &characterModel);
 			renderGrass(ftime);
 			renderSky(&cameraView);
 
