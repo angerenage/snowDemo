@@ -12,7 +12,7 @@ static HDC hdc;
 static HGLRC hglrc;
 
 bool running = true;
-int currentSceneId = 0;
+int currentSceneId = -1;
 
 static bool mouseHeld = false;
 
@@ -58,8 +58,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 				case VK_ESCAPE:
 					running = false;
 					break;
-				case VK_TAB:
-					currentSceneId = (currentSceneId + 1) % 2;
+				case VK_SPACE:
+					if (currentSceneId < 0) currentSceneId = 0;
 					break;
 			}
 			break;

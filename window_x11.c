@@ -24,7 +24,7 @@ static XVisualInfo *vi;
 bool running = true;
 
 bool mouseHeld = false;
-int currentSceneId = 0;
+int currentSceneId = -1;
 
 double getTime() {
 	struct timespec ts;
@@ -166,11 +166,14 @@ void handleEvents() {
 
 			case KeyPress: {
 				KeySym key = XLookupKeysym(&event.xkey, 0);
-				if (key == XK_Escape)
-					running = false;
-				else if (key == XK_Tab)
-					currentSceneId = (currentSceneId + 1) % 2;
-				break;
+				switch (key) {
+					case XK_Escape:
+						running = false;
+						break;
+					case XK_Space:
+						if (currentSceneId < 0) currentSceneId = 0;
+						break;
+				}
 			}
 
 			case ButtonPress:
