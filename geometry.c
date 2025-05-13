@@ -13,14 +13,40 @@ Quaternion quat_normalize(Quaternion q) {
 	return q;
 }
 
-Quaternion quat_lerp(Quaternion q1, Quaternion q2, float t) {
+Quaternion quat_slerp(Quaternion q1, Quaternion q2, float t) {
+	float dot = q1.w * q2.w + q1.x * q2.x + q1.y * q2.y + q1.z * q2.z;
+
+	if (dot < 0.0f) {
+		dot = -dot;
+		q2.w = -q2.w;
+		q2.x = -q2.x;
+		q2.y = -q2.y;
+		q2.z = -q2.z;
+	}
+
+	const float DOT_THRESHOLD = 0.9995f;
+	if (dot > DOT_THRESHOLD) {
+		Quaternion result;
+		result.w = q1.w + t * (q2.w - q1.w);
+		result.x = q1.x + t * (q2.x - q1.x);
+		result.y = q1.y + t * (q2.y - q1.y);
+		result.z = q1.z + t * (q2.z - q1.z);
+		return quat_normalize(result);
+	}
+
+	float theta_0 = acosf(dot);
+	float theta = theta_0 * t;
+	float sin_theta = sinf(theta);
+	float sin_theta_0 = sinf(theta_0);
+
+	float s0 = cosf(theta) - dot * sin_theta / sin_theta_0;
+	float s1 = sin_theta / sin_theta_0;
+
 	Quaternion result;
-	result.w = (1 - t) * q1.w + t * q2.w;
-	result.x = (1 - t) * q1.x + t * q2.x;
-	result.y = (1 - t) * q1.y + t * q2.y;
-	result.z = (1 - t) * q1.z + t * q2.z;
-	
-	result = quat_normalize(result);
+	result.w = (s0 * q1.w) + (s1 * q2.w);
+	result.x = (s0 * q1.x) + (s1 * q2.x);
+	result.y = (s0 * q1.y) + (s1 * q2.y);
+	result.z = (s0 * q1.z) + (s1 * q2.z);
 	return result;
 }
 

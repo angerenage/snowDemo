@@ -6,10 +6,6 @@
 #include "glutils.h"
 #include "resources.h"
 
-enum animation {
-	ANIM_RUNNING,
-};
-
 typedef struct s_bone {
 	vec3 position;
 	vec3 lightPosition;
@@ -21,6 +17,8 @@ extern const unsigned int boneNumber;
 
 extern vec3 characterPosition;
 extern float currentZOffset;
+
+extern unsigned int animationID;
 
 void initCharacter();
 void loadAnimation(const Ressource* restrict const anim);

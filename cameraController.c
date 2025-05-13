@@ -45,8 +45,8 @@ void updateCamera() {
 		cameraView = viewMatrix(cameraPos, characterPosition, (vec3){0.0f, 1.0f, 0.0f});
 	}
 	else {
-		cameraPos = (vec3){-6.5f, 1.3f, 0.0f};
-		cameraDirection = (vec3){1.0f, -0.20f, 0.0f};
+		cameraPos = (vec3){-6.5f, 1.5f, 0.0f};
+		cameraDirection = (vec3){1.0f, -0.1f, 0.0f};
 
 		vec3 target = vec3_add(cameraPos, cameraDirection);
 		cameraView = viewMatrix(cameraPos, target, (vec3){0.0f, 1.0f, 0.0f});

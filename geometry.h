@@ -45,7 +45,7 @@ typedef struct s_plane {
 } Plane;
 
 Quaternion quat_normalize(Quaternion q);
-Quaternion quat_lerp(Quaternion q1, Quaternion q2, float t);
+Quaternion quat_slerp(Quaternion q1, Quaternion q2, float t);
 
 mat3 mat3_identity();
 mat3 mat3_quaternion(Quaternion q);

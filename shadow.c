@@ -88,7 +88,7 @@ void clearShadow() {
 
 void updateLight(float time, bool isDay) {
 	const float sunTime = -time / 100.0f;
-	const float angle = sunTime + (float)M_PI_2 * 0.6f;
+	const float angle = sunTime + (float)M_PI_2 * 0.56f;
 
 	sunPosition = (vec3){sinf(angle) + cosf(angle), cosf(angle) - sinf(angle), 0.0};
 	lightPosition = isDay ? sunPosition : moonPosition;

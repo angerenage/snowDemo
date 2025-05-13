@@ -83,8 +83,10 @@ typedef struct s_frame {
 	Quaternion rotations[sizeof(characterDefinition) / sizeof(BoneDefinition)];
 } Frame;
 
+unsigned int animationID = 0;
 static Frame* animation = NULL;
 static unsigned int animationLength = 0;
+static float transitionStartTime = -1.0f;
 
 vec3 characterPosition = {0.0f, 0.0f, 0.0f};
 float currentZOffset = 0.0f;
@@ -342,6 +344,12 @@ static GLuint createCharacterVAO(const Face* restrict const faces, unsigned int 
 	return vao;
 }
 
+void loadAnimation(const Ressource* restrict const anim) {
+	animation = (Frame*)anim->data;
+	animationLength = (unsigned int)(anim->size / sizeof(Frame));
+	animationID++;
+}
+
 void initCharacter() {
 	const float gap = 0.02f;
 
@@ -420,30 +428,34 @@ void initCharacter() {
 	free(faces);
 
 	boneSSBO = createSSBO(sizeof(struct s_GpuBone) * boneNumber, 1);
-}
 
-void loadAnimation(const Ressource* restrict const anim) {
-	animation = (Frame*)anim->data;
-	animationLength = (unsigned int)(anim->size / sizeof(Frame));
+	loadAnimation(&res_running_anim);
+	animationID = 0;
 }
 
 void updateCharacter(float time) {
-	characterPosition.z = time * 3.5f;
+	if (animationID == 0) {
+		characterPosition.z = time * 3.5f;
 
-	const float patchSize = (float)(CHUNK_NBR_Z * CHUNK_SIZE);
-	if (characterPosition.z - currentZOffset >= patchSize) currentZOffset = floorf(characterPosition.z / patchSize) * patchSize;
+		const float patchSize = (float)(CHUNK_NBR_Z * CHUNK_SIZE);
+		if (characterPosition.z - currentZOffset >= patchSize) currentZOffset = floorf(characterPosition.z / patchSize) * patchSize;
+	}
+	else {
+		time *= 0.3f;
+	}
 
-	if (!animation) return;
-	
+	Frame currentFrame, nextFrame;
+	float lerpTime = time - (int)time;
+
 	int currentFrameId = (int)(time * 30.0f) % animationLength;
 	int nextFrameId = (currentFrameId + 1) % animationLength;
 
-	Frame currentFrame = animation[currentFrameId];
-	Frame nextFrame = animation[nextFrameId];
+	currentFrame = animation[currentFrameId];
+	nextFrame = animation[nextFrameId];
 
-	bones[0].position = vec3_lerp(currentFrame.position, nextFrame.position, time - (int)time);
+	bones[0].position = vec3_lerp(currentFrame.position, nextFrame.position, lerpTime);
 	for (unsigned int i = 0; i < boneNumber; i++) {
-		Quaternion rot = quat_lerp(currentFrame.rotations[i], nextFrame.rotations[i], time - (int)time);
+		Quaternion rot = quat_slerp(currentFrame.rotations[i], nextFrame.rotations[i], lerpTime);
 		bones[i].rotation = mat3_quaternion(rot);
 	}
 

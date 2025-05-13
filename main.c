@@ -13,7 +13,11 @@
 #include "grass.h"
 
 #define SCENE1_TIME 55.0f
+#define SCENE2_TIME 30.0f
+
 #define TRANSITION_TIME 3.0f
+
+static const float patchSize = (float)(CHUNK_NBR_Z * CHUNK_SIZE);
 
 int main() {
 	initWindow(screenSize);
@@ -40,7 +44,6 @@ int main() {
 	initGrass();
 
 	mat4 characterModel = rotationMatrix((vec3){0.0f, -(float)M_PI / 2.0f, 0.0f});
-	loadAnimation(&res_running_anim);
 
 	projection = projectionMatrix((float)M_PI / 4.0f, screenSize.x / screenSize.y, 0.001f, 1000.0f);
 	updateCamera();
@@ -56,6 +59,13 @@ int main() {
 
 		double now = getTime();
 		const float ftime = (float)(now - start);
+
+		if (currentSceneId < 0) {
+			// waiting screen
+
+			swapBuffers();
+			continue;
+		}
 
 		glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
@@ -126,10 +136,15 @@ int main() {
 				glDisable(GL_BLEND);
 
 				if (ftime > SCENE1_TIME) {
-					currentSceneId = 1;
-					start = getTime();
+					currentSceneId++;
+					characterPosition.z = 0.0f;
+					currentZOffset = 0.0f;
 
-					characterModel.m[3][2] = 0.0f;
+					characterModel = transformMatrix((vec3){0.0f, 0.0f, 0.0f}, (vec3){0.0f, -(float)M_PI / 2.0f, 0.0f}, (vec3){1.0f, 1.0f, 1.0f});
+
+					loadAnimation(&res_idle_anim);
+
+					start = getTime();
 
 					glDisable(GL_STENCIL_TEST);
 
@@ -137,12 +152,17 @@ int main() {
 				}
 			}
 		}
-		else {
+		else if (currentSceneId == 1) {
 #ifdef DEBUG
 			if (first) {
-				start = getTime();
+				characterPosition.z = 0.0f;
+				currentZOffset = 0.0f;
 
-				characterModel.m[3][2] = 0.0f;
+				characterModel = transformMatrix((vec3){-5.0f, -0.1f, 0.9f}, (vec3){0.0f, (float)M_PI / 6.0f, 0.0f}, (vec3){1.0f, 1.0f, 1.0f});
+
+				loadAnimation(&res_idle_anim);
+
+				start = getTime();
 
 				glDisable(GL_STENCIL_TEST);
 
@@ -171,6 +191,12 @@ int main() {
 
 				glDisable(GL_BLEND);
 			}
+
+			if (ftime > SCENE2_TIME) currentSceneId++;
+		}
+		else {
+			glClear(GL_COLOR_BUFFER_BIT);
+			// Credit screen
 		}
 
 #ifdef DEBUG
