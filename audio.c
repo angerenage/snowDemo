@@ -181,12 +181,12 @@ void initAudio() {
 
 void playSound() {
 #ifdef DEBUG
-	if (pthread_create(&audioThread, NULL, audioThreadRoutine, (void*)&res_music_xm) != 0) {
+	if (pthread_create(&audioThread, NULL, audioThreadRoutine, (void*)&res_music_it) != 0) {
 		fprintf(stderr, "Failed to create thread\n");
 		exit(EXIT_FAILURE);
 	}
 #else
-	pthread_create(&audioThread, NULL, audioThreadRoutine, (void*)&res_music_xm);
+	pthread_create(&audioThread, NULL, audioThreadRoutine, (void*)&res_music_it);
 #endif
 }
 
