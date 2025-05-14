@@ -1,2 +1,2 @@
 #version 330 core
-in vec3 fragPos;layout(std430,binding=0)buffer b1{vec3 l[][2];};uniform vec3 lightPos;vec3 v(){vec3 v=vec3(0);for(int f=0;f<11;f++){vec3 a=l[f][0],d=l[f][1];v+=d*(1./(1.+.09*length(a-fragPos)))*.3;}return v;}void main(){vec3 f=v();gl_FragColor=vec4(vec3(.2,.5,.2)*.2*mix(.2,1.,smoothstep(0.,.3,dot(vec3(0,1,0),normalize(lightPos))))+f,1);}
+in vec3 fragPos;out vec4 fragColor;layout(std430,binding=0)buffer b1{vec3 l[][2];};uniform vec3 lightPos;vec3 v(){vec3 v=vec3(0);for(int f=0;f<11;f++){vec3 a=l[f][0],d=l[f][1];v+=d*(1./(1.+.09*length(a-fragPos)))*.3;}return v;}void main(){vec3 f=v();fragColor=vec4(vec3(.2,.5,.2)*.2*mix(.2,1.,smoothstep(0.,.3,dot(vec3(0,1,0),normalize(lightPos))))+f,1);}

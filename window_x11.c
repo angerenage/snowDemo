@@ -8,6 +8,10 @@
 #include <GL/glx.h>
 #include <GL/gl.h>
 #include <time.h>
+#ifdef DEBUG
+#include <stdio.h>
+#include <stdlib.h>
+#endif
 
 #ifndef CLOCK_MONOTONIC
 #define CLOCK_MONOTONIC 1
