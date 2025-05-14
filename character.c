@@ -86,8 +86,8 @@ typedef struct s_frame {
 unsigned int animationID = 0;
 static Frame* animation = NULL;
 static unsigned int animationLength = 0;
-static float transitionStartTime = -1.0f;
 
+static const float patchSize = (float)(CHUNK_NBR_Z * CHUNK_SIZE);
 vec3 characterPosition = {0.0f, 0.0f, 0.0f};
 float currentZOffset = 0.0f;
 
@@ -436,8 +436,6 @@ void initCharacter() {
 void updateCharacter(float time) {
 	if (animationID == 0) {
 		characterPosition.z = time * 3.5f;
-
-		const float patchSize = (float)(CHUNK_NBR_Z * CHUNK_SIZE);
 		if (characterPosition.z - currentZOffset >= patchSize) currentZOffset = floorf(characterPosition.z / patchSize) * patchSize;
 	}
 	else {

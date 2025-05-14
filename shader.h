@@ -4,7 +4,6 @@
 
 #include "glsl_unpacker.h"
 
-extern GLuint debugShader;
 extern GLuint basicShader;
 
 extern GLuint textShader;

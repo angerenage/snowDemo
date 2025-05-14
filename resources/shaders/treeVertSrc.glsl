@@ -1,27 +1,2 @@
 #version 330 core
-
-layout(location=0) in vec3 position;
-layout(location=1) in vec3 normal;
-layout (location=3) in mat4 instanceModel;
-
-out vec3 fragPos;
-out vec3 fragNormal;
-
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
-uniform float worldZOffset;
-
-void main() {
-	mat4 modelInstance = model * instanceModel;
-
-	vec4 pos = modelInstance * vec4(position, 1.0);
-	pos.z += worldZOffset;
-
-	fragPos = pos.xyz;
-
-	mat3 normalMatrix = transpose(inverse(mat3(modelInstance)));
-	fragNormal = normalize(normalMatrix * normal);
-
-	gl_Position = projection * view * pos;
-}
+layout(location=0)in vec3 position;layout(location=1)in vec3 normal;layout(location=3)in mat4 instanceModel;out vec3 fragPos,fragNormal;uniform mat4 model,view,projection;uniform float worldZOffset;void main(){mat4 n=model*instanceModel;vec4 l=n*vec4(position,1);l.z+=worldZOffset;fragPos=l.xyz;mat3 m=transpose(inverse(mat3(n)));fragNormal=normalize(m*normal);gl_Position=projection*view*l;}

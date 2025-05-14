@@ -170,7 +170,7 @@ void handleEvents() {
 					case XK_Escape:
 						running = false;
 						break;
-					case XK_Space:
+					case XK_space:
 						if (currentSceneId < 0) currentSceneId = 0;
 						break;
 				}

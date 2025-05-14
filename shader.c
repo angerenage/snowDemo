@@ -66,7 +66,6 @@ static GLuint compileComputeShader(const char* cs) {
 	return linkShaderProgram(&shader, 1);
 }
 
-GLuint debugShader;
 GLuint basicShader;
 
 GLuint textShader;
@@ -103,13 +102,6 @@ void initShaders() {
 	char *basicFragSrc = getShaderSourceFromFile(compressedShaders, shader_basicFragSrc);
 
 	basicShader = compileShader(basicVertSrc, NULL, NULL, NULL, basicFragSrc);
-
-	// Debug shaders
-	char *debugFragSrc = getShaderSourceFromFile(compressedShaders, shader_debugFragSrc);
-
-	debugShader = compileShader(basicVertSrc, NULL, NULL, NULL, debugFragSrc);
-
-	free(debugFragSrc);
 
 	// Text shaders
 	char *textVertSrc = getShaderSourceFromFile(compressedShaders, shader_textVertSrc);
@@ -245,7 +237,6 @@ void initShaders() {
 }
 
 void cleanupShaders() {
-	glDeleteProgram(debugShader);
 	glDeleteProgram(basicShader);
 
 	glDeleteProgram(textShader);

@@ -27,6 +27,7 @@ add_custom_command(
 		-c ${CRUSHED_SOURCE}
 		--max-token-size $<IF:$<CONFIG:Release>,500,10>
 		--core
+		$<$<CONFIG:Release>:--verbose>
 	DEPENDS ${SHADER_FILES}
 	COMMENT "Crushing shaders..."
 	VERBATIM

@@ -18,8 +18,6 @@
 
 #define TRANSITION_TIME 3.0f
 
-static const float patchSize = (float)(CHUNK_NBR_Z * CHUNK_SIZE);
-
 int main() {
 	initWindow(screenSize);
 
@@ -98,7 +96,8 @@ int main() {
 			swapBuffers();
 			continue;
 		}
-		else if (first) {
+		
+		if (first) {
 			first = false;
 			start = now;
 			ftime = 0.0f;
@@ -133,7 +132,6 @@ int main() {
 			renderCharacter(characterShader, &projection, &cameraView, &characterModel);
 			renderTrees(treeShader, &projection, &cameraView, &lightPosition, currentChunkZ);
 			renderSnow(&cameraView, currentChunkZ);
-			renderSky(&cameraView);
 			renderLights(&cameraView, ftime);
 
 			// Ice pass

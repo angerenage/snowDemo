@@ -482,33 +482,19 @@ static const Glyph special[] = {
 
 static const Glyph* getGlyphForCharacter(wchar_t c) {
 	if (isascii(c)) {
-		if (isdigit(c)) {
-			return &digits[c - '0'];
+		if (isalpha(c)) {
+			if (islower(c)) return &lowercase[c - 'a'];
+			return &uppercase[c - 'A'];
 		}
-		else if (isalpha(c)) {
-			if (islower(c)) {
-				return &lowercase[c - 'a'];
-			}
-			else {
-				return &uppercase[c - 'A'];
-			}
-		}
-		else if (c == L'-') {
-			return &special[0];
-		}
-		else if (c == L'"') {
-			return &special[1];
-		}
+		if (isdigit(c)) return &digits[c - '0'];
+		if (c == L'-') return &special[0];
+		if (c == L'"') return &special[1];
 		// Punctuation
 	}
 	else {
 		// Special case for é, è, ê, à, ... (if needed)
-		if (c == L'é') {
-			return &special[2];
-		}
-		else if (c == L'è') {
-			return &special[3];
-		}
+		if (c == L'é') return &special[2];
+		if (c == L'è') return &special[3];
 
 		printf("Non ascii character\n");
 	}
