@@ -27,11 +27,13 @@ def embed_file(fpath, root_dir):
 def generate(files, out_c, out_h):
 	with open(out_c, "w") as fc, open(out_h, "w") as fh:
 		# HEADER
+		fh.write("// Automatically generated file\n")
 		fh.write("#pragma once\n\n")
 		fh.write("#include <stddef.h>\n\n")
 		fh.write("typedef struct {\n\tvoid* data;\n\tsize_t size;\n} Ressource;\n\n")
 
 		# IMPLEMENTATION
+		fc.write("// Automatically generated file\n")
 		fc.write(f'#include "{os.path.basename(out_h)}"\n\n')
 
 		for res in files:
@@ -42,7 +44,7 @@ def generate(files, out_c, out_h):
 			fc.write(f"static const unsigned char res_{res['symbol']}_data[] = {{\n{res['data']}\n}};\n\n")
 			fc.write(f"const Ressource res_{res['symbol']} = {{ (void*)res_{res['symbol']}_data, {res['size']} }};\n\n")
 
-def main():
+if __name__ == "__main__":
 	if len(sys.argv) < 4:
 		print("Usage: resources_embedder.py <output.c> <output.h> <file1> [file2 ...]")
 		sys.exit(1)
@@ -57,6 +59,3 @@ def main():
 	files = [embed_file(path, root_dir) for path in file_paths]
 
 	generate(files, out_c, out_h)
-
-if __name__ == "__main__":
-	main()

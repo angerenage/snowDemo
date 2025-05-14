@@ -1,6 +1,8 @@
 #include "shadow.h"
 
-#include <stdio.h>
+#ifdef DEBUG
+	#include <stdio.h>
+#endif
 
 #include "character.h"
 #include "cameraController.h"

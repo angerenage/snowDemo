@@ -4,7 +4,7 @@
 
 #include "cameraController.h"
 #include "shadow.h"
-#include "resources.h"
+#include <resources.h>
 
 static GLuint skyboxVAO;
 static GLuint skyboxTexture;

@@ -4,7 +4,7 @@
 
 #include "geometry.h"
 #include "glutils.h"
-#include "resources.h"
+#include <resources.h>
 
 typedef struct s_bone {
 	vec3 position;

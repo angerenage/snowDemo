@@ -11,8 +11,10 @@ set(SHADER_DIR "${CMAKE_SOURCE_DIR}/resources/shaders")
 set(SHADER_PACK "${CMAKE_BINARY_DIR}/shaders.pack")
 set(CRUSHED_HEADER "${CMAKE_SOURCE_DIR}/glsl_unpacker.h")
 set(CRUSHED_SOURCE "${CMAKE_BINARY_DIR}/glsl_unpacker.c")
-set(GENERATED_C "${CMAKE_BINARY_DIR}/generated_resources.c")
-set(GENERATED_H "${CMAKE_SOURCE_DIR}/resources.h")
+set(RES_GENERATED_C "${CMAKE_BINARY_DIR}/generated_resources.c")
+set(RES_GENERATED_H "${CMAKE_SOURCE_DIR}/include/resources.h")
+set(TEXT_GEN_SOURCE "${CMAKE_BINARY_DIR}/text_data.c")
+set(TEXT_GEN_HEADER "${CMAKE_SOURCE_DIR}/include/text_data.h")
 
 # Collect shader files
 file(GLOB SHADER_FILES "${SHADER_DIR}/*.glsl")
@@ -40,19 +42,29 @@ list(FILTER ALL_RESOURCES EXCLUDE REGEX "\\.glsl$")
 
 # Embed resources
 add_custom_command(
-	OUTPUT ${GENERATED_C} ${GENERATED_H}
+	OUTPUT ${RES_GENERATED_C} ${RES_GENERATED_H}
 	COMMAND echo ${ALL_RESOURCES}
 	COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/resources_embedder.py
-		${GENERATED_C} ${GENERATED_H}
+		${RES_GENERATED_C} ${RES_GENERATED_H}
 		${SHADER_PACK} ${ALL_RESOURCES}
 	DEPENDS ${CMAKE_SOURCE_DIR}/tools/resources_embedder.py ${ALL_RESOURCES} ${SHADER_PACK}
 	COMMENT "Embedding resources..."
 )
 
+# Generate text data
+add_custom_command(
+	OUTPUT ${TEXT_GEN_SOURCE} ${TEXT_GEN_HEADER}
+	COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/glyphs_generator.py
+		${TEXT_GEN_SOURCE} ${TEXT_GEN_HEADER}
+	DEPENDS ${CMAKE_SOURCE_DIR}/tools/glyphs_generator.py
+	COMMENT "Generating glyph and text data..."
+)
+
 # Source files + generated resources
 file(GLOB SRC_FILES "*.c" "./include/glad.c")
-list(APPEND SRC_FILES ${GENERATED_C})
+list(APPEND SRC_FILES ${RES_GENERATED_C})
 list(APPEND SRC_FILES ${CRUSHED_SOURCE})
+list(APPEND SRC_FILES ${TEXT_GEN_SOURCE})
 add_executable(snow ${SRC_FILES})
 
 # Include project and third-party headers

@@ -174,6 +174,7 @@ void handleEvents() {
 						if (currentSceneId < 0) currentSceneId = 0;
 						break;
 				}
+				break;
 			}
 
 			case ButtonPress:

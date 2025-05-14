@@ -5,6 +5,8 @@
 #include "geometry.h"
 #include "cameraController.h"
 
+#define FULLSCREEN
+
 extern bool running;
 extern int currentSceneId;
 

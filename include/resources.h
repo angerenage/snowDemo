@@ -1,3 +1,4 @@
+// Automatically generated file
 #pragma once
 
 #include <stddef.h>

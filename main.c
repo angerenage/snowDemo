@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdbool.h>
 
 #include "window.h"
@@ -47,14 +46,14 @@ int main() {
 	projection = projectionMatrix((float)M_PI / 4.0f, screenSize.x / screenSize.y, 0.001f, 1000.0f);
 	updateCamera();
 
-	Text openingText = createText(L"Appuyez sur Espace pour commencer", 0.08f);
+	Text openingText = createText(text_opening, 0.08f);
 
-	Text creditText = createText(L"Démo imaginée et développée par Ange Rollet", 0.065f);
-	Text musicTitleText = createText(L"- Musique -", 0.08f);
-	Text musicCreditText = createText(L"\"\" par ", 0.06f);
-	Text thanksTitleText = createText(L"- Remerciements spéciaux -", 0.08f);
-	Text thanksParis8Text = createText(L"Université Paris 8    -    Farès Belhadj     ", 0.055f);
-	Text thanksElseText = createText(L"robobo1221    -    xaot88    ", 0.055f);
+	Text creditText = createText(text_credit, 0.065f);
+	Text musicTitleText = createText(text_music_title, 0.08f);
+	Text musicCreditText = createText(text_music_credit, 0.06f);
+	Text thanksTitleText = createText(text_thanks_title, 0.08f);
+	Text thanksParis8Text = createText(text_thanks_paris8, 0.055f);
+	Text thanksElseText = createText(text_thanks_else, 0.055f);
 
 	Text *credits[] = {
 		&creditText,
@@ -74,13 +73,13 @@ int main() {
 		double now = getTime();
 		float ftime = (float)(now - start);
 
-		glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glClear(GL_DEPTH_BUFFER_BIT);
 
 		if (currentSceneId < 0) {
 			glClear(GL_COLOR_BUFFER_BIT);
 
-			fixHorizontal(&openingText, CENTER_ANCHOR, &screenSize, 0.0);
-			fixVertical(&openingText, BOTTOM_ANCHOR, &screenSize, 100.0);
+			fixHorizontal(&openingText, CENTER_ANCHOR, 0.0);
+			fixVertical(&openingText, BOTTOM_ANCHOR, 100.0);
 
 			mat4 model = transformMatrix(openingText.pos, (vec3){0.0f, 0.0f, 0.0f}, (vec3){openingText.scale, openingText.scale, openingText.scale});
 
@@ -96,7 +95,7 @@ int main() {
 			swapBuffers();
 			continue;
 		}
-		
+
 		if (first) {
 			first = false;
 			start = now;
@@ -107,6 +106,8 @@ int main() {
 		updateCharacter(ftime);
 
 		if (currentSceneId == 0) {
+			glClear(GL_STENCIL_BUFFER_BIT);
+
 			clearShadow();
 			updateCamera();
 
@@ -213,23 +214,23 @@ int main() {
 		else {
 			glClear(GL_COLOR_BUFFER_BIT);
 
-			fixHorizontal(&creditText, CENTER_ANCHOR, &screenSize, 0.0f);
-			fixVertical(&creditText, TOP_ANCHOR, &screenSize, screenSize.y * 0.175f - 25.0f);
+			fixHorizontal(&creditText, CENTER_ANCHOR, 0.0f);
+			fixVertical(&creditText, TOP_ANCHOR, screenSize.y * 0.175f - 25.0f);
 
-			fixHorizontal(&musicTitleText, CENTER_ANCHOR, &screenSize, 0.0f);
-			fixVertical(&musicTitleText, TOP_ANCHOR, &screenSize, screenSize.y * 0.5f);
+			fixHorizontal(&musicTitleText, CENTER_ANCHOR, 0.0f);
+			fixVertical(&musicTitleText, TOP_ANCHOR, screenSize.y * 0.5f);
 
-			fixHorizontal(&musicCreditText, CENTER_ANCHOR, &screenSize, 0.0f);
-			fixVertical(&musicCreditText, TOP_ANCHOR, &screenSize, screenSize.y * 0.7f);
+			fixHorizontal(&musicCreditText, CENTER_ANCHOR, 0.0f);
+			fixVertical(&musicCreditText, TOP_ANCHOR, screenSize.y * 0.7f);
 
-			fixHorizontal(&thanksTitleText, CENTER_ANCHOR, &screenSize, 0.0f);
-			fixVertical(&thanksTitleText, MIDDLE_ANCHOR, &screenSize, screenSize.y * -0.1f);
+			fixHorizontal(&thanksTitleText, CENTER_ANCHOR, 0.0f);
+			fixVertical(&thanksTitleText, MIDDLE_ANCHOR, screenSize.y * -0.1f);
 
-			fixHorizontal(&thanksParis8Text, CENTER_ANCHOR, &screenSize, 0.0f);
-			fixVertical(&thanksParis8Text, MIDDLE_ANCHOR, &screenSize, screenSize.y * -0.3f);
+			fixHorizontal(&thanksParis8Text, CENTER_ANCHOR, 0.0f);
+			fixVertical(&thanksParis8Text, MIDDLE_ANCHOR, screenSize.y * -0.3f);
 
-			fixHorizontal(&thanksElseText, CENTER_ANCHOR, &screenSize, 0.0f);
-			fixVertical(&thanksElseText, MIDDLE_ANCHOR, &screenSize, screenSize.y * -0.5f);
+			fixHorizontal(&thanksElseText, CENTER_ANCHOR, 0.0f);
+			fixVertical(&thanksElseText, MIDDLE_ANCHOR, screenSize.y * -0.5f);
 
 			for (unsigned int i = 0; i < sizeof(credits) / sizeof(Text*); i++) {
 				mat4 model = transformMatrix(credits[i]->pos, (vec3){0.0f, 0.0f, 0.0f}, (vec3){credits[i]->scale, credits[i]->scale, credits[i]->scale});

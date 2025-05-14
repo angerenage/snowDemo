@@ -5,7 +5,7 @@
 	#include <stdio.h>
 #endif
 
-#include "resources.h"
+#include <resources.h>
 
 static GLuint compileShaderStage(GLenum type, const char* code) {
 	if (!code) return 0;

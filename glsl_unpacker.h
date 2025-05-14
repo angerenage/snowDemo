@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stddef.h>
+
 enum ShaderOffset {
 	shader_skyVertSrc = 94,
 	shader_grassFragSrc = 123,
