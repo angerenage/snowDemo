@@ -68,13 +68,14 @@ glyphs = {
 	'\"': [0000000000, 0b00000111, 0000000000, 0b00000111, 0000000000],
 	'é': [0b00111000, 0b01010100, 0b01010110, 0b01010101, 0b00011000],
 	'è': [0b00111000, 0b01010101, 0b01010110, 0b01010100, 0b00011000],
+	'.': [0b00000000, 0b00000000, 0b01000000, 0b00000000, 0b00000000],
 }
 
 texts = {
 	"opening": "Appuyez sur Espace pour commencer",
 	"credit": "Démo imaginée et développée par Ange Rollet",
 	"music_title": "- Musique -",
-	"music_credit": "\"\" par ",
+	"music_credit": "\".in your arms.\" de skuter",
 	"thanks_title": "- Remerciements spéciaux -",
 	"thanks_paris8": "Université Paris 8    -    Farès Belhadj     ",
 	"thanks_else": "robobo1221    -    xaot88    "

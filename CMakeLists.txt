@@ -109,7 +109,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mwindows")
 		target_link_libraries(snow user32 gdi32 opengl32)
 	elseif(UNIX)
-		target_link_libraries(snow m X11 GL)
+		target_link_libraries(snow m X11 GL mikmod)
 	endif()
 endif()
 

@@ -1,6 +1,7 @@
 #include <stdbool.h>
 
 #include "window.h"
+#include "audio.h"
 #include "cameraController.h"
 #include "shadow.h"
 #include "glutils.h"
@@ -13,12 +14,13 @@
 #include "text.h"
 
 #define SCENE1_TIME 55.0f
-#define SCENE2_TIME 25.0f
+#define SCENE2_TIME 20.0f
 
 #define TRANSITION_TIME 3.0f
 
 int main() {
 	initWindow(screenSize);
+	initAudio();
 
 	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_DEPTH_TEST);
@@ -100,6 +102,8 @@ int main() {
 			first = false;
 			start = now;
 			ftime = 0.0f;
+
+			playSound();
 		}
 
 		updateLight(ftime, currentSceneId != 0);
@@ -253,6 +257,8 @@ int main() {
 		swapBuffers();
 	}
 
+	stopSound();
+
 	for (unsigned int i = 0; i < sizeof(credits) / sizeof(Text*); i++) freeMesh(credits[i]->mesh);
 	cleanupGrass();
 	cleanupTrees();
@@ -262,6 +268,7 @@ int main() {
 	cleanupSky();
 	cleanupUtils();
 	cleanupShaders();
+	cleanupAudio();
 	cleanupWindow();
 
 	return 0;

@@ -5,7 +5,7 @@
 
 typedef uint8_t Glyph[5];
 
-extern const Glyph glyph_data[40];
+extern const Glyph glyph_data[42];
 
 extern const uint8_t text_opening[];
 extern const uint8_t text_credit[];
