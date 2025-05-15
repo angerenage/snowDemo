@@ -1,5 +1,7 @@
 #include "audio.h"
 
+#ifdef LINUX
+
 #include <mikmod.h>
 #include <pthread.h>
 #include <limits.h>
@@ -8,11 +10,13 @@
 #include <stdio.h>
 #endif
 
+#endif
+
 #include <resources.h>
 
 #define PCM_DEVICE "default"
 
-extern pthread_t audioThread;
+#ifdef LINUX
 
 typedef struct memReader_s {
 	MREADER core;
@@ -161,7 +165,10 @@ static void* audioThreadRoutine(void *arg) {
 	return NULL;
 }
 
+#endif
+
 void initAudio() {
+#ifdef LINUX
 	MikMod_RegisterAllDrivers();
 	MikMod_RegisterAllLoaders();
 
@@ -177,9 +184,11 @@ void initAudio() {
 #else
 	MikMod_Init("");
 #endif
+#endif
 }
 
 void playSound() {
+#ifdef LINUX
 #ifdef DEBUG
 	if (pthread_create(&audioThread, NULL, audioThreadRoutine, (void*)&res_music_it) != 0) {
 		fprintf(stderr, "Failed to create thread\n");
@@ -188,16 +197,21 @@ void playSound() {
 #else
 	pthread_create(&audioThread, NULL, audioThreadRoutine, (void*)&res_music_it);
 #endif
+#endif
 }
 
 void stopSound() {
+#ifdef LINUX
 	pthread_mutex_lock(&mutex);
 	keep_playing = 0;
 	pthread_cond_signal(&cond);
 	pthread_mutex_unlock(&mutex);
+#endif
 }
 
 void cleanupAudio() {
+#ifdef LINUX
 	pthread_join(audioThread, NULL);
 	MikMod_Exit();
+#endif
 }
